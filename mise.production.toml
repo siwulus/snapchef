@@ -1,4 +1,0 @@
-# Layered on top of mise.toml when MISE_ENV=production.
-# Used by CI to flip NODE_ENV without disturbing local dev defaults.
-[env]
-NODE_ENV = "production"
