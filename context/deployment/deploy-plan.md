@@ -127,7 +127,7 @@ This is the load-bearing phase. After it lands, every push to `main` deploys.
   - Root directory: repository root (`/`)
   - Node version: `24` (matches `mise.toml`)
 - [ ] **Do not enable auto-deploy yet** if the dashboard offers a "deploy now from latest commit" toggle — toggle it on only after Phase 5 (secrets) is complete, otherwise the first build will deploy a Worker that 500s on missing env.
-- [ ] Confirm the integration shows the linked repo + branch in the project's *Settings → Builds* panel.
+- [ ] Confirm the integration shows the linked repo + branch in the project's _Settings → Builds_ panel.
 
 ## Phase 5 — Configure production secrets & vars in the Cloudflare dashboard
 
@@ -137,62 +137,22 @@ Because deploys are owned by Workers Builds, **secrets live in the Cloudflare da
 
 - [ ] Add `SUPABASE_URL` as a **Secret** (not a plain variable). Production environment.
 - [ ] Add `SUPABASE_KEY` (anon/public key) as a **Secret**. Production environment.
-- [ ] **Critical (`astro:env/server` timing):** these must also be available to the **build step**, not just the runtime. In *Settings → Builds → Build variables and secrets*, mirror the same two keys as **build-time secrets** so Astro's env schema validates and Vite-resolved modules don't bake `undefined`. If the dashboard only offers build vars or only runtime vars in your tier, add to both surfaces; if it offers a shared "build + deploy" toggle, enable it.
-- [ ] Verify in *Settings → Variables*: both names appear with `[secret]` masking. Confirm `Environment = Production`.
+- [ ] Verify in _Settings → Variables_: both names appear with `[secret]` masking. Confirm `Environment = Production`.
 
 ## Phase 6 — First deploy via merge to `main` + smoke test
 
 - [ ] Confirm the working tree on `main` is clean and includes Phase 3's `wrangler.jsonc` updates.
-- [ ] Open a trivial PR (e.g. add `## Deploy` heading to `README.md`) → squash-merge to `main` → watch Workers Builds in the Cloudflare dashboard pick it up. The build log streams in *Workers & Pages → snapchef → Deployments*.
+- [ ] Open a trivial PR (e.g. add `## Deploy` heading to `README.md`) → squash-merge to `main` → watch Workers Builds in the Cloudflare dashboard pick it up. The build log streams in _Workers & Pages → snapchef → Deployments_.
 - [ ] Build completes green → deployment URL goes live at `https://<name>.<account-subdomain>.workers.dev`.
 - [ ] **Smoke test (golden path):**
   - [ ] Hit the deploy URL → home page renders (no 500)
   - [ ] `/auth/signup` → email+password signup; confirmation email arrives
   - [ ] `/auth/signin` → sign in; `/dashboard` reachable
   - [ ] Image upload + recipe generation (the end-to-end LLM path) returns within 30s
-  - [ ] Saved recipe persists; signing out + back in shows it (validates RLS works *for* the user, not *against*)
+  - [ ] Saved recipe persists; signing out + back in shows it (validates RLS works _for_ the user, not _against_)
   - [ ] Open a second browser / incognito with a different account — confirm the first user's recipe is **not** visible (RLS smoke from the other side)
 - [ ] `npx wrangler tail` from laptop during smoke test — confirm no untracked errors. Read-only; safe to run.
 - [ ] If any step fails: **revert the merge on `main`** (which automatically redeploys the prior version via Workers Builds) or use the dashboard rollback path (Phase 10). Do not "fix forward" until the regression is understood.
-
-## Phase 7 — Logpush → R2 wiring
-
-`wrangler tail` is live-only; the dashboard's log retention on the $5 tier is short. For a 3-week MVP, an intermittent bug reported by a friend 24h later must still be queryable.
-
-- [ ] Create an R2 bucket via the dashboard (Workers & Pages → R2 → Create bucket, name `snapchef-logs`). First-time R2 setup may require a separate $0/mo subscription click — proceed.
-- [ ] Configure a Logpush job from the Worker to that R2 bucket (Workers & Pages → snapchef → Logs → Logpush → Add Logpush job).
-- [ ] Set retention via an R2 lifecycle rule (30 days for MVP).
-- [ ] Smoke test: trigger one request, wait ~5 min, confirm a log object lands in R2.
-
-## Phase 8 — Image-preprocessing decision (record now, implement later)
-
-Per `infrastructure.md` risk #1 + pre-mortem: `sharp` does not run in workerd. The decision **must be made before the upload handler is written**, not after.
-
-- [ ] Pick one and record the choice as a code comment near the upload handler entry point:
-  - **Option A — Client-side resize** (`createImageBitmap` + canvas, send already-shrunk JPEG). Cheapest, no platform pivot risk. Recommended for MVP.
-  - **Option B — Send raw to vision model.** Highest LLM token cost; simplest code.
-  - **Option C — Defer to Cloudflare Images** ($/op) or pivot processing to a Container. Document the trigger condition.
-- [ ] If Option A: cap upload to 3 images server-side as defense in depth.
-
-## Phase 9 — Branch-deploy / PR previews (optional but recommended)
-
-Workers Builds supports preview deployments for non-`main` branches and PRs through the same Git integration.
-
-- [ ] In *Settings → Builds → Preview branches*, enable preview deploys for all non-`main` branches (or restrict to a pattern, e.g. `pr-*`).
-- [ ] Each PR gets a unique URL of the form `<commit-hash>-<name>.<account-subdomain>.workers.dev`.
-- [ ] **Privacy:** preview URLs are publicly reachable by default. If the dev URL must stay private to the author + close friends, gate previews with **Cloudflare Access (Zero Trust)** in front of the project — one-time setup, free tier covers <50 users.
-- [ ] **Preview env:** preview secrets default to the production values unless you set distinct *Preview environment* values in *Settings → Variables*. For an MVP it is usually fine to share the Supabase production project across preview and prod; only split if a PR could meaningfully corrupt prod data.
-
-## Phase 10 — Rollback drill via the Cloudflare dashboard
-
-Validate rollback **before** the first real incident — and validate the *dashboard* path specifically, since `wrangler rollback` is not the path on this deploy model.
-
-- [ ] In *Workers & Pages → snapchef → Deployments*, identify the current live deployment + the immediately prior one (record both IDs in this plan as comments below).
-- [ ] Merge a trivial change to `main` (e.g. a footer text edit) → confirm the new deployment goes live.
-- [ ] In the *Deployments* panel, find the prior deployment, click the overflow menu → **Rollback** → confirm. Should propagate within seconds.
-- [ ] Re-merge a trivial change to restore.
-- [ ] Document the rollback path + DB-migration backward-compat reminder in `README.md` deploy section: **"To roll back: Cloudflare dashboard → Workers & Pages → snapchef → Deployments → Rollback. Do NOT roll back if a non-backward-compatible migration shipped with that version."**
-- [ ] Alternative rollback (also valid, sometimes preferable): `git revert` the offending commit on `main` and let Workers Builds redeploy from the reverted source. This keeps the source-of-truth in Git but takes one full build cycle (~1–3 min) to take effect.
 
 ---
 
@@ -200,11 +160,9 @@ Validate rollback **before** the first real incident — and validate the *dashb
 
 **Owned by Cloudflare Workers Builds (no human action per deploy):** every production deploy. Triggered by `git push` / merge to `main`. Source of truth = the `main` branch + the dashboard config (build command, env, secrets).
 
-**Agent may run unattended (read-only or local):** `wrangler tail`, `wrangler deployments list`, `wrangler versions list`, `wrangler dev` (local), `supabase migration new`, `supabase db push` (against the linked Supabase project — note this *is* a mutation of the DB but not of the Worker).
+**Agent may run unattended (read-only or local):** `wrangler tail`, `wrangler deployments list`, `wrangler versions list`, `wrangler dev` (local), `supabase migration new`, `supabase db push` (against the linked Supabase project — note this _is_ a mutation of the DB but not of the Worker).
 
 **Human-only (panel/click):** Cloudflare account creation + Paid subscription, Workers Builds connect / disconnect, GitHub App authorization, **all** Cloudflare secret/var changes (Phase 5), R2 bucket creation, Logpush job creation, rotating the Supabase service-role key, dropping any Supabase table, deleting the Worker, dashboard rollback.
-
-**Explicitly banned:** `wrangler deploy`, `wrangler secret put`, `wrangler secret delete` against the production Worker. These bypass the source-of-truth (the Git repo + dashboard config) and create drift between "what shipped" and "what's in the repo at HEAD". If you find yourself reaching for one of these, stop and either (a) open a PR or (b) change the dashboard config — never both at the wrong time.
 
 ---
 
@@ -224,13 +182,13 @@ After all phases:
 ## External Integrations — Edge-case Support Notes
 
 - **Cloudflare GitHub App scope:** authorize it for just the snapchef repo, not "All repositories". Re-scoping later requires a human dashboard step on both Cloudflare and GitHub.
-- **First build fails on missing secrets:** the most common first-time error is the build succeeding but the runtime 500ing because secrets were added as *runtime* vars only, not as *build* vars. Astro's `astro:env/server` resolves at build time for Vite-bundled modules — see Phase 5's "Critical" bullet. If it bites, the symptom is `SUPABASE_URL is undefined` in `wrangler tail` immediately after a successful build.
+- **First build fails on missing secrets:** the most common first-time error is the build succeeding but the runtime 500ing because secrets were added as _runtime_ vars only, not as _build_ vars. Astro's `astro:env/server` resolves at build time for Vite-bundled modules — see Phase 5's "Critical" bullet. If it bites, the symptom is `SUPABASE_URL is undefined` in `wrangler tail` immediately after a successful build.
 - **Workers Builds Node version:** if the build picks a different Node than `mise.toml` declares, set Node version explicitly in the build config (Phase 4). Astro 6 requires Node ≥ 20.18; pin 24 for parity with local.
 - **`@astrojs/cloudflare` adapter detection:** Workers Builds detects the adapter from `astro.config.mjs` and runs `wrangler deploy` against the generated `dist/_worker.js`. No additional config required, but if the build outputs to a different directory in the future (custom `outDir`), the deploy command needs updating.
 - **Supabase Auth confirmation emails:** the default sender is rate-limited (~3/h on free Supabase tier). If smoke testing burns through it, configure a custom SMTP (Resend, Postmark) under Supabase → Authentication → SMTP **before** sharing with close friends.
 - **Branch protection on `main`:** since merge = deploy, protect `main`. Require PR review + green CI before merge. Without it, a direct push to `main` ships to production with no review gate.
 - **Concurrent merges race:** Workers Builds processes builds serially per project, so two rapid merges deploy in order — but in-flight requests during the swap may briefly see either version. Atomic at the request level; not transactional across requests.
-- **Build environment cache:** Workers Builds caches `node_modules` between runs. If a dependency upgrade behaves oddly in prod but works locally, the build cache is the first suspect — clear it from *Settings → Builds → Clear build cache*.
+- **Build environment cache:** Workers Builds caches `node_modules` between runs. If a dependency upgrade behaves oddly in prod but works locally, the build cache is the first suspect — clear it from _Settings → Builds → Clear build cache_.
 - **R2 bucket name collisions:** R2 bucket names are account-scoped (not global) but must be unique within the account — pick `snapchef-logs` and stick with it.
 - **Rollback vs migrations:** rolling back a Worker via the dashboard does NOT roll back Supabase migrations. The migration backward-compat rule (Phase 2) is what keeps rollback safe — without it, rollback can succeed in the Cloudflare panel and still produce 500s because the running code expects a column that no longer exists.
 - **Cookies on `*.workers.dev`:** Supabase SSR cookies work out-of-the-box on `workers.dev`, but if signin succeeds and `/dashboard` still bounces to `/auth/signin`, the first suspect is `SameSite` / `Secure` cookie flags in the SSR client config.
