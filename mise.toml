@@ -1,0 +1,41 @@
+# mise.toml — environment management for snapchef
+# Docs: https://mise.jdx.dev/configuration.html
+
+[tools]
+node = "24"
+
+[env]
+NODE_ENV = "development"
+_.file = ".env"
+
+[tasks.dev]
+description = "Run Astro dev server"
+run = "npm run dev"
+
+[tasks.build]
+description = "Build for Cloudflare Workers"
+run = "npm run build"
+
+[tasks.preview]
+description = "Preview built site"
+run = "npm run preview"
+
+[tasks.lint]
+description = "ESLint (type-checked)"
+run = "npm run lint"
+
+[tasks.format]
+description = "Prettier write"
+run = "npm run format"
+
+[tasks.deploy]
+description = "Deploy to Cloudflare Workers"
+run = "npx wrangler deploy"
+
+[tasks.db-start]
+description = "Start local Supabase stack (requires Docker)"
+run = "npx supabase start"
+
+[tasks.db-stop]
+description = "Stop local Supabase stack"
+run = "npx supabase stop"

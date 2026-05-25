@@ -33,7 +33,7 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 
 ## Environment, Commits & CI
 
-- Node `22.14.0` (`@.nvmrc`). Local dev secrets: `.env` (Node) and `.dev.vars` (Cloudflare local dev, gitignored). Local Supabase requires Docker — see `@README.md`.
+- Node `24` (`@mise.toml`, replaces `.nvmrc`); `mise.toml` also auto-loads `.env` and defines task aliases (`mise run dev|build|lint|format|deploy|db-start|db-stop`). Local dev secrets: `.env` (Node) and `.dev.vars` (Cloudflare local dev, gitignored). Local Supabase requires Docker — see `@README.md`.
 - Pre-commit hooks run via Husky + lint-staged — see `@package.json`. Do not bypass with `--no-verify`.
 - Commit subjects so far are short imperatives; no Conventional Commits prefix in use yet.
 - CI: `@.github/workflows/ci.yml` (runs on `main`). Both Supabase secrets are required for the build step.
