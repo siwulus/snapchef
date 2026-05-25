@@ -1,4 +1,4 @@
-# 10x Astro Starter
+# Snapchef
 
 ![](./public/template.png)
 
