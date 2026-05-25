@@ -150,25 +150,16 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ## Deployment
 
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/).
+This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) via **Workers Builds** — Cloudflare watches the GitHub repo and deploys automatically on every push to `main`. **Do not run `npx wrangler deploy` against production.** Source of truth = the `main` branch plus the Cloudflare dashboard config.
 
-1. Build the project:
-
-```bash
-npm run build
-```
-
-2. Deploy with Wrangler:
-
-```bash
-npx wrangler deploy
-```
-
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
+- Secrets (`SUPABASE_URL`, `SUPABASE_KEY`) are set in the Cloudflare dashboard under **Workers & Pages → snapchef → Settings → Variables and Secrets** (mirror them to *Build variables and secrets* so `astro:env/server` resolves at build time).
+- Local dev secrets live in `.env` (Node) and `.dev.vars` (`wrangler dev`); both are gitignored.
+- Live logs: `npx wrangler tail` (read-only; safe).
+- To roll back: Cloudflare dashboard → Workers & Pages → snapchef → Deployments → Rollback. **Do not** roll back if a non-backward-compatible Supabase migration shipped with that version.
 
 ## CI
 
-GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step.
+GitHub Actions runs lint + build on every push and PR to `main`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step. CI does **not** deploy — deploys are owned by Cloudflare Workers Builds (see Deployment above).
 
 ## License
 

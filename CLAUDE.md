@@ -7,6 +7,8 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 - API routes (`src/pages/api/**`) must `export const prerender = false`. The app runs `output: "server"` — see `@astro.config.mjs`.
 - Server-only env access goes through `astro:env/server`. `SUPABASE_URL` / `SUPABASE_KEY` are declared in the `env.schema` of `@astro.config.mjs` — do not read `import.meta.env.*` or `process.env.*` for them.
 - New Supabase tables require RLS enabled with granular per-operation, per-role policies in the same migration. Migration filenames follow `YYYYMMDDHHmmss_short_description.sql` under `supabase/migrations/`.
+- Every Supabase migration must be **additive / nullable / non-destructive** (backward-compatible) for at least one Worker version. A dashboard rollback of the Worker does **not** roll back the DB.
+- Production deploys are owned by **Cloudflare Workers Builds** (watches `main`, deploys on push). **Do not run `npx wrangler deploy`** against production, and **do not set production secrets with `npx wrangler secret put`** — both bypass the source-of-truth (repo + dashboard) and cause drift. Secrets live in the Cloudflare dashboard.
 - No Next.js directives (`"use client"`, `"use server"`) — this is Astro, not Next.
 
 ## Project Structure
@@ -21,7 +23,7 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 ## Commands
 
 - See scripts in `@package.json` (`dev`, `build`, `preview`, `lint`, `lint:fix`, `format`). Lint uses type-checked rules from `@eslint.config.js`; format runs Prettier with the Astro + Tailwind plugins.
-- `npx wrangler deploy` — deploy to Cloudflare. Secrets via `npx wrangler secret put`.
+- Wrangler is for local dev + diagnostics only: `npx wrangler dev` (local), `npx wrangler tail` (live logs), `npx wrangler deployments list` / `versions list` (read-only). Production deploys happen via Cloudflare Workers Builds on push to `main`.
 
 ## Coding Style
 
@@ -33,7 +35,7 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 
 ## Environment, Commits & CI
 
-- Node `24` (`@mise.toml`, replaces `.nvmrc`); `mise.toml` also auto-loads `.env` and defines task aliases (`mise run dev|build|lint|format|deploy|db-start|db-stop`). Local dev secrets: `.env` (Node) and `.dev.vars` (Cloudflare local dev, gitignored). Local Supabase requires Docker — see `@README.md`.
+- Node `24` (`@mise.toml`, replaces `.nvmrc`); `mise.toml` also auto-loads `.env` and defines task aliases (`mise run dev|build|preview|lint|format|tail|db-start|db-stop`). Local dev secrets: `.env` (Node) and `.dev.vars` (Cloudflare local dev, gitignored). Local Supabase requires Docker — see `@README.md`.
 - Pre-commit hooks run via Husky + lint-staged — see `@package.json`. Do not bypass with `--no-verify`.
 - Commit subjects so far are short imperatives; no Conventional Commits prefix in use yet.
 - CI: `@.github/workflows/ci.yml` (runs on `main`). Both Supabase secrets are required for the build step.

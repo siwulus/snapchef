@@ -28,9 +28,9 @@ run = "npm run lint"
 description = "Prettier write"
 run = "npm run format"
 
-[tasks.deploy]
-description = "Deploy to Cloudflare Workers"
-run = "npx wrangler deploy"
+[tasks.tail]
+description = "Tail live Cloudflare Worker logs (read-only)"
+run = "npx wrangler tail"
 
 [tasks.db-start]
 description = "Start local Supabase stack (requires Docker)"
