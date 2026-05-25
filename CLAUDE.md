@@ -8,7 +8,7 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 - Server-only env access goes through `astro:env/server`. `SUPABASE_URL` / `SUPABASE_KEY` are declared in the `env.schema` of `@astro.config.mjs` — do not read `import.meta.env.*` or `process.env.*` for them.
 - New Supabase tables require RLS enabled with granular per-operation, per-role policies in the same migration. Migration filenames follow `YYYYMMDDHHmmss_short_description.sql` under `supabase/migrations/`.
 - Every Supabase migration must be **additive / nullable / non-destructive** (backward-compatible) for at least one Worker version. A dashboard rollback of the Worker does **not** roll back the DB.
-- Production deploys are owned by **Cloudflare Workers Builds** (watches `main`, deploys on push). **Do not run `npx wrangler deploy`** against production, and **do not set production secrets with `npx wrangler secret put`** — both bypass the source-of-truth (repo + dashboard) and cause drift. Secrets live in the Cloudflare dashboard.
+- Production deploys are owned by **Cloudflare Workers Builds** (watches `main`, deploys on push). **Do not run `npx wrangler deploy`** against production
 - No Next.js directives (`"use client"`, `"use server"`) — this is Astro, not Next.
 
 ## Project Structure
