@@ -1,5 +1,7 @@
 # Snapchef
 
+<!-- CI re-trigger -->
+
 ![](./public/template.png)
 
 A modern, opinionated starter template for building fast, accessible web applications.
