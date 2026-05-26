@@ -7,8 +7,8 @@ context_type: greenfield
 product_type: web-app
 target_scale:
   users: small
-  qps: # TODO: qps — see Open Questions
-  data_volume: # TODO: data_volume — see Open Questions
+  qps: low
+  data_volume: small
 timeline_budget:
   mvp_weeks: 3
   hard_deadline: null
@@ -61,17 +61,17 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
 
 ### Authentication
 
-- FR-001: Użytkownik może utworzyć konto (email + hasło). Priority: must-have
-  > Socratic: Counter-argument considered: "rejestracja zbędna w MVP z jednym hardcoded userem" — odrzucone; per-user data od dnia 1 jest fundamentem prywatności.
+- FR-001: Użytkownik może utworzyć konto (email + hasło). Rejestracja wymaga weryfikacji emaila — konto pozostaje nieaktywne (logowanie zablokowane) do momentu potwierdzenia adresu przez link wysłany na email. Priority: must-have
+  > Socratic: Counter-argument considered: "rejestracja zbędna w MVP z jednym hardcoded userem" — odrzucone; per-user data od dnia 1 jest fundamentem prywatności. Weryfikacja emaila wymagana od v1 (decyzja użytkownika, OQ1) — zapobiega rejestracji na cudze adresy i jest standardową praktyką zaufania.
 - FR-002: Użytkownik może zalogować się i wylogować. Priority: must-have
   > Socratic: Counter-argument considered: "logout zbędny / sesja powinna być trwała" — odrzucone; standardowy mechanizm sesji jest wystarczający.
 
 ### Image ingestion & product recognition
 
-- FR-003: Zalogowany użytkownik może wgrać 1–N zdjęć produktów przez formularz upload. Priority: must-have
-  > Socratic: Counter-argument considered: "tylko 1 zdjęcie / problemy z dużymi plikami HEIC" — odrzucone; 1–N pozostaje, walidacja formatu/wielkości jest detalem implementacyjnym.
-- FR-004: System rozpoznaje na zdjęciach produkty wraz z szacowaną ilością i prezentuje listę [nazwa, ilość]. Priority: must-have
-  > Socratic: Counter-argument considered: "ilość ze zdjęcia jest nierzetelna / halucynacje produktów" — odrzucone; FR-005 (edycja listy) łapie błędy rozpoznania, więc imperfect output jest akceptowalny.
+- FR-003: Zalogowany użytkownik może wgrać od 1 do 5 zdjęć produktów w jednej sesji uploadu, każde do 5 MB. Próba wgrania pliku przekraczającego limit kończy się czytelnym komunikatem o błędzie. Priority: must-have
+  > Socratic: Counter-argument considered: "tylko 1 zdjęcie / problemy z dużymi plikami HEIC" — odrzucone; 1–5 pozostaje. Limity (5 zdjęć × 5 MB) ustalone przez użytkownika (OQ3) — kompromis między pokryciem typowej szafki a kosztem przetwarzania.
+- FR-004: System rozpoznaje na zdjęciach produkty wraz z szacowaną ilością i prezentuje listę [nazwa, ilość]. Każda pozycja jest deklarowana jednoznacznie (jeden produkt na pozycję) — system nie zwraca alternatyw typu "cytryna lub limonka". Priority: must-have
+  > Socratic: Counter-argument considered: "ilość ze zdjęcia jest nierzetelna / halucynacje produktów / sygnalizacja niepewności per pozycja" — odrzucone; FR-005 (edycja listy) łapie błędy rozpoznania, więc imperfect output i jednoznaczna deklaracja są akceptowalne. Decyzja jednoznaczności potwierdzona przez użytkownika (OQ4) — prostszy UX, korekta przez edycję.
 - FR-005: Użytkownik może edytować rozpoznaną listę: poprawić nazwę / ilość, usunąć pozycję, dodać produkt spoza zdjęć. Priority: must-have
   > Socratic: Counter-argument considered: "edycja komplikuje UI / brak dodawania poza zdjęciami" — odrzucone; bez ręcznego dodania soli/oliwy/przypraw rekomendacja byłaby nierealistyczna.
 
@@ -81,8 +81,8 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
   > Socratic: Counter-argument considered: "3 osobne pola select to za dużo tarcia" — **zaakceptowane i FR zrewidowane**: zamiast strukturalnych pól typ/styl/smaki, jedno pole tekstowe; mniej pracy implementacyjnej i bardziej elastyczne.
 - FR-007: System generuje propozycję przepisu na bazie zaakceptowanej listy produktów i kontekstu posiłku. Priority: must-have
   > Socratic: Counter-argument considered: "system zignoruje listę i wymyśli składniki / 1 wynik to za mało" — odrzucone; constraint na produkty z listy jest detalem implementacyjnym, multi-result trafia do v2.
-- FR-008: Użytkownik widzi wygenerowany przepis (składniki + instrukcje) i decyduje, czy go zapisać. Priority: must-have
-  > Socratic: Counter-argument considered: "brak 'odrzuć i regeneruj' / brakuje servings/czasu" — odrzucone; w scope-down nie ma regeneracji, format przepisu jest detalem implementacyjnym.
+- FR-008: Użytkownik widzi wygenerowany przepis i decyduje, czy go zapisać. Minimalny format przepisu obejmuje: nazwę dania, listę składników (z ilościami) oraz instrukcję wykonania krok po kroku. Bez dodatkowych metadanych (servings / czas / poziom trudności). Priority: must-have
+  > Socratic: Counter-argument considered: "brak 'odrzuć i regeneruj' / brakuje servings/czasu/trudności" — odrzucone; w scope-down nie ma regeneracji. Minimalny format (nazwa + składniki + instrukcja) potwierdzony przez użytkownika (OQ2) — metadane (servings/czas/trudność) trafiają do v2.
 
 ### Recipe persistence
 
@@ -110,7 +110,7 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
 
 **Wejście użytkownika**: zestaw zdjęć produktów + (po rozpoznaniu i edycji) lista [nazwa, ilość] + swobodny opis kontekstu posiłku (typ posiłku, styl, smaki, ograniczenia — wszystko w jednym polu tekstowym).
 
-**Wyjście aplikacji**: jeden przepis kulinarny zawierający składniki (z listy lub powszechnie dostępne dodatki) i instrukcję wykonania, dopasowany do opisanego kontekstu.
+**Wyjście aplikacji**: jeden przepis kulinarny zawierający nazwę dania, listę składników z ilościami (z listy lub powszechnie dostępne dodatki) oraz instrukcję wykonania krok po kroku, dopasowany do opisanego kontekstu.
 
 **Jak user encountuje regułę w flow**: po wgraniu zdjęć i akceptacji listy produktów oraz po wpisaniu opisu kontekstu, użytkownik widzi wygenerowany przepis na ekranie. Reguła jest istotą produktu — bez niej aplikacja byłaby tylko galerią zdjęć z notatką tekstową.
 
@@ -132,9 +132,11 @@ Model ról: **płaska struktura** — brak rozróżnienia admin / user. Każdy u
 
 ## Open Questions
 
-1. **Weryfikacja emaila przy rejestracji** — czy wymagana od v1, czy dopiero później? Wpływa na pracę implementacyjną i UX rejestracji. Owner: user. Block: no.
-2. **Format wyjściowy przepisu** — czy zawiera servings / czas / poziom trudności, czy minimum (składniki + instrukcja)? Owner: user. Block: no.
-3. **Limit wielkości i liczby zdjęć w jednej sesji uploadu** — do ustalenia w fazie implementacji. Owner: user. Block: no.
-4. **Sygnalizacja niepewności rozpoznania produktu** — czy system ma deklarować niepewność per pozycja (np. "może być cytryna lub limonka"), czy zawsze deklaruje jednoznacznie? Owner: user. Block: no.
-5. **`target_scale.qps`** — nie podane w shape-notes. Ballpark dla MVP "small users" prawdopodobnie `low`, ale wymaga potwierdzenia. Owner: user. Block: no.
-6. **`target_scale.data_volume`** — nie podane w shape-notes. Ballpark prawdopodobnie `small` (kilku userów × kilkanaście przepisów + zdjęcia), wymaga potwierdzenia. Owner: user. Block: no.
+Brak. Wszystkie pytania z poprzedniej iteracji zostały rozstrzygnięte przez właściciela produktu (2026-05-26) i wprowadzone do treści PRD:
+
+- ~~OQ1 Weryfikacja emaila~~ → rozstrzygnięte: wymagana od v1 (FR-001).
+- ~~OQ2 Format wyjściowy przepisu~~ → rozstrzygnięte: minimum — nazwa + składniki + instrukcja (FR-008, Business Logic).
+- ~~OQ3 Limit zdjęć w uploadzie~~ → rozstrzygnięte: do 5 zdjęć, max 5 MB każde (FR-003).
+- ~~OQ4 Sygnalizacja niepewności rozpoznania~~ → rozstrzygnięte: zawsze jednoznacznie (FR-004).
+- ~~OQ5 `target_scale.qps`~~ → rozstrzygnięte: `low` (frontmatter).
+- ~~OQ6 `target_scale.data_volume`~~ → rozstrzygnięte: `small` (frontmatter).
