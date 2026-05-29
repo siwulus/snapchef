@@ -26,3 +26,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# 10x-cli / Claude local tooling — never commit
+.claude/skills/
+.claude/.10x-cli-manifest.json
+.claude/prompts/
