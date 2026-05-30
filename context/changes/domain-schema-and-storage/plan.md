@@ -264,19 +264,19 @@ Make the new schema visible to the TypeScript compiler so future slices get auto
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly: `npx supabase db reset` exits 0
-- [ ] 1.2 Schema present: `\dt public.*` lists `recipe_sessions` and `recipes`
-- [ ] 1.3 RLS enabled on both tables
-- [ ] 1.4 Policy count: 8 table policies + 4 storage policies
-- [ ] 1.5 Bucket `session-photos` present and `public = false`
-- [ ] 1.6 Lint passes: `npm run lint`
-- [ ] 1.7 Format clean: `npm run format -- --check`
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` exits 0
+- [x] 1.2 Schema present: `\dt public.*` lists `recipe_sessions` and `recipes`
+- [x] 1.3 RLS enabled on both tables
+- [x] 1.4 Policy count: 8 table policies + 4 storage policies
+- [x] 1.5 Bucket `session-photos` present and `public = false`
+- [x] 1.6 Lint passes: `npm run lint`
+- [x] 1.7 Format clean: `npm run format -- --check`
 
 #### Manual
 
-- [ ] 1.8 Studio Table Editor shows both tables with expected columns and CHECKs
-- [ ] 1.9 Studio Storage shows `session-photos` bucket marked private
-- [ ] 1.10 Second `npx supabase db reset` still exits 0 (idempotency)
+- [x] 1.8 Studio Table Editor shows both tables with expected columns and CHECKs
+- [x] 1.9 Studio Storage shows `session-photos` bucket marked private
+- [x] 1.10 Second `npx supabase db reset` still exits 0 (idempotency)
 
 ### Phase 2: RLS verification
 

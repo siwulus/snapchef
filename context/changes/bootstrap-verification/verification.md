@@ -51,17 +51,18 @@ solo + short timeline.
 
 ## Pre-scaffold verification
 
-| Signal | Value | Severity |
-| --- | --- | --- |
-| GitHub repo | `przeprogramowani/10x-astro-starter` | — |
-| `pushed_at` | 2026-05-17T10:33:39Z (4 days ago) | fresh |
-| npm package check | skipped — `cmd_template` uses `git clone`, no npm `create-*` CLI | n/a |
+| Signal            | Value                                                            | Severity |
+| ----------------- | ---------------------------------------------------------------- | -------- |
+| GitHub repo       | `siwulus/snapchef`.                                              | —        |
+| `pushed_at`       | 2026-05-17T10:33:39Z (4 days ago)                                | fresh    |
+| npm package check | skipped — `cmd_template` uses `git clone`, no npm `create-*` CLI | n/a      |
 
 No staleness warnings. Proceeded to scaffold.
 
 ## Scaffold log
 
 **Resolved command:**
+
 ```
 git clone https://github.com/przeprogramowani/10x-astro-starter .bootstrap-scaffold && cd .bootstrap-scaffold && npm install
 ```
@@ -73,6 +74,7 @@ git clone https://github.com/przeprogramowani/10x-astro-starter .bootstrap-scaff
 **npm install:** 774 packages added in 43s; 309 packages looking for funding.
 
 **Files moved into cwd:**
+
 - `.env.example`, `.gitignore`, `.nvmrc`, `.prettierrc.json` (no conflict)
 - `.github/`, `.husky/`, `.vscode/` (no conflict)
 - `README.md`, `astro.config.mjs`, `components.json`, `eslint.config.js`, `tsconfig.json`, `wrangler.jsonc` (no conflict)
@@ -80,6 +82,7 @@ git clone https://github.com/przeprogramowani/10x-astro-starter .bootstrap-scaff
 - `node_modules/`, `public/`, `src/`, `supabase/` (no conflict)
 
 **Conflicts resolved (sidelined as `.scaffold` siblings):**
+
 - `CLAUDE.md` — existing user file kept; scaffold's copy saved as `CLAUDE.md.scaffold`. Diff with `diff CLAUDE.md CLAUDE.md.scaffold` to see what the starter ships.
 
 **`.gitignore` handling:** cwd had no existing `.gitignore`, so the scaffold's copy moved in directly (no append-merge needed).
@@ -94,12 +97,12 @@ git clone https://github.com/przeprogramowani/10x-astro-starter .bootstrap-scaff
 
 **Severity counts:**
 
-| Severity | Count |
-| --- | --- |
-| Critical | 0 |
-| High | 1 |
-| Moderate | 10 |
-| Low | 0 |
+| Severity  | Count  |
+| --------- | ------ |
+| Critical  | 0      |
+| High      | 1      |
+| Moderate  | 10     |
+| Low       | 0      |
 | **Total** | **11** |
 
 ### High-severity finding (surfaced inline)
@@ -109,16 +112,18 @@ git clone https://github.com/przeprogramowani/10x-astro-starter .bootstrap-scaff
 ### Moderate-severity findings (log-only)
 
 Direct dependencies flagged:
+
 - `@astrojs/check` (>=0.9.3) — via `@astrojs/language-server` → `volar-service-yaml`
 - `@astrojs/cloudflare` (>=12.2.4) — via `@cloudflare/vite-plugin` and `wrangler`
 - `wrangler` (<=0.0.0-kickoff-demo || >=3.108.0) — via `miniflare`
 
 Transitive dependencies flagged:
+
 - `@astrojs/language-server`, `@cloudflare/vite-plugin`, `miniflare`, `volar-service-yaml`, `yaml-language-server`, `ws` (GHSA-58qx-3vcg-4xpx — uninitialized memory disclosure)
 
 **Direct vs transitive split:** 3 direct, 7 transitive (devalue + 6 moderate transitives).
 
-**Suggested next action (informational, not auto-applied):** `npm audit fix` for non-breaking fixes, or `npm audit fix --force` for fixes that include semver-major bumps (e.g., `@astrojs/check` 0.9.2, `@astrojs/cloudflare` 12.6.13, `wrangler` 3.107.3 — note these are *downgrades* from the starter's pins, so review carefully).
+**Suggested next action (informational, not auto-applied):** `npm audit fix` for non-breaking fixes, or `npm audit fix --force` for fixes that include semver-major bumps (e.g., `@astrojs/check` 0.9.2, `@astrojs/cloudflare` 12.6.13, `wrangler` 3.107.3 — note these are _downgrades_ from the starter's pins, so review carefully).
 
 ## Hints recorded but not acted on
 
@@ -143,6 +148,7 @@ Your project is scaffolded and verified — happy hacking.
 A future skill (M1L4 — "Memory Architecture") will set up the full agent context: merging your existing `CLAUDE.md` with `CLAUDE.md.scaffold`, generating `AGENTS.md`, wiring CI workflow files, and applying any compensation actions tied to the hint flags above.
 
 Immediate manual follow-ups you may want to consider:
+
 1. `diff CLAUDE.md CLAUDE.md.scaffold` and merge anything starter-specific you want into your `CLAUDE.md`, then delete the `.scaffold` sibling.
 2. Copy `.env.example` to `.env` and fill in Supabase + Cloudflare credentials.
 3. Decide whether to address the high-severity `devalue` advisory via `npm audit fix` now or after first commit.

@@ -1,9 +1,9 @@
 ---
 change_id: domain-schema-and-storage
 title: Domain schema and storage
-status: planned
+status: implementing
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-05-30
 archived_at: null
 ---
 

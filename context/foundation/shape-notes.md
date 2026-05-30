@@ -23,6 +23,7 @@ Codzienny problem osoby gotującej w domu: ma w lodówce i szafkach jakiś zbió
 Istniejące alternatywy (spisanie produktów ręcznie i konwersacja z ChatGPT, klasyczne apki typu SuperCook / Whisk) są na tyle uciążliwe w fazie inwentaryzacji — pisanie produktu po produkcie na telefonie w kuchni — że proces zostaje porzucony, zanim dojdzie do rekomendacji. Pain ma trzy nakładające się warstwy: **decision paralysis** ("co dziś ugotować?"), **workflow friction** (spisywanie wszystkiego ręcznie) oraz **food waste** (produkty się marnują, bo nie wiem, jak je zużyć).
 
 **Insight** odróżniający Snapchef od istniejących rozwiązań:
+
 1. **Foto zamiast listy** — multimodalny LLM rozpoznaje produkty bezpośrednio ze zdjęć lodówki/szafek, eliminując etap ręcznego spisywania.
 2. **Iteracyjny dialog z aplikacją** — przepis nie jest statycznym jednorazowym wynikiem; użytkownik doprecyzowuje go w rozmowie, aż pasuje.
 3. **Personalizacja kontekstem posiłku** — nie tylko "co mam", ale też "jaki posiłek, jaki styl kuchni, jakie smaki" — wynik dopasowany do okazji, nie tylko do składników.

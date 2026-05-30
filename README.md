@@ -154,7 +154,7 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) via **Workers Builds** — Cloudflare watches the GitHub repo and deploys automatically on every push to `main`. **Do not run `npx wrangler deploy` against production.** Source of truth = the `main` branch plus the Cloudflare dashboard config.
 
-- Secrets (`SUPABASE_URL`, `SUPABASE_KEY`) are set in the Cloudflare dashboard under **Workers & Pages → snapchef → Settings → Variables and Secrets** (mirror them to *Build variables and secrets* so `astro:env/server` resolves at build time).
+- Secrets (`SUPABASE_URL`, `SUPABASE_KEY`) are set in the Cloudflare dashboard under **Workers & Pages → snapchef → Settings → Variables and Secrets** (mirror them to _Build variables and secrets_ so `astro:env/server` resolves at build time).
 - Local dev secrets live in `.env` (Node) and `.dev.vars` (`wrangler dev`); both are gitignored.
 - Live logs: `npx wrangler tail` (read-only; safe).
 - To roll back: Cloudflare dashboard → Workers & Pages → snapchef → Deployments → Rollback. **Do not** roll back if a non-backward-compatible Supabase migration shipped with that version.
