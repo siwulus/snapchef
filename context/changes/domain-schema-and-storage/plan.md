@@ -295,12 +295,12 @@ Make the new schema visible to the TypeScript compiler so future slices get auto
 
 #### Automated
 
-- [x] 3.1 `npm run db:types` exits 0 and writes `src/db/database.types.ts`
-- [x] 3.2 Generated file contains `recipe_sessions` and `recipes`
-- [x] 3.3 `npm run build` exits 0
-- [x] 3.4 Lint and format pass
+- [x] 3.1 `npm run db:types` exits 0 and writes `src/db/database.types.ts` — ea8243f
+- [x] 3.2 Generated file contains `recipe_sessions` and `recipes` — ea8243f
+- [x] 3.3 `npm run build` exits 0 — ea8243f
+- [x] 3.4 Lint and format pass — ea8243f
 
 #### Manual
 
-- [x] 3.5 `recipe_sessions.Row` and `recipes.Row` shapes match Phase 1 schema
-- [x] 3.6 `db:types` script discoverable to future contributors
+- [x] 3.5 `recipe_sessions.Row` and `recipes.Row` shapes match Phase 1 schema — ea8243f
+- [x] 3.6 `db:types` script discoverable to future contributors — ea8243f
