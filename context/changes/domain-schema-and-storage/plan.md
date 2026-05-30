@@ -264,32 +264,32 @@ Make the new schema visible to the TypeScript compiler so future slices get auto
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset` exits 0
-- [x] 1.2 Schema present: `\dt public.*` lists `recipe_sessions` and `recipes`
-- [x] 1.3 RLS enabled on both tables
-- [x] 1.4 Policy count: 8 table policies + 4 storage policies
-- [x] 1.5 Bucket `session-photos` present and `public = false`
-- [x] 1.6 Lint passes: `npm run lint`
-- [x] 1.7 Format clean: `npm run format -- --check`
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` exits 0 — c5724d2
+- [x] 1.2 Schema present: `\dt public.*` lists `recipe_sessions` and `recipes` — c5724d2
+- [x] 1.3 RLS enabled on both tables — c5724d2
+- [x] 1.4 Policy count: 8 table policies + 4 storage policies — c5724d2
+- [x] 1.5 Bucket `session-photos` present and `public = false` — c5724d2
+- [x] 1.6 Lint passes: `npm run lint` — c5724d2
+- [x] 1.7 Format clean: `npm run format -- --check` — c5724d2
 
 #### Manual
 
-- [x] 1.8 Studio Table Editor shows both tables with expected columns and CHECKs
-- [x] 1.9 Studio Storage shows `session-photos` bucket marked private
-- [x] 1.10 Second `npx supabase db reset` still exits 0 (idempotency)
+- [x] 1.8 Studio Table Editor shows both tables with expected columns and CHECKs — c5724d2
+- [x] 1.9 Studio Storage shows `session-photos` bucket marked private — c5724d2
+- [x] 1.10 Second `npx supabase db reset` still exits 0 (idempotency) — c5724d2
 
 ### Phase 2: RLS verification
 
 #### Automated
 
-- [ ] 2.1 Verification script exits 0 under `psql -v ON_ERROR_STOP=1`
-- [ ] 2.2 Final assertion row prints `'RLS verified'`
-- [ ] 2.3 Re-run after `supabase db reset` still passes
+- [x] 2.1 Verification script exits 0 under `psql -v ON_ERROR_STOP=1`
+- [x] 2.2 Final assertion row prints `'RLS verified'`
+- [x] 2.3 Re-run after `supabase db reset` still passes
 
 #### Manual
 
-- [ ] 2.4 Verification log captures every assertion case from Contract
-- [ ] 2.5 No residual rows after clean run
+- [x] 2.4 Verification log captures every assertion case from Contract
+- [x] 2.5 No residual rows after clean run
 
 ### Phase 3: TypeScript types
 
