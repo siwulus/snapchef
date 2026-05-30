@@ -1,0 +1,25 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const user = Astro.locals.user;
+---
+
+<AppLayout title="Recipes — Snapchef">
+  <div class="flex flex-col gap-6">
+    <div>
+      <h1 class="text-foreground text-2xl font-semibold">
+        {user?.email ? `Welcome, ${user.email}` : "Your Recipes"}
+      </h1>
+      <p class="text-muted-foreground mt-1 text-sm">Your recipe collection will appear here.</p>
+    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>No recipes yet</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p class="text-muted-foreground text-sm">Start building your collection by adding your first recipe.</p>
+      </CardContent>
+    </Card>
+  </div>
+</AppLayout>

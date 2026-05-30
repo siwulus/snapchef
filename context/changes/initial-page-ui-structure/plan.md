@@ -435,33 +435,33 @@ This completes the change.
 
 #### Automated
 
-- [x] 2.1 `rg "bg-cosmic|text-blue-100|bg-purple-6|backdrop-blur|bg-clip-text" src` returns nothing
-- [x] 2.2 No dangling imports of `Welcome`/`Banner`/`LibBadge`/`config-status`/`layouts/Layout`/`phosphor` in `.astro`/`.ts`/`.tsx`
-- [x] 2.3 Deleted files absent: `Welcome.astro`, `Banner.astro`, `LibBadge.astro`, `config-status.ts`, `layouts/Layout.astro`
-- [x] 2.4 `@phosphor-icons/react` not in `package.json`; `@utility bg-cosmic` not in `global.css`
-- [x] 2.5 Type checking passes (`npm run build` / `npx tsc --noEmit`)
-- [x] 2.6 Linting passes (`npm run lint`)
+- [x] 2.1 `rg "bg-cosmic|text-blue-100|bg-purple-6|backdrop-blur|bg-clip-text" src` returns nothing — 450908b
+- [x] 2.2 No dangling imports of `Welcome`/`Banner`/`LibBadge`/`config-status`/`layouts/Layout`/`phosphor` in `.astro`/`.ts`/`.tsx` — 450908b
+- [x] 2.3 Deleted files absent: `Welcome.astro`, `Banner.astro`, `LibBadge.astro`, `config-status.ts`, `layouts/Layout.astro` — 450908b
+- [x] 2.4 `@phosphor-icons/react` not in `package.json`; `@utility bg-cosmic` not in `global.css` — 450908b
+- [x] 2.5 Type checking passes (`npm run build` / `npx tsc --noEmit`) — 450908b
+- [x] 2.6 Linting passes (`npm run lint`) — 450908b
 
 #### Manual
 
-- [ ] 2.7 `/` landing renders on light token theme with working CTAs and value-prop cards
-- [ ] 2.8 Auth pages render token-styled; forms use shadcn Input/Label/Button
-- [ ] 2.9 Sign-up → confirm-email → sign-in flow works; client validation + server error display still function
-- [ ] 2.10 No cosmic remnants; no console errors
+- [x] 2.7 `/` landing renders on light token theme with working CTAs and value-prop cards
+- [x] 2.8 Auth pages render token-styled; forms use shadcn Input/Label/Button
+- [x] 2.9 Sign-up → confirm-email → sign-in flow works; client validation + server error display still function
+- [x] 2.10 No cosmic remnants; no console errors
 
 ### Phase 3: Authenticated Home + Route Protection
 
 #### Automated
 
-- [ ] 3.1 `src/pages/recipes/index.astro` exists; `src/pages/dashboard.astro` deleted
-- [ ] 3.2 `PROTECTED_ROUTES` equals `["/recipes"]` in `src/middleware.ts`
-- [ ] 3.3 `signin.ts` redirects to `/recipes` on success
-- [ ] 3.4 Type checking passes (`npm run build` / `npx tsc --noEmit`)
-- [ ] 3.5 Linting passes (`npm run lint`)
+- [x] 3.1 `src/pages/recipes/index.astro` exists; `src/pages/dashboard.astro` deleted
+- [x] 3.2 `PROTECTED_ROUTES` equals `["/recipes"]` in `src/middleware.ts`
+- [x] 3.3 `signin.ts` redirects to `/recipes` on success
+- [x] 3.4 Type checking passes (`npm run build` / `npx tsc --noEmit`)
+- [x] 3.5 Linting passes (`npm run lint`)
 
 #### Manual
 
-- [ ] 3.6 Anonymous visit to `/recipes` redirects to `/auth/signin`
-- [ ] 3.7 After sign-in, user lands on `/recipes` placeholder on `AppLayout`
-- [ ] 3.8 `/dashboard` returns 404
-- [ ] 3.9 Sign out from `/recipes` returns to `/` landing
+- [x] 3.6 Anonymous visit to `/recipes` redirects to `/auth/signin`
+- [x] 3.7 After sign-in, user lands on `/recipes` placeholder on `AppLayout`
+- [x] 3.8 `/dashboard` returns 404
+- [x] 3.9 Sign out from `/recipes` returns to `/` landing
