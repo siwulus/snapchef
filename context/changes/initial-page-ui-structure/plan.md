@@ -453,15 +453,15 @@ This completes the change.
 
 #### Automated
 
-- [x] 3.1 `src/pages/recipes/index.astro` exists; `src/pages/dashboard.astro` deleted
-- [x] 3.2 `PROTECTED_ROUTES` equals `["/recipes"]` in `src/middleware.ts`
-- [x] 3.3 `signin.ts` redirects to `/recipes` on success
-- [x] 3.4 Type checking passes (`npm run build` / `npx tsc --noEmit`)
-- [x] 3.5 Linting passes (`npm run lint`)
+- [x] 3.1 `src/pages/recipes/index.astro` exists; `src/pages/dashboard.astro` deleted — 8c0eea7
+- [x] 3.2 `PROTECTED_ROUTES` equals `["/recipes"]` in `src/middleware.ts` — 8c0eea7
+- [x] 3.3 `signin.ts` redirects to `/recipes` on success — 8c0eea7
+- [x] 3.4 Type checking passes (`npm run build` / `npx tsc --noEmit`) — 8c0eea7
+- [x] 3.5 Linting passes (`npm run lint`) — 8c0eea7
 
 #### Manual
 
-- [x] 3.6 Anonymous visit to `/recipes` redirects to `/auth/signin`
-- [x] 3.7 After sign-in, user lands on `/recipes` placeholder on `AppLayout`
-- [x] 3.8 `/dashboard` returns 404
-- [x] 3.9 Sign out from `/recipes` returns to `/` landing
+- [x] 3.6 Anonymous visit to `/recipes` redirects to `/auth/signin` — 8c0eea7
+- [x] 3.7 After sign-in, user lands on `/recipes` placeholder on `AppLayout` — 8c0eea7
+- [x] 3.8 `/dashboard` returns 404 — 8c0eea7
+- [x] 3.9 Sign out from `/recipes` returns to `/` landing — 8c0eea7
