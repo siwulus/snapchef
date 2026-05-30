@@ -282,25 +282,25 @@ Make the new schema visible to the TypeScript compiler so future slices get auto
 
 #### Automated
 
-- [x] 2.1 Verification script exits 0 under `psql -v ON_ERROR_STOP=1`
-- [x] 2.2 Final assertion row prints `'RLS verified'`
-- [x] 2.3 Re-run after `supabase db reset` still passes
+- [x] 2.1 Verification script exits 0 under `psql -v ON_ERROR_STOP=1` — 90206e1
+- [x] 2.2 Final assertion row prints `'RLS verified'` — 90206e1
+- [x] 2.3 Re-run after `supabase db reset` still passes — 90206e1
 
 #### Manual
 
-- [x] 2.4 Verification log captures every assertion case from Contract
-- [x] 2.5 No residual rows after clean run
+- [x] 2.4 Verification log captures every assertion case from Contract — 90206e1
+- [x] 2.5 No residual rows after clean run — 90206e1
 
 ### Phase 3: TypeScript types
 
 #### Automated
 
-- [ ] 3.1 `npm run db:types` exits 0 and writes `src/db/database.types.ts`
-- [ ] 3.2 Generated file contains `recipe_sessions` and `recipes`
-- [ ] 3.3 `npm run build` exits 0
-- [ ] 3.4 Lint and format pass
+- [x] 3.1 `npm run db:types` exits 0 and writes `src/db/database.types.ts`
+- [x] 3.2 Generated file contains `recipe_sessions` and `recipes`
+- [x] 3.3 `npm run build` exits 0
+- [x] 3.4 Lint and format pass
 
 #### Manual
 
-- [ ] 3.5 `recipe_sessions.Row` and `recipes.Row` shapes match Phase 1 schema
-- [ ] 3.6 `db:types` script discoverable to future contributors
+- [x] 3.5 `recipe_sessions.Row` and `recipes.Row` shapes match Phase 1 schema
+- [x] 3.6 `db:types` script discoverable to future contributors

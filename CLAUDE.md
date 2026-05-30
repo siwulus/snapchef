@@ -10,6 +10,7 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 - Every Supabase migration must be **additive / nullable / non-destructive** (backward-compatible) for at least one Worker version. A dashboard rollback of the Worker does **not** roll back the DB.
 - Production deploys are owned by **Cloudflare Workers Builds** (watches `main`, deploys on push). **Do not run `npx wrangler deploy`** against production
 - No Next.js directives (`"use client"`, `"use server"`) — this is Astro, not Next.
+- **No AI attribution in commits** — strip `Co-Authored-By: Claude …`, `Generated with …`, model names (`ChatGPT`, `Copilot`, etc.), and robot emojis from subject, body, and footer. The commit author is the human engineer; tooling does not belong in version history. Remove these lines before committing even if added by default templates.
 
 ## Project Structure
 
