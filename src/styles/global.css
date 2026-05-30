@@ -117,10 +117,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@utility bg-cosmic {
-  background-image: linear-gradient(to bottom, #0a0e1a, #0f1529, #0a0e1a);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

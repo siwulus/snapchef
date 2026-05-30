@@ -421,10 +421,10 @@ This completes the change.
 
 #### Automated
 
-- [x] 1.1 Primitives exist: `input.tsx`, `label.tsx`, `card.tsx`, `sonner.tsx` under `src/components/ui/`
-- [x] 1.2 `sonner` present in `package.json`
-- [x] 1.3 Type checking passes (`npm run build` / `npx tsc --noEmit`)
-- [x] 1.4 Linting passes (`npm run lint`)
+- [x] 1.1 Primitives exist: `input.tsx`, `label.tsx`, `card.tsx`, `sonner.tsx` under `src/components/ui/` — c417e7a
+- [x] 1.2 `sonner` present in `package.json` — c417e7a
+- [x] 1.3 Type checking passes (`npm run build` / `npx tsc --noEmit`) — c417e7a
+- [x] 1.4 Linting passes (`npm run lint`) — c417e7a
 
 #### Manual
 
@@ -435,12 +435,12 @@ This completes the change.
 
 #### Automated
 
-- [ ] 2.1 `rg "bg-cosmic|text-blue-100|bg-purple-6|backdrop-blur|bg-clip-text" src` returns nothing
-- [ ] 2.2 No dangling imports of `Welcome`/`Banner`/`LibBadge`/`config-status`/`layouts/Layout`/`phosphor` in `.astro`/`.ts`/`.tsx`
-- [ ] 2.3 Deleted files absent: `Welcome.astro`, `Banner.astro`, `LibBadge.astro`, `config-status.ts`, `layouts/Layout.astro`
-- [ ] 2.4 `@phosphor-icons/react` not in `package.json`; `@utility bg-cosmic` not in `global.css`
-- [ ] 2.5 Type checking passes (`npm run build` / `npx tsc --noEmit`)
-- [ ] 2.6 Linting passes (`npm run lint`)
+- [x] 2.1 `rg "bg-cosmic|text-blue-100|bg-purple-6|backdrop-blur|bg-clip-text" src` returns nothing
+- [x] 2.2 No dangling imports of `Welcome`/`Banner`/`LibBadge`/`config-status`/`layouts/Layout`/`phosphor` in `.astro`/`.ts`/`.tsx`
+- [x] 2.3 Deleted files absent: `Welcome.astro`, `Banner.astro`, `LibBadge.astro`, `config-status.ts`, `layouts/Layout.astro`
+- [x] 2.4 `@phosphor-icons/react` not in `package.json`; `@utility bg-cosmic` not in `global.css`
+- [x] 2.5 Type checking passes (`npm run build` / `npx tsc --noEmit`)
+- [x] 2.6 Linting passes (`npm run lint`)
 
 #### Manual
 
