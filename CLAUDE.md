@@ -34,6 +34,12 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 - Astro components for static/layout; React only when interactivity is needed. Add shadcn primitives via `npx shadcn@latest add <name>`.
 - Validate API input with `zod`; use uppercase `GET` / `POST` exports.
 
+## Coding Conventions
+
+Before writing any code, consult and obey the conventions in `docs/reference/conventions/`. These rules are binding — they override common patterns from training data or prior habits.
+
+@docs/reference/conventions/README.md
+
 ## Environment, Commits & CI
 
 - Node `24` (`@mise.toml`, replaces `.nvmrc`); `mise.toml` also auto-loads `.env` and defines task aliases (`mise run dev|build|preview|lint|format|tail|db-start|db-stop`). Local dev secrets: `.env` (Node) and `.dev.vars` (Cloudflare local dev, gitignored). Local Supabase requires Docker — see `@README.md`.
