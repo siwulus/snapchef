@@ -320,32 +320,32 @@ Negligible. RHF is uncontrolled-first (fewer re-renders than the current per-key
 
 #### Automated
 
-- [x] 1.1 Dependencies install cleanly: `npm install` exits 0 with react-hook-form, @hookform/resolvers, zod in package.json
-- [x] 1.2 `src/components/ui/form.tsx` exists and exports Form, FormField, FormItem, FormControl, FormMessage
-- [x] 1.3 Type checking passes: `npx astro check`
-- [x] 1.4 Linting passes: `npm run lint`
-- [x] 1.5 Build succeeds: `npm run build`
+- [x] 1.1 Dependencies install cleanly: `npm install` exits 0 with react-hook-form, @hookform/resolvers, zod in package.json — 5d71f9c
+- [x] 1.2 `src/components/ui/form.tsx` exists and exports Form, FormField, FormItem, FormControl, FormMessage — 5d71f9c
+- [x] 1.3 Type checking passes: `npx astro check` — 5d71f9c
+- [x] 1.4 Linting passes: `npm run lint` — 5d71f9c
+- [x] 1.5 Build succeeds: `npm run build` — 5d71f9c
 
 #### Manual
 
-- [ ] 1.6 Reconciled IconField/FormField renders identically (icon, password toggle, hint)
-- [ ] 1.7 No uncontrolled→controlled React warning for the foundation field
+- [x] 1.6 Reconciled IconField/FormField renders identically (icon, password toggle, hint) — 5d71f9c
+- [x] 1.7 No uncontrolled→controlled React warning for the foundation field — 5d71f9c
 
 ### Phase 2: Shared Schemas & JSON API Contract
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `npx astro check`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Build succeeds: `npm run build`
-- [ ] 2.4 Schema module imports only `zod` (no astro:env / supabase / service imports)
+- [x] 2.1 Type checking passes: `npx astro check`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Build succeeds: `npm run build`
+- [x] 2.4 Schema module imports only `zod` (no astro:env / supabase / service imports)
 
 #### Manual
 
-- [ ] 2.5 POST /api/auth/signin invalid email → 400 with fieldErrors.email
-- [ ] 2.6 POST /api/auth/signin valid-but-wrong credentials → 400 with message (not field error)
-- [ ] 2.7 POST /api/auth/signup mismatched passwords rejected; server rejects missing/invalid fields
-- [ ] 2.8 Successful sign-in → 200 { ok:true, redirect:"/recipes" }
+- [x] 2.5 POST /api/auth/signin invalid email → 400 with fieldErrors.email
+- [x] 2.6 POST /api/auth/signin valid-but-wrong credentials → 400 with message (not field error)
+- [x] 2.7 POST /api/auth/signup mismatched passwords rejected; server rejects missing/invalid fields
+- [x] 2.8 Successful sign-in → 200 { ok:true, redirect:"/recipes" }
 
 ### Phase 3: Migrate Auth Forms & Future-Form Guide
 

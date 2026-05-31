@@ -1,22 +1,52 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { signUpServerSchema } from "@/lib/validation/auth";
+import type { ApiResult } from "@/types";
 
 export const prerender = false;
 
+function jsonResponse(data: ApiResult, status: number): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function fieldErrorsFromIssues(issues: { path: (string | number)[]; message: string }[]): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const issue of issues) {
+    const key = issue.path[0];
+    if (typeof key === "string" && !(key in result)) {
+      result[key] = issue.message;
+    }
+  }
+  return result;
+}
+
 export const POST: APIRoute = async (context) => {
-  const form = await context.request.formData();
-  const email = form.get("email") as string;
-  const password = form.get("password") as string;
+  let body: unknown;
+  try {
+    body = await context.request.json();
+  } catch {
+    return jsonResponse({ ok: false, message: "Invalid request body" }, 400);
+  }
+
+  const parsed = signUpServerSchema.safeParse(body);
+  if (!parsed.success) {
+    return jsonResponse({ ok: false, fieldErrors: fieldErrorsFromIssues(parsed.error.issues) }, 400);
+  }
+
+  const { email, password } = parsed.data;
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return context.redirect(`/auth/signup?error=${encodeURIComponent("Supabase is not configured")}`);
+    return jsonResponse({ ok: false, message: "Supabase is not configured" }, 400);
   }
+
   const { error } = await supabase.auth.signUp({ email, password });
-
   if (error) {
-    return context.redirect(`/auth/signup?error=${encodeURIComponent(error.message)}`);
+    return jsonResponse({ ok: false, message: error.message }, 400);
   }
 
-  return context.redirect("/auth/confirm-email");
+  return jsonResponse({ ok: true, redirect: "/auth/confirm-email" }, 200);
 };
