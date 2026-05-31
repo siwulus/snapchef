@@ -2,6 +2,8 @@
 
 Forms in Snapchef use **react-hook-form + Zod + shadcn `Form`** primitives. This doc covers the full pattern and shows how file-upload and dynamic-array forms fit the same foundation.
 
+> **Style note:** Examples here follow the coding conventions in [`docs/reference/conventions/`](./conventions/README.md) — same-name Zod schema+type, arrow functions over `function` keyword.
+
 ## 1. Define a Zod schema
 
 Create or extend `src/lib/validation/<feature>.ts`. This file must import **only** `zod` — no Supabase, no `astro:env`, no service imports. Both the client island and the server route import it.
@@ -10,13 +12,15 @@ Create or extend `src/lib/validation/<feature>.ts`. This file must import **only
 // src/lib/validation/recipe.ts
 import { z } from "zod";
 
-export const recipeSchema = z.object({
+export const Recipe = z.object({
   title: z.string().min(1, "Title is required"),
   notes: z.string().optional(),
 });
 
-export type RecipeInput = z.infer<typeof recipeSchema>;
+export type Recipe = z.infer<typeof Recipe>;
 ```
+
+> Schema and type share the same name per [Zod conventions](./conventions/zod.md).
 
 ## 2. Build the form component
 
@@ -28,17 +32,17 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { recipeSchema } from "@/lib/validation/recipe";
-import type { RecipeInput } from "@/lib/validation/recipe";
+import { Recipe } from "@/lib/validation/recipe";
+import type { Recipe as RecipeType } from "@/lib/validation/recipe";
 import { BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
-export default function RecipeForm() {
+const RecipeForm = () => {
   const [serverMessage, setServerMessage] = useState<string | null>(null);
-  const form = useZodForm(recipeSchema, { title: "", notes: "" });
+  const form = useZodForm(Recipe, { title: "", notes: "" });
 
-  async function onSubmit(data: RecipeInput) {
+  const onSubmit = async (data: RecipeType) => {
     setServerMessage(null);
     try {
       const result = await submitJson("/api/recipes", data);
@@ -46,16 +50,16 @@ export default function RecipeForm() {
         window.location.href = result.redirect ?? "/recipes";
       } else {
         if (result.fieldErrors) {
-          for (const [field, message] of Object.entries(result.fieldErrors)) {
-            if (message) form.setError(field as keyof RecipeInput, { message });
-          }
+          Object.entries(result.fieldErrors).forEach(([field, message]) => {
+            if (message) form.setError(field as keyof RecipeType, { message });
+          });
         }
         if (result.message) setServerMessage(result.message);
       }
     } catch {
       toast.error("Something went wrong. Please try again.");
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -82,7 +86,9 @@ export default function RecipeForm() {
       </form>
     </Form>
   );
-}
+};
+
+export default RecipeForm;
 ```
 
 ## 3. Write the API route
@@ -92,12 +98,12 @@ export default function RecipeForm() {
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import { recipeSchema } from "@/lib/validation/recipe";
+import { Recipe } from "@/lib/validation/recipe";
 import type { ApiResult } from "@/types";
 
 export const POST: APIRoute = async ({ request, redirect: _ }) => {
   const body: unknown = await request.json();
-  const parsed = recipeSchema.safeParse(body);
+  const parsed = Recipe.safeParse(body);
 
   if (!parsed.success) {
     const fieldErrors = Object.fromEntries(
@@ -127,9 +133,11 @@ export const POST: APIRoute = async ({ request, redirect: _ }) => {
 Use `z.instanceof(File)` for a single file or iterate a `FileList`. Send via `FormData` instead of JSON (change `submitJson` to a `submitForm` helper that does `fetch(url, { method: "POST", body: formData })`). RHF's `register` or a controlled `<input type="file">` feeds the value into the schema.
 
 ```ts
-export const uploadSchema = z.object({
+export const Upload = z.object({
   photo: z.instanceof(File, { message: "Photo is required" }),
 });
+
+export type Upload = z.infer<typeof Upload>;
 ```
 
 The API route reads `await request.formData()` instead of `request.json()`.

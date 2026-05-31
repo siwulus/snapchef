@@ -368,10 +368,10 @@ backward-compat window to manage. No database or Worker-version concerns apply.
 
 #### Automated
 
-- [x] 1.1 Registry files exist (`README.md`, `generic.md`, `zod.md`)
-- [x] 1.2 CLAUDE.md references the registry (grep)
-- [x] 1.3 Markdown formatting passes
-- [x] 1.4 Lint passes
+- [x] 1.1 Registry files exist (`README.md`, `generic.md`, `zod.md`) — 6c0bbdd
+- [x] 1.2 CLAUDE.md references the registry (grep) — 6c0bbdd
+- [x] 1.3 Markdown formatting passes — 6c0bbdd
+- [x] 1.4 Lint passes — 6c0bbdd
 
 #### Manual
 
@@ -383,8 +383,8 @@ backward-compat window to manage. No database or Worker-version concerns apply.
 
 #### Automated
 
-- [ ] 2.1 No old-split Zod naming remains in forms.md
-- [ ] 2.2 forms.md formatting passes
+- [x] 2.1 No old-split Zod naming remains in forms.md
+- [x] 2.2 forms.md formatting passes
 
 #### Manual
 
