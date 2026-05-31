@@ -3,7 +3,8 @@
     "astro-build.astro-vscode",
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "christian-kohler.path-intellisense"
+    "christian-kohler.path-intellisense",
+    "effectful-tech.effect-vscode"
   ],
   "unwantedRecommendations": []
 }
