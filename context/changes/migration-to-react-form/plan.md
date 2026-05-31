@@ -335,26 +335,26 @@ Negligible. RHF is uncontrolled-first (fewer re-renders than the current per-key
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npx astro check`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Build succeeds: `npm run build`
-- [x] 2.4 Schema module imports only `zod` (no astro:env / supabase / service imports)
+- [x] 2.1 Type checking passes: `npx astro check` — 920f7cf
+- [x] 2.2 Linting passes: `npm run lint` — 920f7cf
+- [x] 2.3 Build succeeds: `npm run build` — 920f7cf
+- [x] 2.4 Schema module imports only `zod` (no astro:env / supabase / service imports) — 920f7cf
 
 #### Manual
 
-- [x] 2.5 POST /api/auth/signin invalid email → 400 with fieldErrors.email
-- [x] 2.6 POST /api/auth/signin valid-but-wrong credentials → 400 with message (not field error)
-- [x] 2.7 POST /api/auth/signup mismatched passwords rejected; server rejects missing/invalid fields
-- [x] 2.8 Successful sign-in → 200 { ok:true, redirect:"/recipes" }
+- [x] 2.5 POST /api/auth/signin invalid email → 400 with fieldErrors.email — 920f7cf
+- [x] 2.6 POST /api/auth/signin valid-but-wrong credentials → 400 with message (not field error) — 920f7cf
+- [x] 2.7 POST /api/auth/signup mismatched passwords rejected; server rejects missing/invalid fields — 920f7cf
+- [x] 2.8 Successful sign-in → 200 { ok:true, redirect:"/recipes" } — 920f7cf
 
 ### Phase 3: Migrate Auth Forms & Future-Form Guide
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npx astro check`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Build succeeds: `npm run build`
-- [ ] 3.4 No native-form artifacts in src/components/auth/\*.tsx (no useFormStatus, no method="POST" action, no manual validate())
+- [x] 3.1 Type checking passes: `npx astro check`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Build succeeds: `npm run build`
+- [x] 3.4 No native-form artifacts in src/components/auth/\*.tsx (no useFormStatus, no method="POST" action, no manual validate())
 
 #### Manual
 

@@ -1,87 +1,98 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, LogIn } from "lucide-react";
-import { FormField } from "@/components/auth/FormField";
+import { toast } from "sonner";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { IconField } from "@/components/auth/IconField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
+import { useZodForm } from "@/components/hooks/useZodForm";
+import { submitJson } from "@/lib/submitJson";
+import { signInSchema } from "@/lib/validation/auth";
+import type { SignInInput } from "@/lib/validation/auth";
 
-interface Props {
-  serverError?: string | null;
-}
-
-export default function SignInForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  function validate() {
-    const next: typeof errors = {};
-    if (!email.trim()) {
-      next.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      next.email = "Enter a valid email address";
-    }
-    if (!password) {
-      next.password = "Password is required";
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  }
+  const form = useZodForm(signInSchema, { email: "", password: "" });
 
-  function clearError(field: keyof typeof errors) {
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-  }
+  useEffect(() => {
+    if (pendingRedirect) window.location.href = pendingRedirect;
+  }, [pendingRedirect]);
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    if (!validate()) {
-      e.preventDefault();
+  async function onSubmit(data: SignInInput) {
+    setServerMessage(null);
+    try {
+      const result = await submitJson("/api/auth/signin", data);
+      if (result.ok) {
+        setPendingRedirect(result.redirect ?? "/recipes");
+      } else {
+        if (result.fieldErrors) {
+          for (const [field, message] of Object.entries(result.fieldErrors)) {
+            if (message) form.setError(field as "email" | "password", { message });
+          }
+        }
+        if (result.message) {
+          setServerMessage(result.message);
+        }
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     }
   }
 
   return (
-    <form method="POST" action="/api/auth/signin" className="space-y-4" onSubmit={handleSubmit} noValidate>
-      <FormField
-        id="email"
-        type="email"
-        label="Email"
-        value={email}
-        onChange={(v) => {
-          setEmail(v);
-          clearError("email");
-        }}
-        placeholder="you@example.com"
-        error={errors.email}
-        icon={<Mail className="size-4" />}
-      />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <IconField field={field} type="email" placeholder="you@example.com" icon={<Mail className="size-4" />} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        id="password"
-        label="Password"
-        type={showPassword ? "text" : "password"}
-        value={password}
-        onChange={(v) => {
-          setPassword(v);
-          clearError("password");
-        }}
-        placeholder="Your password"
-        error={errors.password}
-        icon={<Lock className="size-4" />}
-        endContent={
-          <PasswordToggle
-            visible={showPassword}
-            onToggle={() => {
-              setShowPassword(!showPassword);
-            }}
-          />
-        }
-      />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <IconField
+                field={field}
+                type={showPassword ? "text" : "password"}
+                placeholder="Your password"
+                icon={<Lock className="size-4" />}
+                endContent={
+                  <PasswordToggle
+                    visible={showPassword}
+                    onToggle={() => {
+                      setShowPassword(!showPassword);
+                    }}
+                  />
+                }
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <ServerError message={serverError} />
+        <ServerError message={serverMessage} />
 
-      <SubmitButton pendingText="Signing in..." icon={<LogIn className="size-4" />}>
-        Sign in
-      </SubmitButton>
-    </form>
+        <SubmitButton
+          pendingText="Signing in..."
+          icon={<LogIn className="size-4" />}
+          isSubmitting={form.formState.isSubmitting}
+        >
+          Sign in
+        </SubmitButton>
+      </form>
+    </Form>
   );
 }

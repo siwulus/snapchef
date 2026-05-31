@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { Toaster } from "@/components/ui/sonner";
 
 interface Props {
   title?: string;
@@ -18,5 +19,6 @@ const { title = "Snapchef" } = Astro.props;
   </head>
   <body class="bg-background text-foreground min-h-screen">
     <slot />
+    <Toaster client:load />
   </body>
 </html>

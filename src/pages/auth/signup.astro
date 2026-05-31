@@ -1,15 +1,13 @@
 ---
 import PublicLayout from "@/layouts/PublicLayout.astro";
 import SignUpForm from "@/components/auth/SignUpForm";
-
-const error = Astro.url.searchParams.get("error");
 ---
 
 <PublicLayout title="Sign up">
   <div class="flex min-h-screen items-center justify-center p-4">
     <div class="border-border bg-card w-full max-w-sm border p-8">
       <h1 class="text-foreground mb-6 text-center text-2xl font-semibold">Sign up</h1>
-      <SignUpForm serverError={error} client:load />
+      <SignUpForm client:load />
       <p class="text-muted-foreground mt-4 text-center text-sm">
         Already have an account?{" "}
         <a href="/auth/signin" class="text-foreground hover:text-muted-foreground underline underline-offset-4"

@@ -12,7 +12,7 @@ function jsonResponse(data: ApiResult, status: number): Response {
   });
 }
 
-function fieldErrorsFromIssues(issues: { path: (string | number)[]; message: string }[]): Record<string, string> {
+function fieldErrorsFromIssues(issues: { path: PropertyKey[]; message: string }[]): Record<string, string> {
   const result: Record<string, string> = {};
   for (const issue of issues) {
     const key = issue.path[0];

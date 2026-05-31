@@ -1,134 +1,135 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, UserPlus } from "lucide-react";
-import { FormField } from "@/components/auth/FormField";
+import { toast } from "sonner";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { IconField } from "@/components/auth/IconField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
+import { useZodForm } from "@/components/hooks/useZodForm";
+import { submitJson } from "@/lib/submitJson";
+import { signUpSchema } from "@/lib/validation/auth";
+import type { SignUpInput } from "@/lib/validation/auth";
 
 const MIN_PASSWORD_LENGTH = 6;
 
-interface Props {
-  serverError?: string | null;
-}
-
-export default function SignUpForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  function validate() {
-    const next: typeof errors = {};
+  const form = useZodForm(signUpSchema, { email: "", password: "", confirmPassword: "" });
+  const password = form.watch("password");
 
-    if (!email.trim()) {
-      next.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      next.email = "Enter a valid email address";
-    }
-
-    if (!password) {
-      next.password = "Password is required";
-    } else if (password.length < MIN_PASSWORD_LENGTH) {
-      next.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
-    }
-
-    if (!confirmPassword) {
-      next.confirmPassword = "Please confirm your password";
-    } else if (password !== confirmPassword) {
-      next.confirmPassword = "Passwords do not match";
-    }
-
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  }
-
-  function clearError(field: keyof typeof errors) {
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-  }
-
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
-    if (!validate()) {
-      e.preventDefault();
-    }
-  }
+  useEffect(() => {
+    if (pendingRedirect) window.location.href = pendingRedirect;
+  }, [pendingRedirect]);
 
   const passwordHint =
-    !errors.password && password.length > 0 && password.length < MIN_PASSWORD_LENGTH ? (
-      <p className="text-muted-foreground mt-1 text-xs">
-        {MIN_PASSWORD_LENGTH - password.length} more character
-        {MIN_PASSWORD_LENGTH - password.length !== 1 ? "s" : ""} needed
-      </p>
-    ) : undefined;
+    password.length > 0 && password.length < MIN_PASSWORD_LENGTH
+      ? `${String(MIN_PASSWORD_LENGTH - password.length)} more character${MIN_PASSWORD_LENGTH - password.length !== 1 ? "s" : ""} needed`
+      : undefined;
+
+  async function onSubmit(data: SignUpInput) {
+    setServerMessage(null);
+    try {
+      const result = await submitJson("/api/auth/signup", { email: data.email, password: data.password });
+      if (result.ok) {
+        setPendingRedirect(result.redirect ?? "/auth/confirm-email");
+      } else {
+        if (result.fieldErrors) {
+          for (const [field, message] of Object.entries(result.fieldErrors)) {
+            if (message) form.setError(field as "email" | "password", { message });
+          }
+        }
+        if (result.message) {
+          setServerMessage(result.message);
+        }
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    }
+  }
 
   return (
-    <form method="POST" action="/api/auth/signup" className="space-y-4" onSubmit={handleSubmit} noValidate>
-      <FormField
-        id="email"
-        type="email"
-        label="Email"
-        value={email}
-        onChange={(v) => {
-          setEmail(v);
-          clearError("email");
-        }}
-        placeholder="you@example.com"
-        error={errors.email}
-        icon={<Mail className="size-4" />}
-      />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <IconField field={field} type="email" placeholder="you@example.com" icon={<Mail className="size-4" />} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        id="password"
-        label="Password"
-        type={showPassword ? "text" : "password"}
-        value={password}
-        onChange={(v) => {
-          setPassword(v);
-          clearError("password");
-        }}
-        placeholder="Min. 6 characters"
-        error={errors.password}
-        hint={passwordHint}
-        icon={<Lock className="size-4" />}
-        endContent={
-          <PasswordToggle
-            visible={showPassword}
-            onToggle={() => {
-              setShowPassword(!showPassword);
-            }}
-          />
-        }
-      />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <IconField
+                field={field}
+                type={showPassword ? "text" : "password"}
+                placeholder="Min. 6 characters"
+                icon={<Lock className="size-4" />}
+                endContent={
+                  <PasswordToggle
+                    visible={showPassword}
+                    onToggle={() => {
+                      setShowPassword(!showPassword);
+                    }}
+                  />
+                }
+              />
+              <FormMessage />
+              {!fieldState.error && passwordHint && (
+                <p className="text-muted-foreground mt-1 text-xs">{passwordHint}</p>
+              )}
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        id="confirmPassword"
-        name="confirmPassword"
-        label="Confirm password"
-        type={showConfirmPassword ? "text" : "password"}
-        value={confirmPassword}
-        onChange={(v) => {
-          setConfirmPassword(v);
-          clearError("confirmPassword");
-        }}
-        placeholder="Re-enter your password"
-        error={errors.confirmPassword}
-        icon={<Lock className="size-4" />}
-        endContent={
-          <PasswordToggle
-            visible={showConfirmPassword}
-            onToggle={() => {
-              setShowConfirmPassword(!showConfirmPassword);
-            }}
-          />
-        }
-      />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm password</FormLabel>
+              <IconField
+                field={field}
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Re-enter your password"
+                icon={<Lock className="size-4" />}
+                endContent={
+                  <PasswordToggle
+                    visible={showConfirmPassword}
+                    onToggle={() => {
+                      setShowConfirmPassword(!showConfirmPassword);
+                    }}
+                  />
+                }
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <ServerError message={serverError} />
+        <ServerError message={serverMessage} />
 
-      <SubmitButton pendingText="Creating account..." icon={<UserPlus className="size-4" />}>
-        Create account
-      </SubmitButton>
-    </form>
+        <SubmitButton
+          pendingText="Creating account..."
+          icon={<UserPlus className="size-4" />}
+          isSubmitting={form.formState.isSubmitting}
+        >
+          Create account
+        </SubmitButton>
+      </form>
+    </Form>
   );
 }
