@@ -351,16 +351,16 @@ Negligible. RHF is uncontrolled-first (fewer re-renders than the current per-key
 
 #### Automated
 
-- [x] 3.1 Type checking passes: `npx astro check`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Build succeeds: `npm run build`
-- [x] 3.4 No native-form artifacts in src/components/auth/\*.tsx (no useFormStatus, no method="POST" action, no manual validate())
+- [x] 3.1 Type checking passes: `npx astro check` — 9c795be
+- [x] 3.2 Linting passes: `npm run lint` — 9c795be
+- [x] 3.3 Build succeeds: `npm run build` — 9c795be
+- [x] 3.4 No native-form artifacts in src/components/auth/\*.tsx (no useFormStatus, no method="POST" action, no manual validate()) — 9c795be
 
 #### Manual
 
-- [ ] 3.5 Sign-in: empty/invalid/wrong-creds/valid behaviors all correct
-- [ ] 3.6 Successful sign-in lands authenticated on /recipes (middleware does not bounce to /auth/signin — auth cookie persisted across fetch→navigation)
-- [ ] 3.7 Sign-up: confirmPassword mismatch error, char-count hint, success redirect to /auth/confirm-email
-- [ ] 3.8 API offline/killed on submit → sonner toast visible on the auth page (Toaster mounted in PublicLayout; no silent failure)
-- [ ] 3.9 Submit button shows pending state and disables while isSubmitting
-- [ ] 3.10 No uncontrolled→controlled console warnings
+- [x] 3.5 Sign-in: empty/invalid/wrong-creds/valid behaviors all correct — 9c795be
+- [x] 3.6 Successful sign-in lands authenticated on /recipes (middleware does not bounce to /auth/signin — auth cookie persisted across fetch→navigation) — 9c795be
+- [x] 3.7 Sign-up: confirmPassword mismatch error, char-count hint, success redirect to /auth/confirm-email — 9c795be
+- [x] 3.8 API offline/killed on submit → sonner toast visible on the auth page (Toaster mounted in PublicLayout; no silent failure) — 9c795be
+- [x] 3.9 Submit button shows pending state and disables while isSubmitting — 9c795be
+- [x] 3.10 No uncontrolled→controlled console warnings — 9c795be
