@@ -8,7 +8,7 @@ interface SubmitButtonProps {
   isSubmitting?: boolean;
 }
 
-export function SubmitButton({ pendingText, icon, children, isSubmitting = false }: SubmitButtonProps) {
+export const SubmitButton = ({ pendingText, icon, children, isSubmitting = false }: SubmitButtonProps) => {
   return (
     <Button type="submit" disabled={isSubmitting} className="w-full">
       {isSubmitting ? (
@@ -24,4 +24,4 @@ export function SubmitButton({ pendingText, icon, children, isSubmitting = false
       )}
     </Button>
   );
-}
+};

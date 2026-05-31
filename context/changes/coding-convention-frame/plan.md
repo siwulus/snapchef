@@ -383,8 +383,8 @@ backward-compat window to manage. No database or Worker-version concerns apply.
 
 #### Automated
 
-- [x] 2.1 No old-split Zod naming remains in forms.md
-- [x] 2.2 forms.md formatting passes
+- [x] 2.1 No old-split Zod naming remains in forms.md — 8b10cc6
+- [x] 2.2 forms.md formatting passes — 8b10cc6
 
 #### Manual
 
@@ -395,11 +395,11 @@ backward-compat window to manage. No database or Worker-version concerns apply.
 
 #### Automated
 
-- [ ] 3.1 Typecheck passes (no dangling refs)
-- [ ] 3.2 Lint passes
-- [ ] 3.3 No old Zod naming remains in src
-- [ ] 3.4 No `function` keyword in refactored non-vendored files (bar documented exceptions)
-- [ ] 3.5 Build passes
+- [x] 3.1 Typecheck passes (no dangling refs)
+- [x] 3.2 Lint passes
+- [x] 3.3 No old Zod naming remains in src
+- [x] 3.4 No `function` keyword in refactored non-vendored files (bar documented exceptions)
+- [x] 3.5 Build passes
 
 #### Manual
 

@@ -8,18 +8,18 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { signUpSchema } from "@/lib/validation/auth";
-import type { SignUpInput } from "@/lib/validation/auth";
+import { SignUp } from "@/lib/validation/auth";
+import type { SignUp as SignUpType } from "@/lib/validation/auth";
 
 const MIN_PASSWORD_LENGTH = 6;
 
-export default function SignUpForm() {
+const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  const form = useZodForm(signUpSchema, { email: "", password: "", confirmPassword: "" });
+  const form = useZodForm(SignUp, { email: "", password: "", confirmPassword: "" });
   const password = form.watch("password");
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function SignUpForm() {
       ? `${String(MIN_PASSWORD_LENGTH - password.length)} more character${MIN_PASSWORD_LENGTH - password.length !== 1 ? "s" : ""} needed`
       : undefined;
 
-  async function onSubmit(data: SignUpInput) {
+  const onSubmit = async (data: SignUpType) => {
     setServerMessage(null);
     try {
       const result = await submitJson("/api/auth/signup", { email: data.email, password: data.password });
@@ -39,9 +39,9 @@ export default function SignUpForm() {
         setPendingRedirect(result.redirect ?? "/auth/confirm-email");
       } else {
         if (result.fieldErrors) {
-          for (const [field, message] of Object.entries(result.fieldErrors)) {
+          Object.entries(result.fieldErrors).forEach(([field, message]) => {
             if (message) form.setError(field as "email" | "password", { message });
-          }
+          });
         }
         if (result.message) {
           setServerMessage(result.message);
@@ -50,7 +50,7 @@ export default function SignUpForm() {
     } catch {
       toast.error("Something went wrong. Please try again.");
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -132,4 +132,6 @@ export default function SignUpForm() {
       </form>
     </Form>
   );
-}
+};
+
+export default SignUpForm;

@@ -5,7 +5,7 @@ interface PasswordToggleProps {
   onToggle: () => void;
 }
 
-export function PasswordToggle({ visible, onToggle }: PasswordToggleProps) {
+export const PasswordToggle = ({ visible, onToggle }: PasswordToggleProps) => {
   return (
     <button
       type="button"
@@ -16,4 +16,4 @@ export function PasswordToggle({ visible, onToggle }: PasswordToggleProps) {
       {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
     </button>
   );
-}
+};

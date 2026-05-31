@@ -1,6 +1,6 @@
 import type { ApiResult } from "@/types";
 
-export async function submitJson(url: string, data: unknown): Promise<ApiResult> {
+export const submitJson = async (url: string, data: unknown): Promise<ApiResult> => {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -13,4 +13,4 @@ export async function submitJson(url: string, data: unknown): Promise<ApiResult>
   }
 
   return response.json() as Promise<ApiResult>;
-}
+};

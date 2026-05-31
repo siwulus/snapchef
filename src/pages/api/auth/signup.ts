@@ -1,27 +1,21 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
-import { signUpServerSchema } from "@/lib/validation/auth";
+import { SignUpServer } from "@/lib/validation/auth";
 import type { ApiResult } from "@/types";
 
 export const prerender = false;
 
-function jsonResponse(data: ApiResult, status: number): Response {
-  return new Response(JSON.stringify(data), {
+const jsonResponse = (data: ApiResult, status: number): Response =>
+  new Response(JSON.stringify(data), {
     status,
     headers: { "Content-Type": "application/json" },
   });
-}
 
-function fieldErrorsFromIssues(issues: { path: PropertyKey[]; message: string }[]): Record<string, string> {
-  const result: Record<string, string> = {};
-  for (const issue of issues) {
+const fieldErrorsFromIssues = (issues: { path: PropertyKey[]; message: string }[]): Record<string, string> =>
+  issues.reduce<Record<string, string>>((acc, issue) => {
     const key = issue.path[0];
-    if (typeof key === "string" && !(key in result)) {
-      result[key] = issue.message;
-    }
-  }
-  return result;
-}
+    return typeof key === "string" && !(key in acc) ? { ...acc, [key]: issue.message } : acc;
+  }, {});
 
 export const POST: APIRoute = async (context) => {
   let body: unknown;
@@ -31,7 +25,7 @@ export const POST: APIRoute = async (context) => {
     return jsonResponse({ ok: false, message: "Invalid request body" }, 400);
   }
 
-  const parsed = signUpServerSchema.safeParse(body);
+  const parsed = SignUpServer.safeParse(body);
   if (!parsed.success) {
     return jsonResponse({ ok: false, fieldErrors: fieldErrorsFromIssues(parsed.error.issues) }, 400);
   }

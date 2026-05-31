@@ -8,21 +8,21 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { signInSchema } from "@/lib/validation/auth";
-import type { SignInInput } from "@/lib/validation/auth";
+import { SignIn } from "@/lib/validation/auth";
+import type { SignIn as SignInType } from "@/lib/validation/auth";
 
-export default function SignInForm() {
+const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  const form = useZodForm(signInSchema, { email: "", password: "" });
+  const form = useZodForm(SignIn, { email: "", password: "" });
 
   useEffect(() => {
     if (pendingRedirect) window.location.href = pendingRedirect;
   }, [pendingRedirect]);
 
-  async function onSubmit(data: SignInInput) {
+  const onSubmit = async (data: SignInType) => {
     setServerMessage(null);
     try {
       const result = await submitJson("/api/auth/signin", data);
@@ -30,9 +30,9 @@ export default function SignInForm() {
         setPendingRedirect(result.redirect ?? "/recipes");
       } else {
         if (result.fieldErrors) {
-          for (const [field, message] of Object.entries(result.fieldErrors)) {
+          Object.entries(result.fieldErrors).forEach(([field, message]) => {
             if (message) form.setError(field as "email" | "password", { message });
-          }
+          });
         }
         if (result.message) {
           setServerMessage(result.message);
@@ -41,7 +41,7 @@ export default function SignInForm() {
     } catch {
       toast.error("Something went wrong. Please try again.");
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -95,4 +95,6 @@ export default function SignInForm() {
       </form>
     </Form>
   );
-}
+};
+
+export default SignInForm;

@@ -14,7 +14,7 @@ interface IconFieldProps {
   hint?: ReactNode;
 }
 
-export function IconField({ field, type = "text", placeholder, icon, endContent, hint }: IconFieldProps) {
+export const IconField = ({ field, type = "text", placeholder, icon, endContent, hint }: IconFieldProps) => {
   return (
     <div>
       <div className="relative">
@@ -27,4 +27,4 @@ export function IconField({ field, type = "text", placeholder, icon, endContent,
       {hint}
     </div>
   );
-}
+};

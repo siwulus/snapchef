@@ -4,7 +4,7 @@ interface ServerErrorProps {
   message?: string | null;
 }
 
-export function ServerError({ message }: ServerErrorProps) {
+export const ServerError = ({ message }: ServerErrorProps) => {
   if (!message) return null;
 
   return (
@@ -13,4 +13,4 @@ export function ServerError({ message }: ServerErrorProps) {
       {message}
     </p>
   );
-}
+};
