@@ -395,11 +395,11 @@ backward-compat window to manage. No database or Worker-version concerns apply.
 
 #### Automated
 
-- [x] 3.1 Typecheck passes (no dangling refs)
-- [x] 3.2 Lint passes
-- [x] 3.3 No old Zod naming remains in src
-- [x] 3.4 No `function` keyword in refactored non-vendored files (bar documented exceptions)
-- [x] 3.5 Build passes
+- [x] 3.1 Typecheck passes (no dangling refs) — 346c1d7
+- [x] 3.2 Lint passes — 346c1d7
+- [x] 3.3 No old Zod naming remains in src — 346c1d7
+- [x] 3.4 No `function` keyword in refactored non-vendored files (bar documented exceptions) — 346c1d7
+- [x] 3.5 Build passes — 346c1d7
 
 #### Manual
 
