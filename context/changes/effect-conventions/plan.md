@@ -255,13 +255,13 @@ complete.
 
 #### Automated
 
-- [x] 2.1 Active Domains table row for `effect.md` present
-- [x] 2.2 `@./effect.md` import present in README
-- [x] 2.3 Prettier check passes on `README.md`
-- [x] 2.4 `npm run lint` unaffected
+- [x] 2.1 Active Domains table row for `effect.md` present — 259471d1b
+- [x] 2.2 `@./effect.md` import present in README — 259471d1b
+- [x] 2.3 Prettier check passes on `README.md` — 259471d1b
+- [x] 2.4 `npm run lint` unaffected — 259471d1b
 
 #### Manual
 
-- [x] 2.5 `CLAUDE.md → README → effect.md` propagation chain confirmed
-- [x] 2.6 Active Domains table renders correctly
-- [x] 2.7 Fresh agent session cites an `effect.md` rule when asked about FP style
+- [x] 2.5 `CLAUDE.md → README → effect.md` propagation chain confirmed — 259471d1b
+- [x] 2.6 Active Domains table renders correctly — 259471d1b
+- [x] 2.7 Fresh agent session cites an `effect.md` rule when asked about FP style — 259471d1b

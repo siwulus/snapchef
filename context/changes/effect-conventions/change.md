@@ -1,9 +1,9 @@
 ---
 id: effect-conventions
 title: Effect-TS Coding Conventions (Pipe-First Functional Programming)
-status: implementing
+status: implemented
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-06-01
 ---
 
 # Effect-TS Coding Conventions (Pipe-First Functional Programming)
