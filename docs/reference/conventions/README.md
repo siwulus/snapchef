@@ -4,14 +4,17 @@
 
 ## Active Domains
 
-| Domain        | File           | Summary                                                                               |
-| ------------- | -------------- | ------------------------------------------------------------------------------------- |
-| Generic style | `./generic.md` | Arrow functions over `function` keyword; functional programming over imperative loops |
-| Zod naming    | `./zod.md`     | Schema and inferred type share the same name                                          |
+| Domain        | File           | Summary                                                                                 |
+| ------------- | -------------- | --------------------------------------------------------------------------------------- |
+| Generic style | `./generic.md` | Arrow functions over `function` keyword; functional programming over imperative loops   |
+| Zod naming    | `./zod.md`     | Schema and inferred type share the same name                                            |
+| Effect-TS     | `./effect.md`  | First-choice FP approach: pipe-first pipelines, typed errors, wrap Promises at the edge |
 
 @./generic.md
 
 @./zod.md
+
+@./effect.md
 
 ---
 

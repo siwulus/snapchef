@@ -239,29 +239,29 @@ complete.
 
 #### Automated
 
-- [x] 1.1 File exists: `test -f docs/reference/conventions/effect.md`
-- [x] 1.2 Prettier check passes on `effect.md`
-- [x] 1.3 Contains five `## Rule:` headings
-- [x] 1.4 No `effect/unstable` imports in snippets
+- [x] 1.1 File exists: `test -f docs/reference/conventions/effect.md` — 9d72c2f2c
+- [x] 1.2 Prettier check passes on `effect.md` — 9d72c2f2c
+- [x] 1.3 Contains five `## Rule:` headings — 9d72c2f2c
+- [x] 1.4 No `effect/unstable` imports in snippets — 9d72c2f2c
 
 #### Manual
 
-- [x] 1.5 Each rule has a coherent `✓ good` / `✗ bad` stable-3.x pair
-- [x] 1.6 Tone and structure match `generic.md` / `zod.md`
-- [x] 1.7 Pipe-first intent unmistakable; `Effect.gen` only as documented exception
-- [x] 1.8 zod rule consistent with CLAUDE.md hard rule and `zod.md`
+- [x] 1.5 Each rule has a coherent `✓ good` / `✗ bad` stable-3.x pair — 9d72c2f2c
+- [x] 1.6 Tone and structure match `generic.md` / `zod.md` — 9d72c2f2c
+- [x] 1.7 Pipe-first intent unmistakable; `Effect.gen` only as documented exception — 9d72c2f2c
+- [x] 1.8 zod rule consistent with CLAUDE.md hard rule and `zod.md` — 9d72c2f2c
 
 ### Phase 2: Register & Verify Propagation
 
 #### Automated
 
-- [ ] 2.1 Active Domains table row for `effect.md` present
-- [ ] 2.2 `@./effect.md` import present in README
-- [ ] 2.3 Prettier check passes on `README.md`
-- [ ] 2.4 `npm run lint` unaffected
+- [x] 2.1 Active Domains table row for `effect.md` present
+- [x] 2.2 `@./effect.md` import present in README
+- [x] 2.3 Prettier check passes on `README.md`
+- [x] 2.4 `npm run lint` unaffected
 
 #### Manual
 
-- [ ] 2.5 `CLAUDE.md → README → effect.md` propagation chain confirmed
-- [ ] 2.6 Active Domains table renders correctly
-- [ ] 2.7 Fresh agent session cites an `effect.md` rule when asked about FP style
+- [x] 2.5 `CLAUDE.md → README → effect.md` propagation chain confirmed
+- [x] 2.6 Active Domains table renders correctly
+- [x] 2.7 Fresh agent session cites an `effect.md` rule when asked about FP style
