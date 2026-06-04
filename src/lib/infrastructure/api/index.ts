@@ -1,5 +1,6 @@
-import { ParseJsonError, decodeWith, type ErrorCode, type ServerSnapchefError } from "@/lib/core/model/error";
+import { ParseJsonError, type ErrorCode, type ServerSnapchefError } from "@/lib/core/model/error";
 import type { ApiErrorResponsePayload, ApiSuccessResponsePayload } from "@/lib/infrastructure/api/types";
+import { decodeWith } from "@/lib/utils";
 import { Effect } from "effect";
 import { match } from "ts-pattern";
 import { z } from "zod";
