@@ -1,7 +1,7 @@
 ---
 id: error-object-structure
 title: Application Domain Error Structure (SnapchefError family)
-status: implementing
+status: implemented
 created: 2026-06-04
 updated: 2026-06-04
 ---

@@ -284,11 +284,11 @@ None — pure type/class definitions and a small mapper; no runtime path execute
 
 #### Automated
 
-- [x] 2.1 Type-checked lint passes: `npm run lint`
-- [x] 2.2 Production build passes: `npm run build`
+- [x] 2.1 Type-checked lint passes: `npm run lint` — 2b0c9ed8e
+- [x] 2.2 Production build passes: `npm run build` — 2b0c9ed8e
 
 #### Manual
 
-- [x] 2.3 Review: `ERROR_STATUS` exhaustiveness compiler-enforced (probe + revert)
-- [x] 2.4 Review: `runApiRoute` is the only `runPromise`; defects → generic 500, no `cause` leakage
-- [x] 2.5 Dev server starts; sign-in/sign-up/sign-out behave exactly as before
+- [x] 2.3 Review: `ERROR_STATUS` exhaustiveness compiler-enforced (probe + revert) — 2b0c9ed8e
+- [x] 2.4 Review: `runApiRoute` is the only `runPromise`; defects → generic 500, no `cause` leakage — 2b0c9ed8e
+- [x] 2.5 Dev server starts; sign-in/sign-up/sign-out behave exactly as before — 2b0c9ed8e
