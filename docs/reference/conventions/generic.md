@@ -70,4 +70,5 @@ orders.forEach((o) => {
 > **Exceptions:**
 >
 > - `for…of` is acceptable when the loop body has side effects that don't map cleanly to a functional expression (e.g., `await` inside a serial loop where parallel execution is not desired).
+> - `.forEach` is acceptable when the body is pure side-effect orchestration against an external API and produces no value — e.g., registering form errors (`form.setError` per entry in `SignInForm.tsx`) or setting cookies (`cookies.set` in `infrastructure/db/supabase.ts`). The rule targets data transformation, not effect fan-out.
 > - Plain `if` statements for non-collection branching (e.g., early returns, single-value guards) are fine — this rule targets collection iteration and data transformation, not all conditionals.

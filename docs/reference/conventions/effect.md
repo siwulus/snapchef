@@ -143,6 +143,40 @@ const findUser = (id: string): Effect.Effect<User> =>
 
 ---
 
+## Rule: Structure domain errors — tag matches class name, `code` field, layered unions
+
+Name the `Data.TaggedError` tag exactly after the class (PascalCase), carry domain metadata in the fields (`cause: unknown` for wrapped failures, `error: z.ZodError` for validation), and group each layer's errors into a named union. Server-side errors (`src/lib/core/model/error/`) additionally declare `readonly code: ErrorCode` — the key `runApiRoute` uses to map the error to an HTTP status and the API envelope. Client-side transport errors (`src/components/api/errors.ts`) follow the same shape without a `code`.
+
+```ts
+// ✓ good — src/lib/core/model/error: tag === class name, code field, named union
+import { Data } from "effect";
+
+export class BusinessRuleError extends Data.TaggedError("BusinessRuleError")<{
+  readonly message: string;
+  readonly code: BusinessRuleErrorCode;
+}> {}
+
+export class ExternalSystemError extends Data.TaggedError("ExternalSystemError")<{
+  readonly message: string;
+  readonly cause: unknown;
+}> {
+  readonly code = "EXTERNAL_SYSTEM_FAILURE" as const;
+}
+
+export type ServerSnapchefError = ParseJsonError | ValidationError | BusinessRuleError | ExternalSystemError;
+```
+
+```ts
+// ✗ bad — tag drifts from the class name; stringly-typed plain Error; no union
+class DbFailure extends Data.TaggedError("DatabaseError")<{ msg: string }> {} // tag ≠ class
+
+const fail = () => Effect.fail(new Error("EXTERNAL_SYSTEM_FAILURE: db down")); // code buried in a string
+```
+
+> **Why the `code` field:** the boundary mapper in `src/lib/infrastructure/api/index.ts` resolves HTTP status via `ERROR_STATUS[payload.code]` and matches errors exhaustively by `_tag` with ts-pattern. A new `ErrorCode` lands together with its `ERROR_STATUS` row and mapper branch (see api-server.md).
+
+---
+
 ## Rule: Keep zod for validation — bridge it into Effect
 
 zod remains the validation tool (a CLAUDE.md hard rule: "Validate API input with `zod`"). Do not introduce `effect/Schema` as a second validator. Cross into Effect by wrapping `safeParse` and mapping a failure to a `Data.TaggedError`.

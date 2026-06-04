@@ -14,7 +14,7 @@ May import from `src/lib/` **only**:
 - **Types and zod schemas** from `core/model/**` (domain models; e.g. the `ErrorCode` enum schema)
 - **Command and response schemas** from `core/boundry/**` (zod schemas shared with React forms, per root CLAUDE.md)
 
-Every other `src/lib/` reference from components is forbidden. Client-side HTTP plumbing lives in `src/components/api/` (`http.ts`, `contract.ts`, `errors.ts`), not here.
+Every other `src/lib/` reference from components is forbidden. Client-side HTTP plumbing lives in `src/components/api/` (`http.ts`, `errors.ts`), not here.
 
 ### `src/pages/api/**` (Astro API routes — server-only)
 

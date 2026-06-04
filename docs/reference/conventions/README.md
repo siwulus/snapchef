@@ -4,17 +4,23 @@
 
 ## Active Domains
 
-| Domain        | File           | Summary                                                                                 |
-| ------------- | -------------- | --------------------------------------------------------------------------------------- |
-| Generic style | `./generic.md` | Arrow functions over `function` keyword; functional programming over imperative loops   |
-| Zod naming    | `./zod.md`     | Schema and inferred type share the same name                                            |
-| Effect-TS     | `./effect.md`  | First-choice FP approach: pipe-first pipelines, typed errors, wrap Promises at the edge |
+| Domain        | File              | Summary                                                                                                   |
+| ------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Generic style | `./generic.md`    | Arrow functions over `function` keyword; functional programming over imperative loops                     |
+| Zod naming    | `./zod.md`        | Schema and inferred type share the same name                                                              |
+| Effect-TS     | `./effect.md`     | First-choice FP approach: pipe-first pipelines, typed errors, wrap Promises at the edge                   |
+| API — server  | `./api-server.md` | Astro routes: `runApiRoute` is the only exit; `parseRequestBody` for input; typed error→status mapping    |
+| API — client  | `./api-client.md` | Browser HTTP via `components/api` helpers; envelope validated with zod; Effects run once at the form edge |
 
 @./generic.md
 
 @./zod.md
 
 @./effect.md
+
+@./api-server.md
+
+@./api-client.md
 
 ---
 
