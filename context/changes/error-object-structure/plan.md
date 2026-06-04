@@ -271,24 +271,24 @@ None — pure type/class definitions and a small mapper; no runtime path execute
 
 #### Automated
 
-- [x] 1.1 Type-checked lint passes: `npm run lint`
-- [x] 1.2 Production build passes: `npm run build`
+- [x] 1.1 Type-checked lint passes: `npm run lint` — 451c09496
+- [x] 1.2 Production build passes: `npm run build` — 451c09496
 
 #### Manual
 
-- [x] 1.3 Review: exported surfaces of both modules match the contracts (tags, codes, unions, `decodeWith`, type-only server-branch import); stable effect 3.x imports only
-- [x] 1.4 Review: `src/lib/CLAUDE.md` access matrix matches the agreed layer rules
-- [x] 1.5 Dev server starts; existing auth flows behave unchanged
+- [x] 1.3 Review: exported surfaces of both modules match the contracts (tags, codes, unions, `decodeWith`, type-only server-branch import); stable effect 3.x imports only — 451c09496
+- [x] 1.4 Review: `src/lib/CLAUDE.md` access matrix matches the agreed layer rules — 451c09496
+- [x] 1.5 Dev server starts; existing auth flows behave unchanged — 451c09496
 
 ### Phase 2: API boundary mapper
 
 #### Automated
 
-- [ ] 2.1 Type-checked lint passes: `npm run lint`
-- [ ] 2.2 Production build passes: `npm run build`
+- [x] 2.1 Type-checked lint passes: `npm run lint`
+- [x] 2.2 Production build passes: `npm run build`
 
 #### Manual
 
-- [ ] 2.3 Review: `ERROR_STATUS` exhaustiveness compiler-enforced (probe + revert)
-- [ ] 2.4 Review: `runApiRoute` is the only `runPromise`; defects → generic 500, no `cause` leakage
-- [ ] 2.5 Dev server starts; sign-in/sign-up/sign-out behave exactly as before
+- [x] 2.3 Review: `ERROR_STATUS` exhaustiveness compiler-enforced (probe + revert)
+- [x] 2.4 Review: `runApiRoute` is the only `runPromise`; defects → generic 500, no `cause` leakage
+- [x] 2.5 Dev server starts; sign-in/sign-up/sign-out behave exactly as before
