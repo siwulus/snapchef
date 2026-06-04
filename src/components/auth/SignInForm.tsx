@@ -7,8 +7,8 @@ import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
-import { submitJson } from "@/lib/submitJson";
-import { SignInCommand, type RedirectTarget } from "@/lib/core/boundry/auth";
+import { useApiClient } from "@/components/hooks/useApiClient";
+import { SignInCommand, RedirectTarget } from "@/lib/core/boundry/auth";
 
 const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +16,7 @@ const SignInForm = () => {
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
   const form = useZodForm(SignInCommand, { email: "", password: "" });
+  const { post } = useApiClient();
 
   useEffect(() => {
     if (pendingRedirect) window.location.href = pendingRedirect;
@@ -23,22 +24,20 @@ const SignInForm = () => {
 
   const onSubmit = async (data: SignInCommand) => {
     setServerMessage(null);
-    try {
-      const result = await submitJson<RedirectTarget>("/api/auth/signin", data);
-      if (result.ok) {
-        setPendingRedirect(result.data.redirect);
-      } else {
-        if (result.fieldErrors) {
-          Object.entries(result.fieldErrors).forEach(([field, message]) => {
-            if (message) form.setError(field as "email" | "password", { message });
-          });
-        }
-        if (result.message) {
-          setServerMessage(result.message);
-        }
-      }
-    } catch {
+    const result = await post("/api/auth/signin", data, RedirectTarget);
+    if (result.ok) {
+      setPendingRedirect(result.data.redirect);
+    } else if ("transport" in result) {
       toast.error("Something went wrong. Please try again.");
+    } else {
+      if (result.fieldErrors) {
+        Object.entries(result.fieldErrors).forEach(([field, message]) => {
+          if (message) form.setError(field as "email" | "password", { message });
+        });
+      }
+      if (result.message) {
+        setServerMessage(result.message);
+      }
     }
   };
 

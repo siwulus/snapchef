@@ -10,13 +10,11 @@ These rules govern what each layer may import from `src/lib/`. They override the
 
 May import from `src/lib/` **only**:
 
-- **Types** from `infrastructure/api/types` (e.g. `ApiResult`, `FieldErrors`)
-- **Types** from `core/model/**` (domain models)
-- **Command schemas** from `core/boundry/**` (zod schemas shared with React forms, per root CLAUDE.md)
+- **Types** from `infrastructure/api/types` (e.g. `ApiResponsePayload`)
+- **Types and zod schemas** from `core/model/**` (domain models; e.g. the `ErrorCode` enum schema)
+- **Command and response schemas** from `core/boundry/**` (zod schemas shared with React forms, per root CLAUDE.md)
 
-Every other `src/lib/` reference from components is forbidden.
-
-> **Legacy exception**: `src/lib/submitJson.ts` is currently imported by form components. This is a documented temporary state until the follow-up change relocates it to `src/components/api/`.
+Every other `src/lib/` reference from components is forbidden. Client-side HTTP plumbing lives in `src/components/api/` (`http.ts`, `contract.ts`, `errors.ts`), not here.
 
 ### `src/pages/api/**` (Astro API routes — server-only)
 

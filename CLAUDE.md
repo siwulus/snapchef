@@ -15,9 +15,9 @@ Snapchef is an Astro 6 SSR app (React 19 islands, Tailwind 4, Supabase auth, sha
 ## Project Structure
 
 - `src/pages/` Astro routes; `src/pages/api/` endpoints.
-- `src/components/ui/` shadcn/ui ("new-york" variant); `src/components/auth/` auth UI; extract React hooks to `src/components/hooks/`.
+- `src/components/ui/` shadcn/ui ("new-york" variant); `src/components/auth/` auth UI; `src/components/api/` client HTTP layer (transport errors, envelope validation, fetch core); extract React hooks to `src/components/hooks/`.
 - `src/lib/core/` — framework-free domain layer (imports `zod` and `effect` only, no Astro/Supabase): `core/boundry/<domain>/` holds command schemas shared by React forms and API routes (e.g. `SignInCommand`); `core/model/<domain>/` holds domain models. Replaces the old `src/types.ts`.
-- `src/lib/infrastructure/` — framework/IO adapters: `infrastructure/db/supabase.ts` (Supabase SSR client factory), `infrastructure/db/types/index.ts` (generated DB types — regenerate via `npm run db:types`; excluded from ESLint and Prettier), `infrastructure/api/types/` (API contracts: `ApiResult`, `FieldErrors`).
+- `src/lib/infrastructure/` — framework/IO adapters: `infrastructure/db/supabase.ts` (Supabase SSR client factory), `infrastructure/db/types/index.ts` (generated DB types — regenerate via `npm run db:types`; excluded from ESLint and Prettier), `infrastructure/api/types/` (API contracts: `ApiResponsePayload`).
 - `src/lib/utils/` — generic helpers (currently a placeholder).
 - `src/middleware.ts` — attaches `context.locals.user`; gate paths via `PROTECTED_ROUTES`.
 - `supabase/` — local stack config + migrations. See `@README.md` for `npx supabase init/start`.

@@ -7,8 +7,8 @@ import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
-import { submitJson } from "@/lib/submitJson";
-import { SignUpCommand, type RedirectTarget } from "@/lib/core/boundry/auth";
+import { useApiClient } from "@/components/hooks/useApiClient";
+import { SignUpCommand, RedirectTarget } from "@/lib/core/boundry/auth";
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -19,6 +19,7 @@ const SignUpForm = () => {
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
   const form = useZodForm(SignUpCommand, { email: "", password: "", confirmPassword: "" });
+  const { post } = useApiClient();
   const password = form.watch("password");
 
   useEffect(() => {
@@ -32,25 +33,20 @@ const SignUpForm = () => {
 
   const onSubmit = async (data: SignUpCommand) => {
     setServerMessage(null);
-    try {
-      const result = await submitJson<RedirectTarget>("/api/auth/signup", {
-        email: data.email,
-        password: data.password,
-      });
-      if (result.ok) {
-        setPendingRedirect(result.data.redirect);
-      } else {
-        if (result.fieldErrors) {
-          Object.entries(result.fieldErrors).forEach(([field, message]) => {
-            if (message) form.setError(field as keyof SignUpCommand, { message });
-          });
-        }
-        if (result.message) {
-          setServerMessage(result.message);
-        }
-      }
-    } catch {
+    const result = await post("/api/auth/signup", { email: data.email, password: data.password }, RedirectTarget);
+    if (result.ok) {
+      setPendingRedirect(result.data.redirect);
+    } else if ("transport" in result) {
       toast.error("Something went wrong. Please try again.");
+    } else {
+      if (result.fieldErrors) {
+        Object.entries(result.fieldErrors).forEach(([field, message]) => {
+          if (message) form.setError(field as keyof SignUpCommand, { message });
+        });
+      }
+      if (result.message) {
+        setServerMessage(result.message);
+      }
     }
   };
 
