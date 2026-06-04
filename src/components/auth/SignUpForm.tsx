@@ -8,8 +8,7 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { SignUpCommand } from "@/lib/core/boundry/auth";
-import type { UserCredentials } from "@/lib/core/model/auth";
+import { SignUpCommand, type RedirectTarget } from "@/lib/core/boundry/auth";
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -34,12 +33,12 @@ const SignUpForm = () => {
   const onSubmit = async (data: SignUpCommand) => {
     setServerMessage(null);
     try {
-      const result = await submitJson<UserCredentials>("/api/auth/signup", {
+      const result = await submitJson<RedirectTarget>("/api/auth/signup", {
         email: data.email,
         password: data.password,
       });
       if (result.ok) {
-        setPendingRedirect(result.redirect ?? "/auth/confirm-email");
+        setPendingRedirect(result.data.redirect);
       } else {
         if (result.fieldErrors) {
           Object.entries(result.fieldErrors).forEach(([field, message]) => {

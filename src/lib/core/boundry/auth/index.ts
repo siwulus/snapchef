@@ -19,3 +19,9 @@ export const SignUpCommand = z
   });
 
 export type SignUpCommand = z.infer<typeof SignUpCommand>;
+
+export const RedirectTarget = z.object({
+  redirect: z.string(),
+});
+
+export type RedirectTarget = z.infer<typeof RedirectTarget>;

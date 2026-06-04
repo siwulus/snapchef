@@ -1,46 +1,45 @@
-import type { APIRoute } from "astro";
+import type { APIRoute, AstroCookies } from "astro";
+import { Effect } from "effect";
+import { z } from "zod";
 import { createClient } from "@/lib/infrastructure/db/supabase";
-import { SignInCommand } from "@/lib/core/boundry/auth";
-import type { ApiResult } from "@/lib/infrastructure/api/types";
+import { SignInCommand, type RedirectTarget } from "@/lib/core/boundry/auth";
+import { decodeWith, BusinessRuleError, ExternalSystemError, ValidationError } from "@/lib/core/model/error";
+import { runApiRoute } from "@/lib/infrastructure/api";
 
 export const prerender = false;
 
-const jsonResponse = (data: ApiResult, status: number): Response =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
+const parseJsonBody = (request: Request): Effect.Effect<unknown, ValidationError> =>
+  Effect.tryPromise({
+    try: () => request.json(),
+    catch: () => new ValidationError({ message: "Invalid request body", error: new z.ZodError([]) }),
   });
 
-const fieldErrorsFromIssues = (issues: { path: PropertyKey[]; message: string }[]): Record<string, string> =>
-  issues.reduce<Record<string, string>>((acc, issue) => {
-    const key = issue.path[0];
-    return typeof key === "string" && !(key in acc) ? { ...acc, [key]: issue.message } : acc;
-  }, {});
+const supabaseClient = (headers: Headers, cookies: AstroCookies) =>
+  Effect.suspend(() => {
+    const client = createClient(headers, cookies);
+    return client
+      ? Effect.succeed(client)
+      : Effect.fail(new ExternalSystemError({ message: "Supabase is not configured", cause: null }));
+  });
 
-export const POST: APIRoute = async (context) => {
-  let body: unknown;
-  try {
-    body = await context.request.json();
-  } catch {
-    return jsonResponse({ ok: false, message: "Invalid request body" }, 400);
-  }
-
-  const parsed = SignInCommand.safeParse(body);
-  if (!parsed.success) {
-    return jsonResponse({ ok: false, fieldErrors: fieldErrorsFromIssues(parsed.error.issues) }, 400);
-  }
-
-  const { email, password } = parsed.data;
-
-  const supabase = createClient(context.request.headers, context.cookies);
-  if (!supabase) {
-    return jsonResponse({ ok: false, message: "Supabase is not configured" }, 400);
-  }
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    return jsonResponse({ ok: false, message: error.message }, 400);
-  }
-
-  return jsonResponse({ ok: true, redirect: "/recipes" }, 200);
-};
+export const POST: APIRoute = (context) =>
+  runApiRoute(
+    parseJsonBody(context.request).pipe(
+      Effect.flatMap(decodeWith(SignInCommand)),
+      Effect.flatMap((credentials) =>
+        supabaseClient(context.request.headers, context.cookies).pipe(
+          Effect.flatMap((supabase) =>
+            Effect.tryPromise({
+              try: () => supabase.auth.signInWithPassword(credentials),
+              catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
+            }),
+          ),
+        ),
+      ),
+      Effect.flatMap(({ error }) =>
+        error
+          ? Effect.fail(new BusinessRuleError({ code: "UNAUTHORIZED", message: error.message }))
+          : Effect.succeed<RedirectTarget>({ redirect: "/recipes" }),
+      ),
+    ),
+  );

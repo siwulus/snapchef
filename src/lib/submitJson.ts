@@ -1,6 +1,6 @@
-import type { ApiResult } from "@/lib/infrastructure/api/types";
+import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
 
-export const submitJson = async <T>(url: string, data: T): Promise<ApiResult<T>> => {
+export const submitJson = async <TRes>(url: string, data: unknown): Promise<ApiResponsePayload<TRes>> => {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -8,9 +8,5 @@ export const submitJson = async <T>(url: string, data: T): Promise<ApiResult<T>>
     body: JSON.stringify(data),
   });
 
-  if (response.status !== 200 && response.status !== 400) {
-    throw new Error(`Unexpected server response: ${response.status.toString()}`);
-  }
-
-  return response.json() as Promise<ApiResult<T>>;
+  return response.json() as Promise<ApiResponsePayload<TRes>>;
 };

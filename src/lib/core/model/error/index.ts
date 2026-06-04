@@ -1,16 +1,21 @@
 import { Data, Effect } from "effect";
 import { z } from "zod";
 
-export type ErrorCode =
-  | "VALIDATION_FAILED"
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "BUSINESS_RULE_VIOLATED"
-  | "EXTERNAL_SYSTEM_FAILURE";
+export const ErrorCode = z.enum([
+  "VALIDATION_FAILED",
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "CONFLICT",
+  "BUSINESS_RULE_VIOLATED",
+  "EXTERNAL_SYSTEM_FAILURE",
+]);
 
-export type BusinessRuleErrorCode = Exclude<ErrorCode, "VALIDATION_FAILED" | "EXTERNAL_SYSTEM_FAILURE">;
+export type ErrorCode = z.infer<typeof ErrorCode>;
+
+export const BusinessRuleErrorCode = ErrorCode.exclude(["VALIDATION_FAILED", "EXTERNAL_SYSTEM_FAILURE"]);
+
+export type BusinessRuleErrorCode = z.infer<typeof BusinessRuleErrorCode>;
 
 export class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly message: string;

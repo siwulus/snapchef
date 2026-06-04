@@ -8,7 +8,7 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { SignInCommand } from "@/lib/core/boundry/auth";
+import { SignInCommand, type RedirectTarget } from "@/lib/core/boundry/auth";
 
 const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,9 +24,9 @@ const SignInForm = () => {
   const onSubmit = async (data: SignInCommand) => {
     setServerMessage(null);
     try {
-      const result = await submitJson("/api/auth/signin", data);
+      const result = await submitJson<RedirectTarget>("/api/auth/signin", data);
       if (result.ok) {
-        setPendingRedirect(result.redirect ?? "/recipes");
+        setPendingRedirect(result.data.redirect);
       } else {
         if (result.fieldErrors) {
           Object.entries(result.fieldErrors).forEach(([field, message]) => {
