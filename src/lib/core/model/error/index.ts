@@ -2,6 +2,7 @@ import { Data, Effect } from "effect";
 import { z } from "zod";
 
 export const ErrorCode = z.enum([
+  "PARSE_JSON_ERROR",
   "VALIDATION_FAILED",
   "UNAUTHORIZED",
   "FORBIDDEN",
@@ -16,6 +17,13 @@ export type ErrorCode = z.infer<typeof ErrorCode>;
 export const BusinessRuleErrorCode = ErrorCode.exclude(["VALIDATION_FAILED", "EXTERNAL_SYSTEM_FAILURE"]);
 
 export type BusinessRuleErrorCode = z.infer<typeof BusinessRuleErrorCode>;
+
+export class ParseJsonError extends Data.TaggedError("ParseJsonError")<{
+  readonly message: string;
+  readonly cause: unknown;
+}> {
+  readonly code = "PARSE_JSON_ERROR" as const;
+}
 
 export class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly message: string;
@@ -36,7 +44,7 @@ export class ExternalSystemError extends Data.TaggedError("ExternalSystemError")
   readonly code = "EXTERNAL_SYSTEM_FAILURE" as const;
 }
 
-export type ServerSnapchefError = ValidationError | BusinessRuleError | ExternalSystemError;
+export type ServerSnapchefError = ParseJsonError | ValidationError | BusinessRuleError | ExternalSystemError;
 
 export const decodeWith =
   <Schema extends z.ZodType>(schema: Schema) =>

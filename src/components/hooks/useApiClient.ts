@@ -1,21 +1,20 @@
-import { useMemo } from "react";
+import { post } from "@/components/api/http";
+import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
 import { Effect } from "effect";
+import { useMemo } from "react";
+import { toast } from "sonner";
 import type { z } from "zod";
-import { postJson } from "@/components/api/http";
-import type { ClientResult, TransportFailure } from "@/components/api/contract";
-import type { ClientSnapchefError } from "@/components/api/errors";
-
-const toTransportFailure = (transport: ClientSnapchefError): TransportFailure => ({ ok: false, transport });
+import type { ClientSnapchefError } from "../api/errors";
 
 export const useApiClient = () =>
   useMemo(
     () => ({
-      post: <S extends z.ZodType>(url: string, body: unknown, dataSchema: S): Promise<ClientResult<z.output<S>>> =>
-        postJson(url, body, dataSchema).pipe(
-          Effect.map((payload): ClientResult<z.output<S>> => payload),
-          Effect.catchAll((error) => Effect.succeed(toTransportFailure(error))),
-          Effect.runPromise,
-        ),
+      post: <S extends z.ZodType>(
+        url: string,
+        body: unknown,
+        dataSchema: S,
+      ): Effect.Effect<ApiResponsePayload<z.output<S>>, ClientSnapchefError> =>
+        post(url, body, dataSchema).pipe(Effect.tapError((error) => Effect.sync(() => toast.error(error.message)))),
     }),
     [],
   );

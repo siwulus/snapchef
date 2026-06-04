@@ -1,45 +1,60 @@
-import { useState, useEffect } from "react";
-import { Mail, Lock, LogIn } from "lucide-react";
-import { toast } from "sonner";
-import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { IconField } from "@/components/auth/IconField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
-import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
-import { useZodForm } from "@/components/hooks/useZodForm";
+import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useApiClient } from "@/components/hooks/useApiClient";
-import { SignInCommand, RedirectTarget } from "@/lib/core/boundry/auth";
+import { useZodForm } from "@/components/hooks/useZodForm";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { RedirectTarget } from "@/lib/core/boundry/auth";
+import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
+import { Effect } from "effect";
+import { Lock, LogIn, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import z from "zod";
+
+const SignInFormModel = z.object({
+  email: z.email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type SignInFormModel = z.infer<typeof SignInFormModel>;
 
 const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  const form = useZodForm(SignInCommand, { email: "", password: "" });
+  const form = useZodForm(SignInFormModel, { email: "", password: "" });
   const { post } = useApiClient();
 
   useEffect(() => {
     if (pendingRedirect) window.location.href = pendingRedirect;
   }, [pendingRedirect]);
 
-  const onSubmit = async (data: SignInCommand) => {
-    setServerMessage(null);
-    const result = await post("/api/auth/signin", data, RedirectTarget);
-    if (result.ok) {
-      setPendingRedirect(result.data.redirect);
-    } else if ("transport" in result) {
-      toast.error("Something went wrong. Please try again.");
-    } else {
-      if (result.fieldErrors) {
-        Object.entries(result.fieldErrors).forEach(([field, message]) => {
-          if (message) form.setError(field as "email" | "password", { message });
-        });
+  const onSubmit = async (data: SignInFormModel) =>
+    Effect.sync(() => {
+      setServerMessage(null);
+    }).pipe(
+      Effect.flatMap(() => post("/api/auth/signin", data, RedirectTarget)),
+      Effect.tap(handleSubmitResponse),
+      Effect.runPromise,
+    );
+
+  const handleSubmitResponse = (result: ApiResponsePayload<RedirectTarget>): Effect.Effect<void> =>
+    Effect.sync(() => {
+      if (result.ok) {
+        setPendingRedirect(result.data.redirect);
+      } else {
+        if (result.fieldErrors) {
+          Object.entries(result.fieldErrors).forEach(([field, message]) => {
+            if (message) form.setError(field as keyof SignInFormModel, { message });
+          });
+        }
+        if (result.message) {
+          setServerMessage(result.message);
+        }
       }
-      if (result.message) {
-        setServerMessage(result.message);
-      }
-    }
-  };
+    });
 
   return (
     <Form {...form}>

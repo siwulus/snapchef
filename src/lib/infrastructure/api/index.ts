@@ -1,10 +1,11 @@
-import type { ErrorCode, ServerSnapchefError } from "@/lib/core/model/error";
+import { ParseJsonError, decodeWith, type ErrorCode, type ServerSnapchefError } from "@/lib/core/model/error";
 import type { ApiErrorResponsePayload, ApiSuccessResponsePayload } from "@/lib/infrastructure/api/types";
 import { Effect } from "effect";
 import { match } from "ts-pattern";
 import { z } from "zod";
 
 const ERROR_STATUS: Record<ErrorCode, number> = {
+  PARSE_JSON_ERROR: 400,
   VALIDATION_FAILED: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
@@ -34,6 +35,11 @@ const toErrorApiResponsePayload = (shapchefError: ServerSnapchefError): ApiError
       ok: false,
       code: error.code,
       message: "An external service failed. Please try again later.",
+    }))
+    .with({ _tag: "ParseJsonError" }, (error) => ({
+      ok: false,
+      code: error.code,
+      message: "Invalid request body",
     }))
     .exhaustive();
 
@@ -69,3 +75,12 @@ export const runApiRoute = <T>(effect: Effect.Effect<T, ServerSnapchefError>): P
     Effect.catchAllDefect(defectToResponse),
     Effect.runPromise,
   );
+
+export const parseRequestBody = <S extends z.ZodType>(
+  request: Request,
+  schema: S,
+): Effect.Effect<z.output<S>, ServerSnapchefError> =>
+  Effect.tryPromise({
+    try: () => request.json(),
+    catch: (cause) => new ParseJsonError({ message: "Invalid request body", cause }),
+  }).pipe(Effect.flatMap((body) => decodeWith(schema)(body)));

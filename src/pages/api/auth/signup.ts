@@ -1,19 +1,12 @@
-import type { APIRoute, AstroCookies } from "astro";
-import { Effect } from "effect";
-import { z } from "zod";
-import { createClient } from "@/lib/infrastructure/db/supabase";
 import { type RedirectTarget } from "@/lib/core/boundry/auth";
 import { UserCredentials } from "@/lib/core/model/auth";
-import { decodeWith, BusinessRuleError, ExternalSystemError, ValidationError } from "@/lib/core/model/error";
-import { runApiRoute } from "@/lib/infrastructure/api";
+import { BusinessRuleError, ExternalSystemError } from "@/lib/core/model/error";
+import { parseRequestBody, runApiRoute } from "@/lib/infrastructure/api";
+import { createClient } from "@/lib/infrastructure/db/supabase";
+import type { APIRoute, AstroCookies } from "astro";
+import { Effect } from "effect";
 
 export const prerender = false;
-
-const parseJsonBody = (request: Request): Effect.Effect<unknown, ValidationError> =>
-  Effect.tryPromise({
-    try: () => request.json(),
-    catch: () => new ValidationError({ message: "Invalid request body", error: new z.ZodError([]) }),
-  });
 
 const supabaseClient = (headers: Headers, cookies: AstroCookies) =>
   Effect.suspend(() => {
@@ -25,8 +18,7 @@ const supabaseClient = (headers: Headers, cookies: AstroCookies) =>
 
 export const POST: APIRoute = (context) =>
   runApiRoute(
-    parseJsonBody(context.request).pipe(
-      Effect.flatMap(decodeWith(UserCredentials)),
+    parseRequestBody(context.request, UserCredentials).pipe(
       Effect.flatMap((credentials) =>
         supabaseClient(context.request.headers, context.cookies).pipe(
           Effect.flatMap((supabase) =>

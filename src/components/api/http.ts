@@ -1,17 +1,21 @@
 import { Effect } from "effect";
 import { z } from "zod";
-import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
+import { ApiResponsePayload } from "@/lib/infrastructure/api/types";
 import { ApiRequestError, UnexpectedResponseError, type ClientSnapchefError } from "@/components/api/errors";
-import { apiResponsePayload } from "@/components/api/contract";
 
-const fetchJson = (url: string, body: unknown): Effect.Effect<unknown, ClientSnapchefError> =>
+const fetchJson = <S extends z.ZodType>(params: {
+  url: string;
+  body?: unknown;
+  dataSchema: S;
+  method: "POST" | "PUT" | "GET" | "DELETE";
+}): Effect.Effect<ApiResponsePayload<z.output<S>>, ClientSnapchefError> =>
   Effect.tryPromise({
     try: () =>
-      fetch(url, {
-        method: "POST",
+      fetch(params.url, {
+        method: params.method,
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify(body),
+        body: params.body ? JSON.stringify(params.body) : undefined,
       }),
     catch: (cause) => new ApiRequestError({ message: "Network request failed", cause }),
   }).pipe(
@@ -25,20 +29,39 @@ const fetchJson = (url: string, body: unknown): Effect.Effect<unknown, ClientSna
           }),
       }),
     ),
+    Effect.flatMap((json) =>
+      Effect.try({
+        try: () => ApiResponsePayload(params.dataSchema).parse(json),
+        catch: (cause) =>
+          new UnexpectedResponseError({
+            message: "Response did not match the API contract",
+            cause,
+          }),
+      }),
+    ),
   );
 
-export const postJson = <S extends z.ZodType>(
+export const post = <S extends z.ZodType>(
   url: string,
   body: unknown,
   dataSchema: S,
 ): Effect.Effect<ApiResponsePayload<z.output<S>>, ClientSnapchefError> =>
-  fetchJson(url, body).pipe(
-    Effect.flatMap((json) => {
-      const result = apiResponsePayload(dataSchema).safeParse(json);
-      return result.success
-        ? Effect.succeed(result.data)
-        : Effect.fail(
-            new UnexpectedResponseError({ message: "Response did not match the API contract", cause: result.error }),
-          );
-    }),
-  );
+  fetchJson({ url, body, dataSchema, method: "POST" });
+
+export const putJson = <S extends z.ZodType>(
+  url: string,
+  body: unknown,
+  dataSchema: S,
+): Effect.Effect<ApiResponsePayload<z.output<S>>, ClientSnapchefError> =>
+  fetchJson({ url, body, dataSchema, method: "PUT" });
+
+export const get = <S extends z.ZodType>(
+  url: string,
+  dataSchema: S,
+): Effect.Effect<ApiResponsePayload<z.output<S>>, ClientSnapchefError> => fetchJson({ url, dataSchema, method: "GET" });
+
+export const delete_ = <S extends z.ZodType>(
+  url: string,
+  dataSchema: S,
+): Effect.Effect<ApiResponsePayload<z.output<S>>, ClientSnapchefError> =>
+  fetchJson({ url, dataSchema, method: "DELETE" });
