@@ -285,12 +285,12 @@ None material — same fetch count as today; envelope `safeParse` on small JSON 
 
 #### Automated
 
-- [x] 2.1 Type-checked lint passes: `npm run lint`
-- [x] 2.2 Production build passes: `npm run build`
-- [x] 2.3 No references remain: `grep -r "submitJson" src` exits empty
+- [x] 2.1 Type-checked lint passes: `npm run lint` — f43ed5537
+- [x] 2.2 Production build passes: `npm run build` — f43ed5537
+- [x] 2.3 No references remain: `grep -r "submitJson" src` exits empty — f43ed5537
 
 #### Manual
 
-- [x] 2.4 Sign-in / sign-up flows behave as in Phase 1 — now through `useApiClient`
-- [x] 2.5 Offline submit shows toast; no unhandled rejection in console
-- [x] 2.6 Review: `src/lib/CLAUDE.md` matrix + root `CLAUDE.md` match implemented layering
+- [x] 2.4 Sign-in / sign-up flows behave as in Phase 1 — now through `useApiClient` — f43ed5537
+- [x] 2.5 Offline submit shows toast; no unhandled rejection in console — f43ed5537
+- [x] 2.6 Review: `src/lib/CLAUDE.md` matrix + root `CLAUDE.md` match implemented layering — f43ed5537
