@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
-import { createClient } from "@/lib/supabase";
-import { SignUpServer } from "@/lib/validation/auth";
-import type { ApiResult } from "@/types";
+import { createClient } from "@/lib/infrastructure/db/supabase";
+import { UserCredentials } from "@/lib/core/model/auth";
+import type { ApiResult } from "@/lib/infrastructure/api/types";
 
 export const prerender = false;
 
@@ -25,7 +25,7 @@ export const POST: APIRoute = async (context) => {
     return jsonResponse({ ok: false, message: "Invalid request body" }, 400);
   }
 
-  const parsed = SignUpServer.safeParse(body);
+  const parsed = UserCredentials.safeParse(body);
   if (!parsed.success) {
     return jsonResponse({ ok: false, fieldErrors: fieldErrorsFromIssues(parsed.error.issues) }, 400);
   }

@@ -8,21 +8,20 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { SignIn } from "@/lib/validation/auth";
-import type { SignIn as SignInType } from "@/lib/validation/auth";
+import { SignInCommand } from "@/lib/core/boundry/auth";
 
 const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  const form = useZodForm(SignIn, { email: "", password: "" });
+  const form = useZodForm(SignInCommand, { email: "", password: "" });
 
   useEffect(() => {
     if (pendingRedirect) window.location.href = pendingRedirect;
   }, [pendingRedirect]);
 
-  const onSubmit = async (data: SignInType) => {
+  const onSubmit = async (data: SignInCommand) => {
     setServerMessage(null);
     try {
       const result = await submitJson("/api/auth/signin", data);

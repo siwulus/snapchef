@@ -12,5 +12,6 @@
         "parser": "astro"
       }
     }
-  ]
+  ],
+  "exclude": ["src/lib/infrastructure/db/types/index.ts"]
 }

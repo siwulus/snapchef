@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { createClient } from "@/lib/supabase";
+import { createClient } from "@/lib/infrastructure/db/supabase";
 
 const PROTECTED_ROUTES = ["/recipes"];
 

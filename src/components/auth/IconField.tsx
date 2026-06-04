@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { ControllerRenderProps } from "react-hook-form";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { FormControl } from "@/components/ui/form";
+import { cn } from "@/styles/utils";
 
 interface IconFieldProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

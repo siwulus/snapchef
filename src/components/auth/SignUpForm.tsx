@@ -8,8 +8,8 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useZodForm } from "@/components/hooks/useZodForm";
 import { submitJson } from "@/lib/submitJson";
-import { SignUp } from "@/lib/validation/auth";
-import type { SignUp as SignUpType } from "@/lib/validation/auth";
+import { SignUpCommand } from "@/lib/core/boundry/auth";
+import type { UserCredentials } from "@/lib/core/model/auth";
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -19,7 +19,7 @@ const SignUpForm = () => {
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
-  const form = useZodForm(SignUp, { email: "", password: "", confirmPassword: "" });
+  const form = useZodForm(SignUpCommand, { email: "", password: "", confirmPassword: "" });
   const password = form.watch("password");
 
   useEffect(() => {
@@ -31,16 +31,19 @@ const SignUpForm = () => {
       ? `${String(MIN_PASSWORD_LENGTH - password.length)} more character${MIN_PASSWORD_LENGTH - password.length !== 1 ? "s" : ""} needed`
       : undefined;
 
-  const onSubmit = async (data: SignUpType) => {
+  const onSubmit = async (data: SignUpCommand) => {
     setServerMessage(null);
     try {
-      const result = await submitJson("/api/auth/signup", { email: data.email, password: data.password });
+      const result = await submitJson<UserCredentials>("/api/auth/signup", {
+        email: data.email,
+        password: data.password,
+      });
       if (result.ok) {
         setPendingRedirect(result.redirect ?? "/auth/confirm-email");
       } else {
         if (result.fieldErrors) {
           Object.entries(result.fieldErrors).forEach(([field, message]) => {
-            if (message) form.setError(field as "email" | "password", { message });
+            if (message) form.setError(field as keyof SignUpCommand, { message });
           });
         }
         if (result.message) {
