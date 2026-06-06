@@ -1,9 +1,9 @@
 ---
 id: submitJson-cleaning
 title: Replace submitJson with a browser-oriented HTTP client layer
-status: implemented
+status: archived
 created: 2026-06-04
-updated: 2026-06-04
+updated: 2026-06-06
 ---
 
 # Replace submitJson with a browser-oriented HTTP client layer
