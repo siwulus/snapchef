@@ -88,7 +88,7 @@ What's already in place w codebase as of 2026-05-26 (auto-researched + user-conf
 
 ### S-01: Foto upload (1–5 zdjęć × ≤5 MB) i jednoznaczna lista rozpoznanych produktów
 
-- **Outcome:** Zweryfikowany, zalogowany użytkownik wgrywa od 1 do 5 zdjęć produktów (każde ≤5 MB; przekroczenie → czytelny błąd). System rozpoznaje pozycje (multimodalny LLM) i prezentuje **jednoznaczną** listę [nazwa, ilość] — jeden produkt na pozycję, bez alternatyw typu "cytryna lub limonka". Użytkownik może poprawić nazwę/ilość, usunąć pozycję, dodać produkt spoza zdjęć. Sesja in-memory — jeszcze nic nie zapisujemy.
+- **Outcome:** Zweryfikowany, zalogowany użytkownik wgrywa od 1 do 5 zdjęć produktów (każde ≤5 MB; przekroczenie → czytelny błąd). System rozpoznaje pozycje (multimodalny LLM) i prezentuje **jednoznaczną** listę [nazwa, ilość] — jeden produkt na pozycję, bez alternatyw typu "cytryna lub limonka". Użytkownik może poprawić nazwę/ilość, usunąć pozycję, dodać produkt spoza zdjęć. Sesja zapisywana progresywnie w bazie ze `state` lifecycle (`photos_uploaded → products_recognized`); edycja listy pozostaje client-side do S-03. _(Sesja in-memory zastąpiona persystowaną sesją — decyzja #4, 2026-06-06.)_
 - **Change ID:** photo-upload-and-recognition
 - **PRD refs:** FR-001, FR-002 (auth gate'owane przez F-02), FR-003 (limity 1–5 × 5 MB), FR-004 (jednoznaczność), FR-005 (edycja), US-01 (kroki 1–3)
 - **Prerequisites:** F-01 (Storage bucket), F-02 (zweryfikowane konto)
@@ -112,7 +112,7 @@ What's already in place w codebase as of 2026-05-26 (auto-researched + user-conf
 
 ### S-03: Zapis sesji i przepisu na koncie
 
-- **Outcome:** Użytkownik klika "zapisz" na wygenerowanym przepisie. Cała sesja — zdjęcia w Storage, skorygowana lista, opis kontekstu, wygenerowany przepis — ląduje pod właścicielem w bazie, dostępna tylko jemu.
+- **Outcome:** Użytkownik klika "zapisz" na wygenerowanym przepisie. Istniejący wiersz `recipe_sessions` jest finalizowany (UPDATE `state = 'saved'`), skorygowana lista i kontekst są zapisywane, a przepis ląduje w tabeli `recipes` — całość dostępna tylko właścicielowi. _(S-03 to finalizacja istniejącej sesji, nie pierwszy insert — decyzja #4, 2026-06-06.)_
 - **Change ID:** save-session-and-recipe
 - **PRD refs:** FR-009, US-01 (krok 6)
 - **Prerequisites:** S-02

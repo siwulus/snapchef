@@ -26,9 +26,12 @@ derived_from: prd.md (v1), roadmap.md (v2), tech-stack.md, src/db/database.types
    as a client-managed multi-step island. No full-page navigation between steps.
 2. **`/recipes` is the authenticated home** (= saved-recipes list). The generic starter
    `/dashboard` is **retired**. `/` is the public landing and redirects signed-in users to `/recipes`.
-3. **In-memory session, no drafts.** An in-progress session is held in React state only and is
-   discarded on refresh / navigation away. A browser leave-guard warns before losing unsaved work.
-   Nothing persists until the explicit Save step (roadmap S-03).
+3. **Persisted session, client-side step state.** A `recipe_sessions` row is created on photo
+   upload and tracks progress via a `state` column (`created → photos_uploaded → products_recognized
+→ recipe_generated → saved`). The session id is the durable handle for all later steps.
+   Wizard UI state (current step, edited list) remains in React state and is discarded on refresh —
+   a `beforeunload` leave-guard fires when unsaved progress exists. _(Supersedes "in-memory session,
+   no drafts" — decision #4, planning Q&A 2026-06-06.)_
 
 ## 2. Page inventory
 
@@ -51,8 +54,9 @@ Notes:
 - The four session steps (S-01 upload+review, S-02 context+recipe, S-03 save) are **one route**
   (`/recipes/new`), not four. Steps are island state, not URLs — see §3.
 - S-03 (save) is an **action** on the wizard's final step, not its own route.
-- `recipe_sessions` rows are written only on save; there is no standalone "session" route or
-  read-back of raw sessions in the MVP UI (the session input is shown inside the recipe detail).
+- A `recipe_sessions` row is created at photo upload (not on save) and carries a `state`
+  column. The S-03 save step finalizes the existing row (UPDATE) rather than creating a new one.
+  There is no standalone "session" route or read-back of raw sessions in the MVP UI.
 
 ## 3. Navigation model
 
@@ -69,9 +73,10 @@ Step 4  Recipe        generated recipe shown (~30s, FR-007/008) → Save or Disc
 
 - **Forward/back within the island** (Back/Next), not browser history per step. The browser URL
   stays `/recipes/new` for the whole flow.
-- **State is in-memory** (photos, recognized + corrected list, context, generated recipe). Refresh
-  or leaving the route discards it — a `beforeunload` leave-guard fires when unsaved progress
-  exists. This matches the roadmap's in-memory-until-S-03 model; no draft persistence in MVP.
+- **Session is persisted progressively** (photos, recognized list, generated recipe — one
+  `recipe_sessions` row with a `state` lifecycle). Wizard UI state (edited list, current step)
+  is in-memory; refresh discards it — a `beforeunload` leave-guard fires when unsaved progress
+  exists. _(Decision #4, 2026-06-06.)_
 - **Long operations (recognition, generation)** each take ~30s. The step that triggers them enters
   a blocking in-step loading state with continuous progress feedback (NFR >2s). On failure the step
   shows an inline error with **Retry** — the user does not lose earlier steps.
@@ -160,8 +165,9 @@ only for interactive islands. shadcn primitives in `src/components/ui/`, auth UI
 | `/recipes/new`    | page shell                               | **the wizard** — one island owning upload, list editor, context, recipe, save (`client:load`) |
 | `/recipes/[id]`   | page shell + server-rendered recipe body | delete button + confirm dialog                                                                |
 
-- **Wizard island** holds all four steps and the in-memory session state. Upload widget, list
-  editor (add/edit/delete rows), context textarea, recipe view, and save all live inside it.
+- **Wizard island** holds all four steps, the persisted `sessionId` handle, and the in-memory
+  step state (edited list, current step). Upload widget, list editor (add/edit/delete rows),
+  context textarea, recipe view, and save all live inside it.
 - **Destructive delete (FR-012):** hard delete behind a shadcn **confirm `Dialog`**; success toast
   via sonner. No soft-delete/undo (PRD Non-Goal). Used on both the list card and the detail page.
 - **Data shapes** (from F-01, `src/db/database.types.ts`): recognized/corrected items and recipe

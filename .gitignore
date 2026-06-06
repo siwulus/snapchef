@@ -29,5 +29,3 @@ pnpm-debug.log*
 
 # 10x-cli / Claude local tooling — never commit
 .claude/skills/10x-*
-.claude/.10x-cli-manifest.json
-.claude/prompts/skill-explainer.md

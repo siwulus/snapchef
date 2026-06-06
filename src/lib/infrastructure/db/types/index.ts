@@ -11,32 +11,35 @@ export type Database = {
     Tables: {
       recipe_sessions: {
         Row: {
-          corrected_items_md: string
+          corrected_items_md: string | null
           created_at: string
           id: string
-          meal_context: string
+          meal_context: string | null
           photo_paths: string[]
-          recognized_items_md: string
+          recognized_items_md: string | null
+          state: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          corrected_items_md: string
+          corrected_items_md?: string | null
           created_at?: string
           id?: string
-          meal_context: string
-          photo_paths: string[]
-          recognized_items_md: string
+          meal_context?: string | null
+          photo_paths?: string[]
+          recognized_items_md?: string | null
+          state?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          corrected_items_md?: string
+          corrected_items_md?: string | null
           created_at?: string
           id?: string
-          meal_context?: string
+          meal_context?: string | null
           photo_paths?: string[]
-          recognized_items_md?: string
+          recognized_items_md?: string | null
+          state?: string
           updated_at?: string
           user_id?: string
         }
