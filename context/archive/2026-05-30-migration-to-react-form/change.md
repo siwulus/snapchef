@@ -1,10 +1,10 @@
 ---
 change_id: migration-to-react-form
 title: Migration to React form (react-hook-form + Zod foundation)
-status: implemented
+status: archived
 created: 2026-05-30
-updated: 2026-05-31
-archived_at: null
+updated: 2026-06-06
+archived_at: 2026-06-06T08:01:25Z
 ---
 
 ## Notes
