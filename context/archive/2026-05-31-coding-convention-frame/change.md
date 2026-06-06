@@ -1,9 +1,9 @@
 ---
 id: coding-convention-frame
 title: Extensible Coding-Style Conventions for Agentic Coding
-status: implemented
+status: archived
 created: 2026-05-31
-updated: 2026-05-31
+updated: 2026-06-06
 ---
 
 # Extensible Coding-Style Conventions for Agentic Coding
