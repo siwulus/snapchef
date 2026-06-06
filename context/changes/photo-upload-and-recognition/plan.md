@@ -376,14 +376,14 @@ Single additive migration (Phase 1). Backward-compatible with the previous Worke
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset`
-- [x] 1.2 Types regenerate: `npm run db:types`
-- [x] 1.3 Build passes with new env schema: `npm run build`
-- [x] 1.4 Lint passes: `npm run lint`
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` — 5e1e713ea
+- [x] 1.2 Types regenerate: `npm run db:types` — 5e1e713ea
+- [x] 1.3 Build passes with new env schema: `npm run build` — 5e1e713ea
+- [x] 1.4 Lint passes: `npm run lint` — 5e1e713ea
 
 #### Manual
 
-- [x] 1.5 Minimal row insert (defaults) succeeds with NULL md columns + empty photo_paths; invalid `state` / >5 paths rejected by CHECKs
+- [x] 1.5 Minimal row insert (defaults) succeeds with NULL md columns + empty photo_paths; invalid `state` / >5 paths rejected by CHECKs — 5e1e713ea
 
 ### Phase 2: Session API (Create + Upload)
 

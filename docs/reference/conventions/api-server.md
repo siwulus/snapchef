@@ -1,10 +1,10 @@
 # API Server Conventions (Astro Routes)
 
-These rules govern `src/pages/api/**`. The shared machinery lives in `src/lib/infrastructure/api/` (`runApiRoute`, `parseRequestBody`, the `ApiResponsePayload` envelope) and `src/lib/core/model/error/` (the `ServerSnapchefError` family). Layer-access rules (what a route may import) are defined in `src/lib/CLAUDE.md`.
+These rules govern `src/pages/api/**`. The shared machinery lives in `src/lib/infrastructure/api/` (`runApiRoute`, `parseRequestBody`, the `ApiResponsePayload` envelope) and `src/lib/core/model/error/` (the `ServerSnapchefError` family). Business logic lives in `src/lib/core/uc/` use-case classes injected via `context.locals` — see `use-cases.md`. Layer-access rules (what a route may import) are defined in `src/lib/CLAUDE.md`.
 
 ## Rule: Route handlers delegate to `runApiRoute` — never build a `Response` by hand
 
-Express the handler as a single Effect pipeline passed to `runApiRoute` from `@/lib/infrastructure/api`. The effect succeeds with the domain payload; `runApiRoute` owns envelope wrapping (`{ ok: true, data }`), error→HTTP-status mapping, and defect→500 fallback. It is also the route's single `Effect.runPromise` site.
+Express the handler as a single Effect pipeline passed to `runApiRoute` from `@/lib/infrastructure/api`. The effect succeeds with the domain payload; `runApiRoute` owns envelope wrapping (`{ ok: true, data }`), error→HTTP-status mapping, and defect→500 fallback. It is also the route's single `Effect.runPromise` site. The domain step is a method call on a use case from `context.locals` (see `use-cases.md`).
 
 ```ts
 // ✓ good — the handler is one Effect pipeline; runApiRoute is the only exit
@@ -14,12 +14,9 @@ import { Effect } from "effect";
 
 export const prerender = false;
 
-export const POST: APIRoute = (context) =>
+export const POST: APIRoute = ({ request, locals: { authenticator } }) =>
   runApiRoute(
-    parseRequestBody(context.request, UserCredentials).pipe(
-      Effect.flatMap((credentials) => signIn(context, credentials)),
-      Effect.map(() => ({ redirect: "/recipes" })),
-    ),
+    parseRequestBody(request, UserCredentials).pipe(Effect.flatMap((credentials) => authenticator.signIn(credentials))),
   );
 ```
 
@@ -70,8 +67,10 @@ Signal failures with the error classes from `@/lib/core/model/error`, chosen by 
 
 A new `ErrorCode` requires, in the same change: the enum entry in `core/model/error`, a row in `ERROR_STATUS`, and a branch in the ts-pattern `toErrorApiResponsePayload` mapper (both in `infrastructure/api/index.ts` — the `.exhaustive()` match makes the compiler enforce the last one).
 
+Code like the snippet below lives inside a `core/uc` use-case method (e.g. `AuthenticatorUC.signIn`), not in the route — the route only relays the typed failures the UC produces.
+
 ```ts
-// ✓ good — domain outcome vs. infrastructure failure are distinct, typed errors
+// ✓ good — domain outcome vs. infrastructure failure are distinct, typed errors (inside a UC method)
 Effect.tryPromise({
   try: () => supabase.auth.signInWithPassword(credentials),
   catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
@@ -102,12 +101,10 @@ Make the route's success value an exported zod schema from `src/lib/core/boundry
 // ✓ good — the payload type is a shared boundary schema
 import { type RedirectTarget } from "@/lib/core/boundry/auth";
 
-const result: Effect.Effect<RedirectTarget, ServerSnapchefError> = signIn(credentials).pipe(
-  Effect.map(() => ({ redirect: "/recipes" })),
-);
+const result: Effect.Effect<RedirectTarget, ServerSnapchefError> = authenticator.signIn(credentials);
 ```
 
 ```ts
 // ✗ bad — inline shape the client cannot validate against
-const result = signIn(credentials).pipe(Effect.map(() => ({ goto: "/recipes", ok: 1 })));
+const result = authenticator.signIn(credentials).pipe(Effect.map(() => ({ goto: "/recipes", ok: 1 })));
 ```

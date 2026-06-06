@@ -22,7 +22,7 @@ May import:
 
 - `core/boundry/**` (command schemas in)
 - `core/model/**` (domain models)
-- `core/uc/**` (use cases — directory created when the first use case lands)
+- `core/uc/**` (use-case classes — but routes consume the **instances** from `context.locals`, wired by `src/middleware.ts`; import the class only for types. See `docs/reference/conventions/use-cases.md`)
 - `infrastructure/**` (all adapters: db, api, …)
 
 ### `infrastructure/db/**`
@@ -32,17 +32,17 @@ Strictly server-only. Never reachable from client code (`src/components/**`).
 ## Local Rules
 
 - **Named exports only.** No `export default`.
-- **Fail soft on missing secrets.** When a factory depends on optional env (`SUPABASE_URL`, `SUPABASE_KEY`), return `null` rather than throwing — see `infrastructure/db/supabase.ts`. Callers (`src/middleware.ts`) branch on the null.
+- **Fail soft in factories, fail fast at the composition root.** When a factory depends on optional env (`SUPABASE_URL`, `SUPABASE_KEY`), return `null` rather than throwing — see `infrastructure/db/supabase.ts`. The composition root (`injectDependencies` in `src/middleware.ts`) is the one place that turns the null into a hard failure: it throws `ExternalSystemError` so every downstream consumer may assume `context.locals` is fully populated.
 - **User-facing strings stay in Polish** when the existing sibling already uses Polish.
 
 ## File Layout & Naming
 
-- `kebab-case.ts` for all files. No `.tsx`, no `.astro` here.
+- File naming follows the repo-wide rule (`docs/reference/conventions/generic.md`): files whose primary export is a class are `PascalCase.ts` matching the class (e.g. `core/uc/auth/AuthenticatorUC.ts`); all other modules are `kebab-case.ts`. No `.tsx`, no `.astro` here.
 - One responsibility per file; the filename names that responsibility.
 - Per-domain `index.ts` barrel files are the established pattern under `core/*` (e.g. `core/boundry/auth/index.ts`, `core/model/auth/index.ts`). Top-level `src/lib/` modules do not use barrel files — import via the `@/lib/<path>` alias directly.
 
 ## Adding a New Module
 
-1. Filename: `kebab-case.ts` naming the responsibility.
+1. Filename: `kebab-case.ts` naming the responsibility (`PascalCase.ts` only when the file's primary export is a class — see `docs/reference/conventions/generic.md`).
 2. Use `interface` for exported object shapes; reserve `type` for unions / aliases.
 3. Arrow functions throughout (`const fn = () => …`) — see root CLAUDE.md conventions.

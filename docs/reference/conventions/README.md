@@ -6,9 +6,10 @@
 
 | Domain        | File              | Summary                                                                                                   |
 | ------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
-| Generic style | `./generic.md`    | Arrow functions over `function` keyword; functional programming over imperative loops                     |
+| Generic style | `./generic.md`    | File naming (PascalCase for class/component files, kebab-case otherwise); arrow functions; FP over loops  |
 | Zod naming    | `./zod.md`        | Schema and inferred type share the same name                                                              |
 | Effect-TS     | `./effect.md`     | First-choice FP approach: pipe-first pipelines, typed errors, wrap Promises at the edge                   |
+| Use cases     | `./use-cases.md`  | Business logic in `core/uc` classes; constructor DI; middleware composes onto `context.locals`            |
 | API — server  | `./api-server.md` | Astro routes: `runApiRoute` is the only exit; `parseRequestBody` for input; typed error→status mapping    |
 | API — client  | `./api-client.md` | Browser HTTP via `components/api` helpers; envelope validated with zod; Effects run once at the form edge |
 
@@ -17,6 +18,8 @@
 @./zod.md
 
 @./effect.md
+
+@./use-cases.md
 
 @./api-server.md
 

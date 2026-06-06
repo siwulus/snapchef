@@ -1,5 +1,34 @@
 # Generic Style Conventions
 
+## Rule: File naming — filename mirrors the primary export; otherwise kebab-case
+
+When a file has one primary export, name the file exactly after that export: **PascalCase** for classes and React components (`AuthenticatorUC.ts`, `SignInForm.tsx`), **camelCase** for hooks (`useApiClient.ts`). Files without a single primary export (function modules, adapters, utilities) use **kebab-case** naming the responsibility. Never perform a case-only rename — macOS filesystems are case-insensitive while git and Linux CI are case-sensitive; pick the casing when the file is created.
+
+```text
+✓ good
+src/lib/core/uc/auth/AuthenticatorUC.ts   — export class AuthenticatorUC
+src/components/auth/SignInForm.tsx        — export const SignInForm
+src/components/hooks/useApiClient.ts      — export const useApiClient
+src/lib/infrastructure/db/supabase.ts     — module of factory functions
+src/components/api/http.ts                — module of transport helpers
+```
+
+```text
+✗ bad
+src/lib/core/uc/auth/authenticator-uc.ts  — class file not matching the class name
+src/components/auth/sign-in-form.tsx      — component file diverges from <SignInForm />
+src/lib/core/uc/auth/authenticatorUC.ts   — lowercase-first for a class; matches nothing
+src/components/hooks/UseApiClient.ts      — hook is camelCase; its file must be too
+```
+
+> **Exceptions:**
+>
+> - `src/pages/**` — filenames are URL segments; always lowercase (`signin.ts`, not `SignIn.ts`).
+> - `src/components/ui/*` — vendored shadcn primitives keep their generated lowercase names.
+> - `index.ts` barrel files (the established pattern under `src/lib/core/*`).
+
+---
+
 ## Rule: Use arrow functions — avoid the `function` keyword
 
 Use arrow functions (`const fn = () => ...`) everywhere. Do not use `function` declarations or `function` expressions unless an exception below applies.
