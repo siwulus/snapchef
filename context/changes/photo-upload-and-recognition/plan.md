@@ -8,7 +8,8 @@ Deliver roadmap slice S-01: a verified, signed-in user uploads 1–5 photos (≤
 
 - **F-01 landed** (`supabase/migrations/20260530100000_domain_schema_and_storage.sql`): tables `recipe_sessions` / `recipes` with owner-only RLS; private bucket `session-photos` (5 MiB limit, `image/jpeg|png|webp|heic`); storage RLS keyed on first path segment = `auth.uid()`; path convention `{user_id}/{session_id}/{uuid}.{ext}`. Generated types in `src/lib/infrastructure/db/types/index.ts`.
 - **F-02 NOT implemented** — decision: **deferred**; S-01 gates on session only (existing middleware already protects `/recipes*`). F-02 remains its own change.
-- **Server API machinery ready**: `runApiRoute`, `parseRequestBody`, `decodeWith`, `ERROR_STATUS`, ts-pattern error mapper (`src/lib/infrastructure/api/index.ts`); `ServerSnapchefError` family (`src/lib/core/model/error/index.ts`). Established route pattern: `src/pages/api/auth/signin.ts`.
+- **Server API machinery ready**: `runApiRoute`, `parseRequestBody`, `ERROR_STATUS`, ts-pattern error mapper (`src/lib/infrastructure/api/index.ts`); `decodeWith` (`src/lib/utils/index.ts`); `ServerSnapchefError` family (`src/lib/core/model/error/index.ts`). Established route pattern: `src/pages/api/auth/signin.ts`.
+- **Use-case convention in force** (`docs/reference/conventions/use-cases.md`, landed 8f8f85a53 after this plan's first draft): business logic lives in `core/uc/<domain>/<Name>UC` classes with constructor DI (adapters as types only); `src/middleware.ts` `injectDependencies` is the single composition root; every UC is declared on `App.Locals` (`src/env.d.ts`); routes consume UC instances from `context.locals` and stay boundary-only (see `AuthenticatorUC` + thin `signin.ts`).
 - **Client transport JSON-only**: `src/components/api/http.ts` (`post/get/putJson/delete_` over `fetchJson`); `useApiClient` / `useZodForm` hooks; form pattern in `src/components/auth/SignInForm.tsx`; sonner wired in both layouts.
 - **Zero storage and zero LLM code exists.** `@openrouter/agent@0.7.1` installed but unused; no OpenRouter env vars declared.
 - **No test runner configured** — automated verification is lint + build + migration apply.
@@ -30,7 +31,7 @@ Verify: full manual flow on desktop + mobile viewport with real fridge photos co
 
 - Storage RLS authorizes by path prefix — uploading with the **user's session-scoped client** makes ownership enforcement free (`20260530100000_domain_schema_and_storage.sql:138-164`).
 - `recipe_sessions.id` can be supplied at insert (uuid PK, no FK dependency), so storage paths and the session row share one client-generated... server-generated `sessionId` (`crypto.randomUUID()` in the route).
-- Middleware protects `/recipes*` pages only (`src/middleware.ts`); `/api/**` routes must check `context.locals.user` themselves → fail `BusinessRuleError UNAUTHORIZED`.
+- Middleware protects `/recipes*` pages only (`src/middleware.ts`); `/api/`\*\* routes must check `context.locals.user` themselves → fail `BusinessRuleError UNAUTHORIZED`.
 - `request.formData()` is native on Cloudflare Workers — no multipart library needed.
 - `ValidationError` carries `error: z.ZodError` → validating the uploaded `File[]` **with a zod schema** (via `decodeWith`) yields proper 400s with `fieldErrors` for free.
 - zod 4 (`zod@4.4.3`) provides `z.toJSONSchema()` — one schema serves OpenRouter `response_format`, server-side output validation, and the client contract.
@@ -38,18 +39,19 @@ Verify: full manual flow on desktop + mobile viewport with real fridge photos co
 
 ## Decision Log (from planning Q&A, 2026-06-06)
 
-| #   | Decision                                                                          | Choice                                                                                                                                                                                                       |
-| --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | F-02 prerequisite gap                                                             | Defer; session-only gating for S-01                                                                                                                                                                          |
-| 2   | Upload path                                                                       | Multipart POST to our API; server validates + uploads to Storage                                                                                                                                             |
-| 3   | API shape                                                                         | Three endpoints under `/api/recipe-sessions`: create (empty session), `[id]/upload` (photos), `[id]/recognition`; every response embeds the session object `{ sessionId, state }` (plan-review F1/F2)        |
-| 4   | **Session lifecycle (supersedes ui-architecture.md §1.3 "in-memory, no drafts")** | `recipe_sessions` row created at upload; new `state` column tracks progress (`photos_uploaded → products_recognized → recipe_generated → saved`); session id is the referenceable handle for all later steps |
-| 5   | Image formats                                                                     | Accept `jpeg/png/webp` only; rely on iOS auto-convert; canvas resize normalizes to JPEG                                                                                                                      |
-| 6   | Quantity shape                                                                    | Free-text string ("2 szt", "ok. 500 g")                                                                                                                                                                      |
-| 7   | Recognition language                                                              | Polish, fixed in prompt                                                                                                                                                                                      |
-| 8   | Orphans (storage files + draft rows)                                              | Accepted in MVP; cleanup parked                                                                                                                                                                              |
-| 9   | Photo previews                                                                    | Upload response carries ~15 min signed `previewUrl` per photo for server-truth previews (plan-review F3)                                                                                                     |
-| 10  | LLM size guarantee                                                                | Client resizes; server validates a conservative `MAX_LLM_IMAGE_BYTES` ceiling and rejects — Workers cannot resize (plan-review F4, Fix A)                                                                    |
+| #   | Decision                                                                          | Choice                                                                                                                                                                                                                                                                                                                                                               |
+| --- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | F-02 prerequisite gap                                                             | Defer; session-only gating for S-01                                                                                                                                                                                                                                                                                                                                  |
+| 2   | Upload path                                                                       | Multipart POST to our API; server validates + uploads to Storage                                                                                                                                                                                                                                                                                                     |
+| 3   | API shape                                                                         | Three endpoints under `/api/recipe-sessions`: create (empty session), `[id]/upload` (photos), `[id]/recognition`; every response embeds the session object `{ sessionId, state }` (plan-review F1/F2)                                                                                                                                                                |
+| 4   | **Session lifecycle (supersedes ui-architecture.md §1.3 "in-memory, no drafts")** | `recipe_sessions` row created at upload; new `state` column tracks progress (`photos_uploaded → products_recognized → recipe_generated → saved`); session id is the referenceable handle for all later steps                                                                                                                                                         |
+| 5   | Image formats                                                                     | Accept `jpeg/png/webp` only; rely on iOS auto-convert; canvas resize normalizes to JPEG                                                                                                                                                                                                                                                                              |
+| 6   | Quantity shape                                                                    | Free-text string ("2 szt", "ok. 500 g")                                                                                                                                                                                                                                                                                                                              |
+| 7   | Recognition language                                                              | Polish, fixed in prompt                                                                                                                                                                                                                                                                                                                                              |
+| 8   | Orphans (storage files + draft rows)                                              | Accepted in MVP; cleanup parked                                                                                                                                                                                                                                                                                                                                      |
+| 9   | Photo previews                                                                    | Upload response carries ~15 min signed `previewUrl` per photo for server-truth previews (plan-review F3)                                                                                                                                                                                                                                                             |
+| 10  | LLM size guarantee                                                                | Client resizes; server validates a conservative `MAX_LLM_IMAGE_BYTES` ceiling and rejects — Workers cannot resize (plan-review F4, Fix A)                                                                                                                                                                                                                            |
+| 11  | **Business-logic placement (conventions re-review, 2026-06-06)**                  | All session/recognition domain logic in `RecipeSessionUC` (`core/uc/recipe-session/`), constructor-DI'd via middleware onto `context.locals`; LLM enters core through a **domain-shaped port** (`ProductRecognitionService` — `recognizePhoto` / `mergeItems`) defined in core, implemented by `infrastructure/llm` where the prompts stay (re-review F1 + F2 Fix A) |
 
 LLM architecture decisions (model, signed-URL transport, fan-out+merge, manual Effect orchestration — **not** the agent SDK) are recorded in `change.md` and are binding here.
 
@@ -65,10 +67,11 @@ LLM architecture decisions (model, signed-URL transport, fan-out+merge, manual E
 
 ## Implementation Approach
 
-Vertical slice, server-first. One migration extends `recipe_sessions` for the new lifecycle. Three API routes follow the established `runApiRoute` pattern. The OpenRouter adapter is a thin `fetch`-based infrastructure module (chat completions + structured outputs) — we deliberately bypass `@openrouter/agent`'s agentic surface. The wizard is one React island with local step state; transport gains one `postFormData` helper per the sanctioned `fetchJson` extension point.
+Vertical slice, server-first. One migration extends `recipe_sessions` for the new lifecycle. All session/recognition business logic lives in one use-case class, `RecipeSessionUC` (`src/lib/core/uc/recipe-session/`), per `use-cases.md`; the three API routes are thin `runApiRoute` pipelines that delegate to the UC from `context.locals` (the `signin.ts` shape). The OpenRouter adapter is a thin `fetch`-based infrastructure module (chat completions + structured outputs) implementing a domain-shaped core port — we deliberately bypass `@openrouter/agent`'s agentic surface. The wizard is one React island with local step state; transport gains one `postFormData` helper per the sanctioned `fetchJson` extension point.
 
 ## Critical Implementation Details
 
+- **UC layering (use-cases.md)**: domain pipelines (session load, state guards, storage calls, signed-URL minting, fan-out + merge, persistence) are `RecipeSessionUC` methods returning `Effect<…, ServerSnapchefError>`. Routes contribute only boundary concerns: `prerender = false`, the `locals.user` presence check (`BusinessRuleError UNAUTHORIZED` — middleware does not gate `/api/`\*\*), input parsing, UC delegation. Adapters enter the UC via constructor as types only: `SupabaseClient` (`import type` from `@supabase/supabase-js`) and the `ProductRecognitionService` port (defined in core, implemented in `infrastructure/llm`). Middleware (`injectDependencies`) instantiates the UC; `App.Locals` declares it — UC + middleware + `env.d.ts` land in the same change.
 - **Ownership chain**: every Supabase call (storage upload, insert, select, update, signed URLs) uses the **session-scoped client** from `createClient(headers, cookies)` — never a service-role key. RLS is the authorization layer; the route only adds the `locals.user` presence check.
 - **FR-003 + LLM-size validation contract**: the 5 MB limit applies to the **original** files (clear user contract), enforced client-side for UX _and_ server-side (roadmap risk item). Client-side canvas resize is the **resize mechanism** — Cloudflare Workers have no image APIs (no canvas/sharp), so the server cannot resize; instead the upload route **guarantees** the invariant by validating each received file against `MAX_LLM_IMAGE_BYTES` (conservative ceiling, ~4 MB — below every candidate model's per-image limit) and rejecting violations with `ValidationError` (plan-review F4, Fix A).
 - **Recognition idempotency / retry**: the recognition endpoint accepts sessions in `photos_uploaded` **or** `products_recognized` state (re-run overwrites `recognized_items_md`). Any other state (incl. `created` — no photos yet) → `BusinessRuleError CONFLICT`. This makes the client Retry button safe.
@@ -135,7 +138,7 @@ Schema + environment groundwork: the `state` column, relaxed NOT NULLs, regenera
 
 ### Overview
 
-Two endpoints: `POST /api/recipe-sessions` creates an empty session and returns the session object; `POST /api/recipe-sessions/[id]/upload` receives multipart photos, validates (FR-003 + LLM ceiling), uploads to storage, transitions state, and returns the session object + preview URLs.
+The `RecipeSessionUC` use-case class (create + photo-attach methods), its middleware/`App.Locals` wiring, and two thin endpoints: `POST /api/recipe-sessions` creates an empty session and returns the session object; `POST /api/recipe-sessions/[id]/upload` receives multipart photos, validates (FR-003 + LLM ceiling), uploads to storage, transitions state, and returns the session object + preview URLs.
 
 ### Changes Required:
 
@@ -153,23 +156,36 @@ Two endpoints: `POST /api/recipe-sessions` creates an empty session and returns 
 
 **Intent**: Sibling of `parseRequestBody` for multipart routes: lift `request.formData()` into Effect and validate the extracted `File[]` with zod so failures surface as the existing 400 envelope.
 
-**Contract**: `parseMultipartFiles(request, fieldName): Effect.Effect<File[], ServerSnapchefError>` — `formData()` failure → `ParseJsonError` (reused; message "Invalid request body"); count/size/type violations (incl. the `MAX_LLM_IMAGE_BYTES` ceiling — plan-review F4 Fix A) → `ValidationError` via `decodeWith` over a `z.custom<File>()` array schema built from the boundary constants. No new ErrorCode needed.
+**Contract**: `parseMultipartFiles(request, fieldName): Effect.Effect<File[], ServerSnapchefError>` — `formData()` failure → `ParseJsonError` (reused; message "Invalid request body"); count/size/type violations (incl. the `MAX_LLM_IMAGE_BYTES` ceiling — plan-review F4 Fix A) → `ValidationError` via `decodeWith` (from `@/lib/utils`) over a `z.custom<File>()` array schema built from the boundary constants. No new ErrorCode needed.
 
-#### 3. Create-session route
+#### 3. Use-case class + DI wiring
+
+**File**: `src/lib/core/uc/recipe-session/RecipeSessionUC.ts` (new), `src/middleware.ts`, `src/env.d.ts`
+
+**Intent**: The central point for all session business logic per `use-cases.md` — routes stay boundary-only. UC + composition-root wiring + `App.Locals` declaration land together (the convention's "all three in the same change" rule).
+
+**Contract**: `class RecipeSessionUC` with `constructor(private readonly supabase: SupabaseClient)` (`import type` only; Phase 3 extends the constructor with the `ProductRecognitionService` port). Methods (this phase):
+
+- `createSession(userId: string): Effect.Effect<RecipeSession, ServerSnapchefError>` — insert empty `recipe_sessions` row (`user_id`; `state`/`photo_paths` from column defaults) → succeed `RecipeSession` (`state: 'created'`). DB failure → `ExternalSystemError`.
+- `attachPhotos(userId: string, sessionId: string, files: File[]): Effect.Effect<UploadResult, ServerSnapchefError>` — load session by id with the user client (no row → `BusinessRuleError NOT_FOUND`; RLS hides foreign rows) → state guard (`created` | `photos_uploaded`, else `CONFLICT`; re-upload replaces previous files with best-effort `storage.remove`) → `Effect.forEach(files, upload, { concurrency: 5 })` to `session-photos/{userId}/{sessionId}/{crypto.randomUUID()}.jpg` (content-type from the file) → update row (`photo_paths`, `state: 'photos_uploaded'`) → `createSignedUrls(photo_paths, ~15 min)` for previews (plan-review F3) → succeed `UploadResult`. Storage/DB failures → `ExternalSystemError` with best-effort cleanup of just-uploaded files (orphan policy tolerates leftovers).
+
+Wiring: `injectDependencies` in `src/middleware.ts` instantiates `context.locals.recipeSessions = new RecipeSessionUC(supabase)` (same fail-fast branch as `authenticator`); `src/env.d.ts` declares `recipeSessions: RecipeSessionUC` on `App.Locals`.
+
+#### 4. Create-session route
 
 **File**: `src/pages/api/recipe-sessions/index.ts` (new)
 
-**Intent**: Mint the durable session handle before any photos exist.
+**Intent**: Mint the durable session handle before any photos exist — thin delegate (`signin.ts` shape).
 
-**Contract**: `export const prerender = false`; `POST` with no body; single `runApiRoute` pipeline: `locals.user` missing → `BusinessRuleError UNAUTHORIZED` → insert empty `recipe_sessions` row (`user_id`; `state`/`photo_paths` from column defaults) → succeed `RecipeSession` (`state: 'created'`). DB failure → `ExternalSystemError`.
+**Contract**: `export const prerender = false`; `POST` with no body; single `runApiRoute` pipeline: `locals.user` missing → `BusinessRuleError UNAUTHORIZED` → `locals.recipeSessions.createSession(user.id)`.
 
-#### 4. Upload route
+#### 5. Upload route
 
 **File**: `src/pages/api/recipe-sessions/[id]/upload.ts` (new)
 
-**Intent**: Attach validated photos to an existing session, transition its state, return server-truth previews.
+**Intent**: Boundary for photo attachment — parse multipart, delegate, relay typed failures.
 
-**Contract**: `runApiRoute` pipeline: auth check → load session by `context.params.id` with the user client (no row → `BusinessRuleError NOT_FOUND`; RLS hides foreign rows) → state guard (`created` | `photos_uploaded`, else `CONFLICT`; re-upload replaces previous files with best-effort `storage.remove`) → `parseMultipartFiles` → `Effect.forEach(files, upload, { concurrency: 5 })` to `session-photos/{user.id}/{sessionId}/{crypto.randomUUID()}.jpg` (content-type from the file) → update row (`photo_paths`, `state: 'photos_uploaded'`) → `createSignedUrls(photo_paths, ~15 min)` for previews (plan-review F3) → succeed `UploadResult`. Storage/DB failures → `ExternalSystemError` with best-effort cleanup of just-uploaded files (orphan policy tolerates leftovers).
+**Contract**: `runApiRoute` pipeline: auth check (`UNAUTHORIZED`) → `parseMultipartFiles(request, 'photos')` → `locals.recipeSessions.attachPhotos(user.id, context.params.id, files)`. No adapter calls, no state logic in the route.
 
 ### Success Criteria:
 
@@ -192,17 +208,25 @@ Two endpoints: `POST /api/recipe-sessions` creates an empty session and returns 
 
 ### Overview
 
-`POST /api/recipe-sessions/[id]/recognition` — fan-out per photo over signed URLs, merge, persist, return `RecognitionResult`.
+The `ProductRecognitionService` core port, its OpenRouter implementation, the `RecipeSessionUC.recognizeProducts` method, and the thin `POST /api/recipe-sessions/[id]/recognition` route — fan-out per photo over signed URLs, merge, persist, return `RecognitionResult`.
 
 ### Changes Required:
 
-#### 1. OpenRouter infrastructure adapter
+#### 1. Recognition port — core contract
+
+**File**: `src/lib/core/uc/recipe-session/ports.ts` (new)
+
+**Intent**: The domain-shaped contract through which the LLM capability enters core (decision #11 / re-review F2 Fix A) — core never imports `infrastructure/llm`.
+
+**Contract**: `interface ProductRecognitionService { recognizePhoto(signedUrl: string): Effect.Effect<RecognizedItem[], ExternalSystemError>; mergeItems(lists: RecognizedItem[][]): Effect.Effect<RecognizedItem[], ExternalSystemError> }` — typed by the boundary `RecognizedItem`; zod + effect imports only.
+
+#### 2. OpenRouter infrastructure adapter
 
 **File**: `src/lib/infrastructure/llm/openrouter.ts` (new)
 
-**Intent**: Minimal typed chat-completions client over `fetch` (no `@openrouter/agent` agentic loop — see change.md decision #4), with structured outputs and model fallback.
+**Intent**: Implements `ProductRecognitionService` over a minimal typed chat-completions `fetch` client (no `@openrouter/agent` agentic loop — see change.md decision #4), with structured outputs and model fallback. Exposes a factory (e.g. `createProductRecognitionService(): ProductRecognitionService`) consumed only by the middleware composition root.
 
-**Contract**: `completeStructured<S extends z.ZodType>(params: { messages; schema: S; schemaName: string }): Effect.Effect<z.output<S>, ExternalSystemError>`. Request body to `https://openrouter.ai/api/v1/chat/completions`:
+**Contract**: Internal `completeStructured<S extends z.ZodType>(params: { messages; schema: S; schemaName: string }): Effect.Effect<z.output<S>, ExternalSystemError>` (not exported beyond the adapter's needs). Request body to `https://openrouter.ai/api/v1/chat/completions`:
 
 ```jsonc
 {
@@ -215,21 +239,29 @@ Two endpoints: `POST /api/recipe-sessions` creates an empty session and returns 
 
 Missing `OPENROUTER_API_KEY` → fail-soft `ExternalSystemError` (mirrors the Supabase-not-configured pattern). Non-2xx, non-JSON content, or schema-mismatched model output → `ExternalSystemError` with `cause` (model output mismatch is an external failure, not client `ValidationError`).
 
-#### 2. Recognition prompts
+#### 3. Recognition prompts
 
 **File**: `src/lib/infrastructure/llm/prompts.ts` (new)
 
-**Intent**: Two prompt builders. Per-photo recognition: Polish output, food/kitchen products only, one product per item, commit to the most likely identification (FR-004 — never alternatives like "cytryna lub limonka"), free-text estimated quantity, empty list when nothing recognizable. Merge: given N per-photo lists, dedupe semantically (same product across photos/languages/phrasings), sum quantities sensibly, re-enforce one-entry-per-product.
+**Intent**: Two prompt builders, kept beside the adapter that consumes them (decision #11 — the port is domain-shaped; prompt/message wiring is an adapter detail). Per-photo recognition: Polish output, food/kitchen products only, one product per item, commit to the most likely identification (FR-004 — never alternatives like "cytryna lub limonka"), free-text estimated quantity, empty list when nothing recognizable. Merge: given N per-photo lists, dedupe semantically (same product across photos/languages/phrasings), sum quantities sensibly, re-enforce one-entry-per-product.
 
 **Contract**: Both produce messages for `completeStructured` with the `RecognizedItems`-shaped schema (`{ items: RecognizedItem[] }`).
 
-#### 3. Recognition route
+#### 4. UC orchestration + wiring extension
+
+**File**: `src/lib/core/uc/recipe-session/RecipeSessionUC.ts`, `src/middleware.ts`
+
+**Intent**: The fan-out + merge pipeline and the session state transition live in the UC, not the route.
+
+**Contract**: Extend the constructor: `constructor(supabase: SupabaseClient, recognition: ProductRecognitionService)` (both `import type`); middleware passes `createProductRecognitionService()` (constructed unconditionally — the adapter fails soft at call time on a missing key). New method `recognizeProducts(sessionId: string): Effect.Effect<RecognitionResult, ServerSnapchefError>` — load session (no row → `BusinessRuleError NOT_FOUND`; RLS makes foreign rows invisible) → state guard (`photos_uploaded` | `products_recognized`, else `CONFLICT`) → `storage.createSignedUrls(photo_paths, 120)` → `Effect.forEach(urls, this.recognition.recognizePhoto, { concurrency: 5 })` where each call has `Effect.timeout` + one retry and per-photo failures resolve to a sentinel rather than failing the batch → all failed → `ExternalSystemError`; else `this.recognition.mergeItems` (skipped for a single successful photo) → update row (`recognized_items_md = serializeItemsToMarkdown(items)`, `state = 'products_recognized'`) → succeed `RecognitionResult` (embedded `RecipeSession` reflecting the new state, `items`, `photosProcessed`/`photosFailed`).
+
+#### 5. Recognition route
 
 **File**: `src/pages/api/recipe-sessions/[id]/recognition.ts` (new)
 
-**Intent**: Orchestrate the fan-out + merge pipeline and the session state transition.
+**Intent**: Boundary only — thin delegate (`signin.ts` shape).
 
-**Contract**: `runApiRoute` pipeline: auth check → load session by `context.params.id` with the user client (no row → `BusinessRuleError NOT_FOUND`; RLS makes foreign rows invisible) → state guard (`photos_uploaded` | `products_recognized`, else `CONFLICT`) → `storage.createSignedUrls(photo_paths, 120)` → `Effect.forEach(urls, recognizePhoto, { concurrency: 5 })` where each call has `Effect.timeout` + one retry and per-photo failures resolve to a sentinel rather than failing the batch → all failed → `ExternalSystemError`; else merge (skipped for a single successful photo) → update row (`recognized_items_md = serializeItemsToMarkdown(items)`, `state = 'products_recognized'`) → succeed `RecognitionResult` (embedded `RecipeSession` reflecting the new state, `items`, `photosProcessed`/`photosFailed`).
+**Contract**: `runApiRoute` pipeline: auth check (`UNAUTHORIZED`) → `locals.recipeSessions.recognizeProducts(context.params.id)`. No adapter calls, no orchestration in the route.
 
 ### Success Criteria:
 
@@ -352,7 +384,7 @@ No test runner exists in the repo (out of scope to add one — see What We're NO
 ## Performance Considerations
 
 - Client resize (~1568 px JPEG) cuts uploads to ~0.3–0.5 MB/photo → multipart through the Worker is cheap; Worker memory untouched by base64 (signed URLs to the LLM).
-- Worst case inside NFR: upload (~2–4 s) + fan-out (slowest photo ≤ 25 s timeout, typical 5–10 s) + merge (~3–5 s). Retry budget capped by per-call timeout so Retry UX stays responsive.
+- Worst case inside NFR: upload (~~2–4 s) + fan-out (slowest photo ≤ 25 s timeout, typical 5–10 s) + merge (~~3–5 s). Retry budget capped by per-call timeout so Retry UX stays responsive.
 - Signed URL TTLs: 120 s comfortably covers the LLM fetch window; ~15 min preview URLs outlive the review/edit step (re-minted on re-upload).
 
 ## Migration Notes
@@ -364,73 +396,74 @@ Single additive migration (Phase 1). Backward-compatible with the previous Worke
 - Decisions: `context/changes/photo-upload-and-recognition/change.md`
 - F-01 schema: `supabase/migrations/20260530100000_domain_schema_and_storage.sql`
 - Route pattern: `src/pages/api/auth/signin.ts`
+- UC pattern: `docs/reference/conventions/use-cases.md`, `src/lib/core/uc/auth/AuthenticatorUC.ts`, `src/middleware.ts` (`injectDependencies`), `src/env.d.ts`
 - Form pattern: `src/components/auth/SignInForm.tsx`
 - Transport: `src/components/api/http.ts`
 - UI architecture: `context/foundation/ui-architecture.md` (§2, §3a, §6)
 
 ## Progress
 
-> Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
+> Convention: `- [ ]` pending, `- [x]` done. Append `— <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Session Lifecycle Foundation
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset` — 5e1e713ea
-- [x] 1.2 Types regenerate: `npm run db:types` — 5e1e713ea
-- [x] 1.3 Build passes with new env schema: `npm run build` — 5e1e713ea
-- [x] 1.4 Lint passes: `npm run lint` — 5e1e713ea
+- 1.1 Migration applies cleanly: `npx supabase db reset` — 5e1e713ea
+- 1.2 Types regenerate: `npm run db:types` — 5e1e713ea
+- 1.3 Build passes with new env schema: `npm run build` — 5e1e713ea
+- 1.4 Lint passes: `npm run lint` — 5e1e713ea
 
 #### Manual
 
-- [x] 1.5 Minimal row insert (defaults) succeeds with NULL md columns + empty photo_paths; invalid `state` / >5 paths rejected by CHECKs — 5e1e713ea
+- 1.5 Minimal row insert (defaults) succeeds with NULL md columns + empty photo_paths; invalid `state` / >5 paths rejected by CHECKs — 5e1e713ea
 
 ### Phase 2: Session API (Create + Upload)
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` and `npm run build` pass
+- 2.1 `npm run lint` and `npm run build` pass
 
 #### Manual
 
-- [ ] 2.2 Create → 200 session object `state: 'created'`, empty row in DB
-- [ ] 2.3 Valid upload → 200 `state: 'photos_uploaded'` + working previewUrls; files + row correct; re-upload replaces
-- [ ] 2.4 Limit violations (6 files / 6 MB / PDF) → 400; no auth → 401; unknown/foreign id → 404; wrong state → 409
-- [ ] 2.5 Cross-user storage/session access denied (RLS spot-check)
+- 2.2 Create → 200 session object `state: 'created'`, empty row in DB
+- 2.3 Valid upload → 200 `state: 'photos_uploaded'` + working previewUrls; files + row correct; re-upload replaces
+- 2.4 Limit violations (6 files / 6 MB / PDF) → 400; no auth → 401; unknown/foreign id → 404; wrong state → 409
+- 2.5 Cross-user storage/session access denied (RLS spot-check)
 
 ### Phase 3: Recognition API + OpenRouter Adapter
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` and `npm run build` pass
+- 3.1 `npm run lint` and `npm run build` pass
 
 #### Manual
 
-- [ ] 3.2 2-photo session → Polish unambiguous items, markdown + state persisted, ≲ 30 s
-- [ ] 3.3 Retry overwrites; `created`/future state → 409; unknown/foreign id → 404; missing key → 502
-- [ ] 3.4 One unreadable photo → 200 with `photosFailed = 1`
+- 3.2 2-photo session → Polish unambiguous items, markdown + state persisted, ≲ 30 s
+- 3.3 Retry overwrites; `created`/future state → 409; unknown/foreign id → 404; missing key → 502
+- 3.4 One unreadable photo → 200 with `photosFailed = 1`
 
 ### Phase 4: Wizard Island — Step 1 (Upload)
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` and `npm run build` pass
+- 4.1 `npm run lint` and `npm run build` pass
 
 #### Manual
 
-- [ ] 4.2 Auth redirect works; upload UI mobile-clean
-- [ ] 4.3 Validation matrix inline errors; previews + remove work
-- [ ] 4.4 Two-stage loader; mid-flight failure → error + recognition-only retry; success lands on review
-- [ ] 4.5 Leave-guard fires with unsaved selection
+- 4.2 Auth redirect works; upload UI mobile-clean
+- 4.3 Validation matrix inline errors; previews + remove work
+- 4.4 Two-stage loader; mid-flight failure → error + recognition-only retry; success lands on review
+- 4.5 Leave-guard fires with unsaved selection
 
 ### Phase 5: Wizard Island — Step 2 (Review List)
 
 #### Automated
 
-- [ ] 5.1 `npm run lint` and `npm run build` pass
+- 5.1 `npm run lint` and `npm run build` pass
 
 #### Manual
 
-- [ ] 5.2 Full E2E with real photos: edit/delete/add all work in-place
-- [ ] 5.3 Cross-photo dedupe produces one entry; single-photo session correct
-- [ ] 5.4 ~30 s flow with continuous feedback; a11y spot-check passes
+- 5.2 Full E2E with real photos: edit/delete/add all work in-place
+- 5.3 Cross-photo dedupe produces one entry; single-photo session correct
+- 5.4 ~30 s flow with continuous feedback; a11y spot-check passes

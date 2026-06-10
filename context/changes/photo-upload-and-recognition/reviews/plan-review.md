@@ -1,12 +1,13 @@
 <!-- PLAN-REVIEW-REPORT -->
 
-# Plan Review: Photo Upload & Product Recognition (S-01)
+# Plan Review: Photo Upload & Product Recognition (S-01) — Round 2 (conventions re-validation)
 
 - **Plan**: `context/changes/photo-upload-and-recognition/plan.md`
-- **Mode**: Deep (user manual-review comments as primary input)
+- **Mode**: Deep — re-review against `docs/reference/conventions/use-cases.md` (landed 8f8f85a53, after the plan's first draft)
 - **Date**: 2026-06-06
-- **Verdict**: REVISE → **SOUND after fixes** (all 5 findings fixed in plan)
-- **Findings**: 1 critical, 4 warnings, 0 observations
+- **Verdict**: REVISE → **SOUND after fixes** (all 3 findings fixed in plan)
+- **Findings**: 1 critical, 1 warning, 1 observation
+- **Prior round** (same date, superseded): 5 findings (F1 create-then-upload schema conflict, F2 uniform session object, F3 preview URLs, F4 Workers can't resize, F5 in-memory-doc edits) — all FIXED and folded into the plan's Decision Log rows 3, 9, 10 and Phase 1 #4.
 
 ## Verdicts
 
@@ -14,68 +15,51 @@
 | --------------------- | --------------- |
 | End-State Alignment   | PASS            |
 | Lean Execution        | PASS            |
-| Architectural Fitness | WARNING → fixed |
-| Blind Spots           | WARNING → fixed |
+| Architectural Fitness | FAIL → fixed    |
+| Blind Spots           | PASS            |
 | Plan Completeness     | WARNING → fixed |
 
 ## Grounding
 
-6/6 paths ✓ (`infrastructure/api/index.ts`, `components/api/http.ts`, `db/types/index.ts`, `astro.config.mjs`, `api/auth/signin.ts`, `hooks/useApiClient.ts`), 2/2 symbols ✓ (`decodeWith`, `ERROR_STATUS`), brief↔plan ✓, Progress↔Phase contract ✓. `photo_paths NOT NULL + CHECK cardinality 1–5` confirmed at `20260530100000_domain_schema_and_storage.sql:14-18`; in-memory mentions confirmed at `ui-architecture.md:29,72-74,163` and `roadmap.md:91`.
+6/6 paths ✓ (`src/middleware.ts`, `src/env.d.ts`, `src/lib/core/uc/auth/AuthenticatorUC.ts`, `src/pages/api/auth/signin.ts`, `src/lib/infrastructure/api/index.ts`, `src/components/api/http.ts`), 4/4 symbols ✓ (`injectDependencies`, `App.Locals.authenticator`, `runApiRoute`, `decodeWith` — found in `src/lib/utils/index.ts:5`, not `infrastructure/api`), brief↔plan ✓, Progress↔Phase contract ✓. Phase 1 landed (5e1e713ea) and is unaffected — re-review scope is Phases 2–5; Phases 4–5 (client) already comply with `api-client.md`.
 
 ## Findings
 
-### F1 — Create-then-upload restructure conflicts with F-01 schema constraints
+### F1 — Phases 2–3 inline business logic in routes; no UC layer
 
 - **Severity**: ❌ CRITICAL
-- **Impact**: 🔎 MEDIUM — directive settled the tradeoff; wide but mechanical edit
+- **Impact**: 🔎 MEDIUM — real tradeoff settled by convention; wide but mechanical edit
 - **Dimension**: Architectural Fitness
-- **Location**: Phase 1 (migration), Phase 2 (routes), Phase 4 (wizard)
-- **Source**: User comment #2
-- **Detail**: `POST /api/recipe-sessions` creating an EMPTY session is blocked by `photo_paths NOT NULL` + `CHECK cardinality BETWEEN 1 AND 5`; planned `state` default `'photos_uploaded'` wrong for a pre-upload row.
-- **Fix**: Migration adds `photo_paths DEFAULT '{}'`, replaces CHECK with `<= 5`, `state` default `'created'` (added to enum). Phase 2 split into create (`POST /api/recipe-sessions`) + upload (`POST /api/recipe-sessions/[id]/upload`, state guard `created|photos_uploaded`, re-upload replaces). Wizard chains create→upload→recognize, create fired lazily on first submit.
-- **Decision**: FIXED (applied to plan)
+- **Location**: Phase 2 #3/#4 (create/upload routes), Phase 3 #3 (recognition route)
+- **Detail**: All three route contracts put the full domain pipeline (session load → state guard → storage → row update → signed URLs; fan-out/merge/persist) in the handlers. The now-binding `use-cases.md` requires this logic in a `core/uc` class consumed from `context.locals`, wired in `src/middleware.ts` and declared on `App.Locals` — none of which the plan mentioned ("all three in the same change" rule).
+- **Fix**: Add `RecipeSessionUC` (`core/uc/recipe-session/RecipeSessionUC.ts`) with `createSession` / `attachPhotos` (Phase 2) and `recognizeProducts` (Phase 3); constructor DI (`SupabaseClient` + recognition port, types only); routes rewritten as thin `signin.ts`-style delegates; middleware + `env.d.ts` wiring added to Phase 2, constructor extension in Phase 3.
+- **Decision**: FIXED (applied to plan — Decision Log #11, Implementation Approach, Critical Implementation Details "UC layering", Phase 2 #3–#5, Phase 3 #4–#5, References)
 
-### F2 — No uniform session object in API responses
+### F2 — LLM adapter ↔ core boundary undefined under the new rule
 
 - **Severity**: ⚠️ WARNING
-- **Impact**: 🏃 LOW — quick decision; fix obvious and narrowly scoped
+- **Impact**: 🔬 HIGH — architectural stakes; think carefully before deciding
 - **Dimension**: Architectural Fitness
-- **Location**: Phase 2 boundary schemas, all route payloads
-- **Source**: User comment #4
-- **Detail**: Plan returned ad-hoc shapes; every endpoint should return the session object so the client always knows the session state.
-- **Fix**: `RecipeSession = { sessionId, state }` (zod enum mirrors DB CHECK); create → `RecipeSession`; upload → `UploadResult { session, photos }`; recognition → `RecognitionResult { session, items, photosProcessed, photosFailed }`.
-- **Decision**: FIXED (applied to plan)
+- **Location**: Phase 3 #1 (openrouter.ts), #2 (prompts.ts)
+- **Detail**: With orchestration moving into the UC, the LLM capability must be injected — but `core/uc` cannot runtime-import `src/lib/infrastructure/llm`. `AuthenticatorUC` sidesteps this because `SupabaseClient` is an npm-package type; the OpenRouter adapter is our own module, so the plan must define the crossing type and the home of the domain-policy prompts (FR-004, Polish, merge rules).
+- **Fix A ⭐ Recommended**: Domain-shaped port in core — `ProductRecognitionService { recognizePhoto(signedUrl); mergeItems(lists) }` in `core/uc/recipe-session/ports.ts`; `infrastructure/llm` implements it (openrouter.ts + prompts.ts stay together behind a `createProductRecognitionService()` factory); middleware injects.
+  - Strength: Small, domain-typed, trivially mockable port; prompts + transport cohere in one infra module; minimal plan churn; mirrors how `SupabaseClient` enters `AuthenticatorUC` as a type-only contract.
+  - Tradeoff: FR-004 prompt wording lives in infra — core keeps the orchestration policy (fan-out, timeout, partial failure, merge-skip).
+  - Confidence: HIGH.
+  - Blind spot: None significant.
+- **Fix B**: Generic completion port (`completeStructured(messages, schema)`); prompt builders move into `core/uc/recipe-session/`.
+  - Strength: All domain policy incl. prompt rules in core.
+  - Tradeoff: Vendor message shapes (`image_url` content parts) leak into the framework-free layer; port harder to mock meaningfully.
+  - Confidence: MEDIUM.
+  - Blind spot: S-02 reuse of the generic shape unsurveyed.
+- **Decision**: FIXED via Fix A (applied to plan — Phase 3 #1 new ports.ts item, #2 adapter implements port, #3 prompts intent note, #4 UC orchestration + middleware extension)
 
-### F3 — Upload response lacks preview URLs
+### F3 — Stale symbol location: `decodeWith` moved to `@/lib/utils`
 
-- **Severity**: ⚠️ WARNING
-- **Impact**: 🏃 LOW
-- **Dimension**: Blind Spots
-- **Location**: Phase 2 upload route, Phase 4 UploadStep
-- **Source**: User comment #5
-- **Detail**: Previews rendered only from local object URLs; server-truth previews needed.
-- **Fix**: Upload returns `photos: [{ path, previewUrl }]` signed ~15 min (UI TTL, distinct from the 120 s LLM URLs); wizard swaps to `previewUrl` post-upload.
-- **Decision**: FIXED (applied to plan)
-
-### F4 — "Resize on server before storage" collides with Workers' lack of image APIs
-
-- **Severity**: ⚠️ WARNING
-- **Impact**: 🔬 HIGH — platform constraint; literal directive not implementable as stated
-- **Dimension**: Blind Spots
-- **Location**: Phase 2 upload route / Phase 4 image-processing
-- **Source**: User comment #3
-- **Detail**: Cloudflare Workers have no native image decode/resize (no canvas/sharp); server-side resize requires WASM (~1–2 MB bundle, CPU risk) or paid Cloudflare Images.
-- **Fix A ⭐ Recommended**: Client canvas-resize remains the mechanism; server VALIDATES each file against `MAX_LLM_IMAGE_BYTES` (~4 MB conservative ceiling) and rejects with `ValidationError`. Strength: zero deps/CPU risk, server still guarantees the invariant. Tradeoff: non-browser client gets an error, not silent fixing. Confidence: HIGH. Blind spot: exact per-provider image limits unverified — ceiling kept conservative.
-- **Fix B**: Server-side WASM resize (photon-rs). Strength: literal compliance. Tradeoff: bundle + CPU budget risk. Confidence: MEDIUM.
-- **Decision**: FIXED via Fix A (applied to plan)
-
-### F5 — In-memory-session language survives in two foundation docs beyond the planned edit
-
-- **Severity**: ⚠️ WARNING
-- **Impact**: 🏃 LOW
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Plan Completeness
-- **Location**: Phase 1, doc-update change
-- **Source**: User comment #1 (verified by grep)
-- **Detail**: Plan updated ui-architecture §1.3 only; backend-tracked session state also invalidates ui-architecture §3a (lines 72–74) and §6 (line 163), roadmap.md S-01 outcome (line 91) and S-03 outcome wording.
-- **Fix**: Phase 1 doc task enumerates all four edit points (ui-architecture §1.3 + §3a + §6; roadmap S-01 + S-03).
+- **Location**: Current State Analysis, Phase 2 #2
+- **Detail**: Plan placed `decodeWith` in `src/lib/infrastructure/api/index.ts`; since 8f8f85a53 it is exported from `src/lib/utils/index.ts` (infrastructure/api imports it from there).
+- **Fix**: Both plan references updated to `@/lib/utils`.
 - **Decision**: FIXED (applied to plan)

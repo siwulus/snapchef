@@ -43,6 +43,6 @@ Strictly server-only. Never reachable from client code (`src/components/**`).
 
 ## Adding a New Module
 
-1. Filename: `kebab-case.ts` naming the responsibility (`PascalCase.ts` only when the file's primary export is a class — see `docs/reference/conventions/generic.md`).
+1. Module name folow the kebab-case style. Naming the files folow the PascalCase (`PascalCase.ts`)
 2. Use `interface` for exported object shapes; reserve `type` for unions / aliases.
 3. Arrow functions throughout (`const fn = () => …`) — see root CLAUDE.md conventions.

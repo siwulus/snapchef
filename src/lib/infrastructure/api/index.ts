@@ -1,6 +1,7 @@
+import { ACCEPTED_IMAGE_TYPES, MAX_LLM_IMAGE_BYTES, MAX_PHOTO_BYTES, MAX_PHOTOS } from "@/lib/core/boundry/recipe";
 import { ParseJsonError, type ErrorCode, type ServerSnapchefError } from "@/lib/core/model/error";
 import type { ApiErrorResponsePayload, ApiSuccessResponsePayload } from "@/lib/infrastructure/api/types";
-import { decodeWith } from "@/lib/utils";
+import { decodeWith } from "@/lib/utils/effect";
 import { Effect } from "effect";
 import { match } from "ts-pattern";
 import { z } from "zod";
@@ -85,3 +86,33 @@ export const parseRequestBody = <S extends z.ZodType>(
     try: () => request.json(),
     catch: (cause) => new ParseJsonError({ message: "Invalid request body", cause }),
   }).pipe(Effect.flatMap((body) => decodeWith(schema)(body)));
+
+const uploadedFilesSchema = z
+  .array(
+    z.custom<File>(
+      (v) => {
+        if (!(v instanceof File)) return false;
+        if (!ACCEPTED_IMAGE_TYPES.includes(v.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) return false;
+        if (v.size > MAX_PHOTO_BYTES) return false;
+        if (v.size > MAX_LLM_IMAGE_BYTES) return false;
+        return true;
+      },
+      {
+        message: `Each file must be jpeg/png/webp, ≤ ${MAX_PHOTO_BYTES / 1024 / 1024} MB, and ≤ ${MAX_LLM_IMAGE_BYTES / 1024 / 1024} MB after resize`,
+      },
+    ),
+  )
+  .min(1, "At least one photo is required")
+  .max(MAX_PHOTOS, `At most ${MAX_PHOTOS} photos allowed`);
+
+export const parseMultipartFiles = (request: Request, fieldName: string): Effect.Effect<File[], ServerSnapchefError> =>
+  Effect.tryPromise({
+    try: () => request.formData(),
+    catch: (cause) => new ParseJsonError({ message: "Invalid request body", cause }),
+  }).pipe(
+    Effect.flatMap((formData) => {
+      const values = formData.getAll(fieldName);
+      const files = values.filter((v): v is File => v instanceof File);
+      return decodeWith(uploadedFilesSchema)(files);
+    }),
+  );

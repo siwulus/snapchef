@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "db:types": "supabase gen types typescript --local --schema public > src/lib/infrastructure/db/types/index.ts",
+    "db:types": "supabase gen types typescript --local --schema public > src/lib/infrastructure/db/types/generated.ts",
     "prepare": "lefthook install"
   },
   "dependencies": {

@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/infrastructure/db/supabase";
+import { createRecipeSessionRepository } from "@/lib/infrastructure/db/RecipeSessionRepository";
+import { createSessionPhotoStorage } from "@/lib/infrastructure/db/SessionPhotoStorage";
 import type { APIContext, MiddlewareNext } from "astro";
 import { defineMiddleware } from "astro:middleware";
 import { Effect } from "effect";
 import { ExternalSystemError } from "./lib/core/model/error";
 import { AuthenticatorUC } from "./lib/core/uc/auth/AuthenticatorUC";
+import { RecipeSessionUC } from "./lib/core/uc/recipe/RecipeSessionUC";
 
 const PROTECTED_ROUTES = ["/recipes"];
 
@@ -17,6 +20,10 @@ const injectDependencies = (context: APIContext) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (supabase) {
     context.locals.authenticator = new AuthenticatorUC(supabase);
+    context.locals.recipeSessions = new RecipeSessionUC(
+      createRecipeSessionRepository(supabase),
+      createSessionPhotoStorage(supabase),
+    );
   } else {
     throw new ExternalSystemError({ message: "Supabase is not configured", cause: null });
   }
