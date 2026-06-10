@@ -36,28 +36,28 @@ export class SnapchefBusinessRuleViolationError extends Data.TaggedError("Snapch
   readonly code = 422 as const;
 }
 
-export class ShapchefParseError extends Data.TaggedError("ShapchefParseError")<{
+export class SnapchefParseError extends Data.TaggedError("SnapchefParseError")<{
   readonly message: string;
   readonly cause?: unknown;
 }> {
   readonly code = 400 as const;
 }
 
-export class ShapchefInternalSystemError extends Data.TaggedError("ShapchefInternalSystemError")<{
+export class SnapchefInternalSystemError extends Data.TaggedError("SnapchefInternalSystemError")<{
   readonly message: string;
   readonly cause?: unknown;
 }> {
   readonly code = 502 as const;
 }
 
-export class ShapchefExternalSystemError extends Data.TaggedError("ShapchefExternalSystemError")<{
+export class SnapchefExternalSystemError extends Data.TaggedError("SnapchefExternalSystemError")<{
   readonly message: string;
   readonly cause?: unknown;
 }> {
   readonly code = 500 as const;
 }
 
-export class ShapchefValidationError extends Data.TaggedError("ShapchefValidationError")<{
+export class SnapchefValidationError extends Data.TaggedError("SnapchefValidationError")<{
   readonly message: string;
   readonly zodError: z.ZodError;
   readonly cause?: unknown;
@@ -72,7 +72,7 @@ export class SnapchefDatabaseError extends Data.TaggedError("SnapchefDatabaseErr
   readonly code = 500 as const;
 }
 
-export class ShapchefUnexpectedError extends Data.TaggedError("ShapchefUnexpectedError")<{
+export class SnapchefUnexpectedError extends Data.TaggedError("SnapchefUnexpectedError")<{
   readonly message: string;
   readonly cause?: unknown;
 }> {
@@ -85,9 +85,9 @@ export type SnapchefServerError =
   | SnapchefNotFoundError
   | SnapchefConflictError
   | SnapchefBusinessRuleViolationError
-  | ShapchefParseError
-  | ShapchefValidationError
+  | SnapchefParseError
+  | SnapchefValidationError
   | SnapchefDatabaseError
-  | ShapchefExternalSystemError
-  | ShapchefInternalSystemError
-  | ShapchefUnexpectedError;
+  | SnapchefExternalSystemError
+  | SnapchefInternalSystemError
+  | SnapchefUnexpectedError;

@@ -1,5 +1,5 @@
 import {
-  ShapchefExternalSystemError,
+  SnapchefExternalSystemError,
   SnapchefAuthenticationError,
   type SnapchefServerError,
 } from "@/lib/core/model/error";
@@ -32,7 +32,7 @@ export class AuthenticatorUC {
   signOut(): Effect.Effect<void, SnapchefServerError> {
     return Effect.tryPromise({
       try: () => this.supabase.auth.signOut(),
-      catch: (cause) => new ShapchefExternalSystemError({ message: "Authentication service failed", cause }),
+      catch: (cause) => new SnapchefExternalSystemError({ message: "Authentication service failed", cause }),
     });
   }
 

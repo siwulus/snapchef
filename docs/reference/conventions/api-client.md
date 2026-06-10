@@ -32,7 +32,7 @@ const result = (await response.json()) as { redirect: string };
 
 ## Rule: Validate every response against the envelope contract
 
-Inside the transport, parse the response with `ApiResponsePayload(dataSchema)` — the discriminated union on `ok` covering both the success branch (`{ ok: true, data }`) and the error branch (`{ ok: false, code, message?, fieldErrors? }`). The pipeline has exactly three stages, each with its own typed error from `@/components/api/errors`:
+Inside the transport, parse the response with `ApiResponsePayload(dataSchema)` — the discriminated union on `ok` covering both the success branch (`{ ok: true, data }`) and the error branch, where the error detail is **nested under `error`**: `{ ok: false, error: { name, code, message, cause?, fieldErrors? } }` (`code` is the numeric HTTP status; `name` is the server error's `_tag`). The pipeline has exactly three stages, each with its own typed error from `@/components/api/errors`:
 
 1. `fetch` fails → `ApiRequestError` (network unreachable)
 2. body is not JSON → `UnexpectedResponseError`
@@ -101,7 +101,7 @@ export const useApiClient = () => ({
 
 ## Rule: Form submission is the sanctioned edge — one pipeline, one `runPromise`
 
-The `onSubmit` handler (an `async` framework-edge callback by react-hook-form's contract) wraps a single Effect pipeline ending in one `Effect.runPromise`. React state mutations (`setServerMessage`, `form.setError`, …) live inside `Effect.sync`. Handle the envelope by branching on `result.ok`: on failure, map `fieldErrors` onto `form.setError` and `message` onto the server-message state.
+The `onSubmit` handler (an `async` framework-edge callback by react-hook-form's contract) wraps a single Effect pipeline ending in one `Effect.runPromise`. React state mutations (`setServerMessage`, `form.setError`, …) live inside `Effect.sync`. Handle the envelope by branching on `result.ok`: on failure, read the nested `result.error` — map `result.error.fieldErrors` onto `form.setError` and `result.error.message` onto the server-message state.
 
 ```tsx
 // ✓ good — SignInForm.tsx pattern: edge handler wraps one pipeline
@@ -121,25 +121,25 @@ const handleSubmitResponse = (result: ApiResponsePayload<RedirectTarget>): Effec
     if (result.ok) {
       setPendingRedirect(result.data.redirect);
     } else {
-      if (result.fieldErrors) {
-        Object.entries(result.fieldErrors).forEach(([field, message]) => {
+      if (result.error.fieldErrors) {
+        Object.entries(result.error.fieldErrors).forEach(([field, message]) => {
           if (message) form.setError(field as keyof SignInFormModel, { message });
         });
       }
-      if (result.message) {
-        setServerMessage(result.message);
+      if (result.error.message) {
+        setServerMessage(result.error.message);
       }
     }
   });
 ```
 
 ```tsx
-// ✗ bad — await/try-catch interleaved with Effect; multiple run sites
+// ✗ bad — flat envelope reads (result.message / result.fieldErrors), await/try-catch, multiple runs
 const onSubmit = async (data: SignInFormModel) => {
   setServerMessage(null);
   try {
     const result = await Effect.runPromise(post("/api/auth/signin", data, RedirectTarget));
-    if (!result.ok) throw new Error(result.message); // ok: false is not an exception
+    if (!result.ok) throw new Error(result.message); // wrong: error detail is nested under result.error
     setPendingRedirect(result.data.redirect);
   } catch (e) {
     setServerMessage(String(e));

@@ -108,7 +108,8 @@ const insertRecipe = async (input: RecipeInput) => {
 
 > **Exceptions:**
 >
-> - The outermost framework handler is the one sanctioned `runPromise` / `runSync` site. Everything it calls stays in the Effect world.
+> - The outermost framework handler is the one sanctioned `runPromise` / `runSync` site. Everything it calls stays in the Effect world. In this app that edge is `runApiRoute` (api routes) and `injectDependencies`/`setUserInContext` (`src/middleware.ts`).
+> - The hand-rolled `tryPromise` + `flatMap(({ error }) => …)` shown above is the underlying mechanism, not the call-site pattern: for Supabase `{ data, error }` calls use the shared `tryError…` helpers instead (see "Bridge Supabase calls through the shared `tryError…` helpers" below).
 
 ---
 
@@ -143,71 +144,133 @@ const findUser = (id: string): Effect.Effect<User> =>
 
 ---
 
-## Rule: Structure domain errors — tag matches class name, `code` field, layered unions
+## Rule: Structure domain errors — `Snapchef…Error` class, numeric `code`, one `SnapchefServerError` union
 
-Name the `Data.TaggedError` tag exactly after the class (PascalCase), carry domain metadata in the fields (`cause: unknown` for wrapped failures, `error: z.ZodError` for validation), and group each layer's errors into a named union. Server-side errors (`src/lib/core/model/error/`) additionally declare `readonly code: ErrorCode` — the key `runApiRoute` uses to map the error to an HTTP status and the API envelope. Client-side transport errors (`src/components/api/errors.ts`) follow the same shape without a `code`.
+Server-side domain errors live in `src/lib/core/model/error/index.ts`. Each is a `Data.TaggedError` whose **tag equals the class name** (PascalCase, prefixed `Snapchef`), carrying:
+
+- `readonly message: string` — always.
+- `readonly cause?: unknown` — the wrapped failure, when one exists.
+- `readonly code = <number> as const` — the **HTTP status** this error maps to. The boundary mapper reads `error.code` _directly_ as the response status (see api-server.md), so the number is the single source of truth — there is **no `ErrorCode` string enum, no `ERROR_STATUS` lookup table, and no ts-pattern mapper**.
+
+Validation errors additionally carry `readonly zodError: z.ZodError` (the mapper derives `fieldErrors` from it). Every class is a member of the exported `SnapchefServerError` union — adding a class means adding it to that union, nothing else.
+
+The current family (extend it; do not invent parallel error types):
+
+| Class                                | `code` | Meaning                              |
+| ------------------------------------ | ------ | ------------------------------------ |
+| `SnapchefAuthenticationError`        | 401    | Not authenticated / sign-in failed   |
+| `SnapchefAuthorizationError`         | 403    | Authenticated but not permitted      |
+| `SnapchefNotFoundError`              | 404    | Resource / row absent                |
+| `SnapchefConflictError`              | 409    | State conflict                       |
+| `SnapchefBusinessRuleViolationError` | 422    | Domain rule rejected the request     |
+| `SnapchefParseError`                 | 400    | Malformed body / form data           |
+| `SnapchefValidationError`            | 400    | zod decode failed (`zodError` field) |
+| `SnapchefDatabaseError`              | 500    | Supabase / Postgres failure          |
+| `SnapchefExternalSystemError`        | 500    | Third-party / network failure        |
+| `SnapchefInternalSystemError`        | 502    | Internal dependency failure          |
+| `SnapchefUnexpectedError`            | 500    | Defect fallback (`runApiRoute` only) |
 
 ```ts
-// ✓ good — src/lib/core/model/error: tag === class name, code field, named union
+// ✓ good — src/lib/core/model/error: tag === class name, numeric code, member of the union
 import { Data } from "effect";
+import { z } from "zod";
 
-export class BusinessRuleError extends Data.TaggedError("BusinessRuleError")<{
+export class SnapchefNotFoundError extends Data.TaggedError("SnapchefNotFoundError")<{
   readonly message: string;
-  readonly code: BusinessRuleErrorCode;
-}> {}
-
-export class ExternalSystemError extends Data.TaggedError("ExternalSystemError")<{
-  readonly message: string;
-  readonly cause: unknown;
+  readonly cause?: unknown;
 }> {
-  readonly code = "EXTERNAL_SYSTEM_FAILURE" as const;
+  readonly code = 404 as const;
 }
 
-export type ServerSnapchefError = ParseJsonError | ValidationError | BusinessRuleError | ExternalSystemError;
+export class SnapchefValidationError extends Data.TaggedError("SnapchefValidationError")<{
+  readonly message: string;
+  readonly zodError: z.ZodError;
+  readonly cause?: unknown;
+}> {
+  readonly code = 400 as const;
+}
+
+export type SnapchefServerError = SnapchefNotFoundError | SnapchefValidationError; /* | …the rest */
 ```
 
 ```ts
-// ✗ bad — tag drifts from the class name; stringly-typed plain Error; no union
+// ✗ bad — tag drifts from class name; string code; a parallel error type outside the union
 class DbFailure extends Data.TaggedError("DatabaseError")<{ msg: string }> {} // tag ≠ class
 
-const fail = () => Effect.fail(new Error("EXTERNAL_SYSTEM_FAILURE: db down")); // code buried in a string
+export class MyError extends Data.TaggedError("MyError")<{ message: string }> {
+  readonly code = "NOT_FOUND" as const; // string code — the mapper expects a number
+}
 ```
 
-> **Why the `code` field:** the boundary mapper in `src/lib/infrastructure/api/index.ts` resolves HTTP status via `ERROR_STATUS[payload.code]` and matches errors exhaustively by `_tag` with ts-pattern. A new `ErrorCode` lands together with its `ERROR_STATUS` row and mapper branch (see api-server.md).
+> **Adding a new server error:** declare the `Snapchef…Error` class with a numeric `code` and add it to the `SnapchefServerError` union — that is the entire change. The boundary mapper is generic over `code`, so no mapper edit is needed.
+>
+> **Client side:** transport errors in `src/components/api/errors.ts` (`ApiRequestError`, `UnexpectedResponseError`, union `ClientSnapchefError`) follow the same tag-equals-class shape but carry **no `code`** — they never reach the HTTP-status mapper.
 
 ---
 
-## Rule: Keep zod for validation — bridge it into Effect
+## Rule: Validate with zod through the shared `decodeWith` bridge
 
-zod remains the validation tool (a CLAUDE.md hard rule: "Validate API input with `zod`"). Do not introduce `effect/Schema` as a second validator. Cross into Effect by wrapping `safeParse` and mapping a failure to a `Data.TaggedError`.
+zod remains the validation tool (a CLAUDE.md hard rule: "Validate API input with `zod`"). Do not introduce `effect/Schema` as a second validator, and **do not hand-roll `safeParse` + `Effect.fail` bridges** — the one canonical bridge is `decodeWith` from `@/lib/utils/effect`. It runs `schema.safeParse` and fails with `SnapchefValidationError` (carrying the `z.ZodError`) on mismatch.
 
 ```ts
-// ✓ good — zod validates; a thin bridge maps its failure into Effect's channel
-import { Data, Effect } from "effect";
-import { z } from "zod";
+// ✓ good — the single bridge: schema in, Effect<output, SnapchefValidationError> out
+import { decodeWith } from "@/lib/utils/effect";
 
 // `SignIn` is the zod schema + inferred type (see zod.md — same-name convention)
-class ValidationError extends Data.TaggedError("ValidationError")<{
-  readonly error: z.ZodError;
-}> {}
-
-const decodeSignIn = (input: unknown): Effect.Effect<SignIn, ValidationError> => {
-  const result = SignIn.safeParse(input);
-  return result.success ? Effect.succeed(result.data) : Effect.fail(new ValidationError({ error: result.error }));
-};
+const decoded = decodeWith(SignIn)(input); // Effect.Effect<SignIn, SnapchefValidationError>
 ```
 
 ```ts
-// ✗ bad — effect/Schema as a competing validator; conflicts with the zod hard rule
-import { Schema } from "effect";
+// ✓ good — decodeWith is curried, so it drops straight into a pipe
+someEffect.pipe(Effect.flatMap(decodeWith(RecognizedItem)));
+```
 
-const SignIn = Schema.Struct({
-  email: Schema.String,
-  password: Schema.String,
-});
-const decodeSignIn = Schema.decodeUnknown(SignIn);
+```ts
+// ✗ bad — a second hand-rolled safeParse bridge, or effect/Schema as a rival validator
+const decodeSignIn = (input: unknown) => {
+  const r = SignIn.safeParse(input);
+  return r.success ? Effect.succeed(r.data) : Effect.fail(new SomeOtherError()); // duplicate of decodeWith
+};
+import { Schema } from "effect"; // competing validator — forbidden
 ```
 
 > **Exceptions:**
 >
-> - None. Validation stays in zod; only the bridge into Effect lives here.
+> - None. Validation stays in zod, behind `decodeWith`. The only `decodeWith` definition lives in `utils/effect.ts`.
+
+---
+
+## Rule: Bridge Supabase calls through the shared `tryError…` helpers
+
+Every Supabase call returns `{ data, error }` and must be lifted into Effect through the helpers in `@/lib/utils/supabase` — never re-roll `Effect.tryPromise` + `flatMap(({ error }) => …)` at each call site. Pass a thunk that resolves to `{ data, error }` (use `.then(({ error, data }) => ({ error, data }))` on the Supabase builder so the types line up). The helpers map a thrown rejection or a non-null `error` to `SnapchefExternalSystemError`:
+
+- `tryErrorData(fn)` → `Effect<T, …>` — fails `SnapchefNotFoundError` when `data` is null. Use when a row must exist.
+- `tryErrorDataOption(fn)` → `Effect<Option<T>, …>` — null `data` becomes `Option.none()`. Use for "find" queries that may legitimately miss.
+- `tryErrorDataWithSchema(schema)(fn)` → `Effect<output, …>` — like `tryErrorData` then `decodeWith(schema)`.
+
+```ts
+// ✓ good — adapter lifts the Supabase call through the shared helper, then decodes
+import { tryErrorDataOption } from "@/lib/utils/supabase";
+
+const find = (sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
+  tryErrorDataOption<RecipeSessionRow>(() =>
+    supabase
+      .from("recipe_sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .single()
+      .then(({ error, data }) => ({ error, data })),
+  ).pipe(Effect.flatMap((option) => Effect.transposeMapOption(option, decodeWith(RecipeSessionFromRow))));
+```
+
+```ts
+// ✗ bad — re-rolling the tryPromise + error-branch bridge inline at the call site
+Effect.tryPromise({
+  try: () => supabase.from("recipe_sessions").select("*").single(),
+  catch: (cause) => new SnapchefExternalSystemError({ message: "…", cause }),
+}).pipe(Effect.flatMap(({ data, error }) => (error ? Effect.fail(/* … */) : Effect.succeed(data))));
+```
+
+> **Exceptions:**
+>
+> - Supabase Auth calls (`auth.signOut()` etc.) that return only `{ error }` with no meaningful `data` may use a bare `Effect.tryPromise` with an explicit `SnapchefExternalSystemError` catch — there is nothing for the `tryError…` helpers to decode (see `AuthenticatorUC.signOut`).

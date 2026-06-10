@@ -45,13 +45,13 @@ const SignInForm = () => {
       if (result.ok) {
         setPendingRedirect(result.data.redirect);
       } else {
-        if (result.fieldErrors) {
-          Object.entries(result.fieldErrors).forEach(([field, message]) => {
+        if (result.error.fieldErrors) {
+          Object.entries(result.error.fieldErrors).forEach(([field, message]) => {
             if (message) form.setError(field as keyof SignInFormModel, { message });
           });
         }
-        if (result.message) {
-          setServerMessage(result.message);
+        if (result.error.message) {
+          setServerMessage(result.error.message);
         }
       }
     });

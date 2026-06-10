@@ -1,6 +1,6 @@
 import { Effect, Option } from "effect";
 import type z from "zod";
-import { ShapchefExternalSystemError, SnapchefNotFoundError, type SnapchefServerError } from "../core/model/error";
+import { SnapchefExternalSystemError, SnapchefNotFoundError, type SnapchefServerError } from "../core/model/error";
 import { decodeWith } from "./effect";
 
 export const tryErrorDataWithSchema =
@@ -8,11 +8,11 @@ export const tryErrorDataWithSchema =
   (fn: () => PromiseLike<{ data: unknown; error: unknown }>): Effect.Effect<z.output<Schema>, SnapchefServerError> =>
     Effect.tryPromise({
       try: fn,
-      catch: (cause) => new ShapchefExternalSystemError({ message: "Failed to execute function", cause }),
+      catch: (cause) => new SnapchefExternalSystemError({ message: "Failed to execute function", cause }),
     }).pipe(
       Effect.flatMap(({ data, error }) =>
         error
-          ? Effect.fail(new ShapchefExternalSystemError({ message: "Failed to execute function", cause: error }))
+          ? Effect.fail(new SnapchefExternalSystemError({ message: "Failed to execute function", cause: error }))
           : Effect.succeed(data),
       ),
       Effect.flatMap((data) => decodeWith(schema)(data)),
@@ -23,11 +23,11 @@ export const tryErrorDataOption = <T>(
 ): Effect.Effect<Option.Option<T>, SnapchefServerError> =>
   Effect.tryPromise({
     try: fn,
-    catch: (cause) => new ShapchefExternalSystemError({ message: "Failed to execute function", cause }),
+    catch: (cause) => new SnapchefExternalSystemError({ message: "Failed to execute function", cause }),
   }).pipe(
     Effect.flatMap(({ data, error }) =>
       error
-        ? Effect.fail(new ShapchefExternalSystemError({ message: "Failed to execute function", cause: error }))
+        ? Effect.fail(new SnapchefExternalSystemError({ message: "Failed to execute function", cause: error }))
         : Effect.succeed(data),
     ),
     Effect.map((data) => Option.fromNullable(data)),
