@@ -1,54 +1,45 @@
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import {
+  ShapchefExternalSystemError,
+  SnapchefAuthenticationError,
+  type SnapchefServerError,
+} from "@/lib/core/model/error";
+import { tryErrorDataWithSchema } from "@/lib/utils/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect } from "effect";
-import type { UserCredentials } from "../../model/auth";
-import { BusinessRuleError, ExternalSystemError, type ServerSnapchefError } from "../../model/error";
+import z from "zod";
+import { SnapchefUser, type UserCredentials } from "../../model/auth";
 
+const AuthUser = z.object({
+  user: SnapchefUser,
+});
 export class AuthenticatorUC {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  signIn(credentials: UserCredentials): Effect.Effect<{ redirect: string }, ServerSnapchefError> {
-    return Effect.tryPromise({
-      try: () => this.supabase.auth.signInWithPassword(credentials),
-      catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
-    }).pipe(
-      Effect.flatMap(({ error }) =>
-        error
-          ? Effect.fail(new BusinessRuleError({ code: "UNAUTHORIZED", message: error.message }))
-          : Effect.succeed({ redirect: "/recipes" }),
-      ),
+  signIn(credentials: UserCredentials): Effect.Effect<{ redirect: string }, SnapchefServerError> {
+    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.signInWithPassword(credentials)).pipe(
+      Effect.as({ redirect: "/recipes" }),
+      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign in" })),
     );
   }
 
-  signUp(credentials: UserCredentials): Effect.Effect<{ redirect: string }, ServerSnapchefError> {
-    return Effect.tryPromise({
-      try: () => this.supabase.auth.signUp(credentials),
-      catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
-    }).pipe(
-      Effect.flatMap(({ error }) =>
-        error
-          ? Effect.fail(new BusinessRuleError({ code: "BUSINESS_RULE_VIOLATED", message: error.message }))
-          : Effect.succeed({ redirect: "/auth/confirm-email" }),
-      ),
+  signUp(credentials: UserCredentials): Effect.Effect<{ redirect: string }, SnapchefServerError> {
+    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.signUp(credentials)).pipe(
+      Effect.as({ redirect: "/auth/confirm-email" }),
+      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign up" })),
     );
   }
 
-  signOut(): Effect.Effect<void, ServerSnapchefError> {
+  signOut(): Effect.Effect<void, SnapchefServerError> {
     return Effect.tryPromise({
       try: () => this.supabase.auth.signOut(),
-      catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
+      catch: (cause) => new ShapchefExternalSystemError({ message: "Authentication service failed", cause }),
     });
   }
 
-  getUser(): Effect.Effect<User, ServerSnapchefError> {
-    return Effect.tryPromise({
-      try: () => this.supabase.auth.getUser(),
-      catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
-    }).pipe(
-      Effect.flatMap(({ error, data: { user } }) =>
-        error || !user
-          ? Effect.fail(new BusinessRuleError({ code: "UNAUTHORIZED", message: error?.message ?? "User not found" }))
-          : Effect.succeed(user),
-      ),
+  getUser(): Effect.Effect<SnapchefUser, SnapchefServerError> {
+    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.getUser()).pipe(
+      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to get user" })),
+      Effect.map(({ user }) => user),
     );
   }
 }

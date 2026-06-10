@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/infrastructure/db/supabase";
 import { createRecipeSessionRepository } from "@/lib/infrastructure/db/RecipeSessionRepository";
 import { createSessionPhotoStorage } from "@/lib/infrastructure/db/SessionPhotoStorage";
+import { createClient } from "@/lib/infrastructure/db/supabase";
 import type { APIContext, MiddlewareNext } from "astro";
 import { defineMiddleware } from "astro:middleware";
 import { Effect } from "effect";
-import { ExternalSystemError } from "./lib/core/model/error";
+import { ShapchefExternalSystemError } from "./lib/core/model/error";
 import { AuthenticatorUC } from "./lib/core/uc/auth/AuthenticatorUC";
 import { RecipeSessionUC } from "./lib/core/uc/recipe/RecipeSessionUC";
 
@@ -25,7 +25,7 @@ const injectDependencies = (context: APIContext) => {
       createSessionPhotoStorage(supabase),
     );
   } else {
-    throw new ExternalSystemError({ message: "Supabase is not configured", cause: null });
+    throw new ShapchefExternalSystemError({ message: "Supabase is not configured" });
   }
 };
 

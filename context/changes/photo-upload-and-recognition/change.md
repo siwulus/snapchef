@@ -3,7 +3,7 @@ change_id: photo-upload-and-recognition
 title: Uphoto upload and recognition
 status: implementing
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-10
 archived_at: null
 ---
 
@@ -59,3 +59,14 @@ OpenRouter is the communication layer to the multimodal LLM. Three decisions, ba
 - Upload endpoint returns `{ sessionId }`; recognition reads `photo_paths` from the session row (not from the client). Requires an additive migration: add `state`, DROP NOT NULL on `recognized_items_md` / `corrected_items_md` / `meal_context`.
 - Wizard UI state (current step, edited list) remains client-side; abandoned drafts join the accepted-orphans policy.
 - Full decision log from planning (F-02 deferral, multipart upload path, two-endpoint API, jpeg/png/webp-only formats, free-text quantity, Polish output, orphan policy) lives in `plan.md` → Decision Log.
+
+### Plan revalidation — architecture pivot (2026-06-10)
+
+Phase 1 + most of Phase 2 landed manually with a **ports-and-adapters** architecture that diverges from the original plan (which assumed `RecipeSessionUC(supabase)`). The plan + brief were revalidated against the code; the landed code is now the canonical pattern set. New binding decisions (plan.md Decision Log #12–#15):
+
+- **#12 Ports-and-adapters**: `RecipeSessionUC` depends on `RecipeSessionRepository` / `SessionPhotoStorage` / `ProductRecognizer` ports (`core/boundry/recipe/ports.ts`); infra provides functional factories (`createRecipeSessionRepository`, `createSessionPhotoStorage`, future `createProductRecognizer`); middleware composes. Supersedes the `RecipeSessionUC(supabase)` shape. → `docs/reference/conventions/use-cases.md` to be updated to bless this; `AuthenticatorUC(supabase)` kept as a noted exception.
+- **#13 API returns the domain `RecipeSession`** — no slim/`UploadResult`/`RecognitionResult` wire DTOs (supersedes the original "embed `{sessionId,state}`" + preview-URL response decisions).
+- **#14 Phase-2 remaining = re-upload replacement only**; no upload state guard, no client preview URLs, no per-error route typing (all accepted as-is).
+- **#15 Recognized items persist to `recognized_items_md`**; the wizard reconstructs the editable list by parsing it (`deserializeRecognizedItems`). Consequence: no `photosFailed` count on the wire → the partial-failure notice is dropped for S-01 (server still proceeds on partial success). Recognition reuses `createPreviewUrls` (30-min signed URLs) for the LLM fetch — collapses the original two-TTL design into one lifetime.
+
+Domain renamed `recipe-session` → `recipe` across `core/boundry|model|uc`. Shared helpers: `utils/effect.ts` (Supabase→Effect bridge), `utils/recipe.ts` (row↔model map + markdown serializer); `utils/index.ts` deleted.

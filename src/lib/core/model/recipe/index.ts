@@ -11,8 +11,11 @@ export const RecipeSessionState = z.enum([
 
 export type RecipeSessionState = z.infer<typeof RecipeSessionState>;
 
+export const RecipeSessionId = z.uuid();
+export type RecipeSessionId = z.infer<typeof RecipeSessionId>;
+
 export const RecipeSession = z.object({
-  id: z.uuid(),
+  id: RecipeSessionId,
   userId: UserId,
   correctedItemsMd: z.string().nullable(),
   createdAt: z.string(),
@@ -25,9 +28,12 @@ export const RecipeSession = z.object({
 
 export type RecipeSession = z.infer<typeof RecipeSession>;
 
+export const RecipeId = z.uuid();
+export type RecipeId = z.infer<typeof RecipeId>;
+
 export const Recipe = z.object({
-  id: z.uuid(),
-  sessionId: z.uuid(),
+  id: RecipeId,
+  sessionId: RecipeSessionId,
   userId: UserId,
   contentMd: z.string(),
   createdAt: z.string(),

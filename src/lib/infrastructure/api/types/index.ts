@@ -1,11 +1,14 @@
 import { z } from "zod";
-import { ErrorCode } from "@/lib/core/model/error";
 
 export const ApiErrorResponsePayload = z.object({
   ok: z.literal(false),
-  code: ErrorCode,
-  message: z.string().optional(),
-  fieldErrors: z.record(z.string(), z.string()).optional(),
+  error: z.object({
+    name: z.string(),
+    code: z.number(),
+    message: z.string(),
+    cause: z.unknown().optional(),
+    fieldErrors: z.record(z.string(), z.string()).optional(),
+  }),
 });
 
 export type ApiErrorResponsePayload = z.infer<typeof ApiErrorResponsePayload>;

@@ -1,47 +1,93 @@
 import { Data } from "effect";
 import { z } from "zod";
 
-export const ErrorCode = z.enum([
-  "PARSE_JSON_ERROR",
-  "VALIDATION_FAILED",
-  "UNAUTHORIZED",
-  "FORBIDDEN",
-  "NOT_FOUND",
-  "CONFLICT",
-  "BUSINESS_RULE_VIOLATED",
-  "EXTERNAL_SYSTEM_FAILURE",
-]);
-
-export type ErrorCode = z.infer<typeof ErrorCode>;
-
-export const BusinessRuleErrorCode = ErrorCode.exclude(["VALIDATION_FAILED", "EXTERNAL_SYSTEM_FAILURE"]);
-
-export type BusinessRuleErrorCode = z.infer<typeof BusinessRuleErrorCode>;
-
-export class ParseJsonError extends Data.TaggedError("ParseJsonError")<{
+export class SnapchefAuthenticationError extends Data.TaggedError("SnapchefAuthenticationError")<{
   readonly message: string;
-  readonly cause: unknown;
+  readonly cause?: unknown;
 }> {
-  readonly code = "PARSE_JSON_ERROR" as const;
+  readonly code = 401 as const;
 }
 
-export class ValidationError extends Data.TaggedError("ValidationError")<{
+export class SnapchefAuthorizationError extends Data.TaggedError("SnapchefAuthorizationError")<{
   readonly message: string;
-  readonly error: z.ZodError;
+  readonly cause?: unknown;
 }> {
-  readonly code = "VALIDATION_FAILED" as const;
+  readonly code = 403 as const;
 }
 
-export class BusinessRuleError extends Data.TaggedError("BusinessRuleError")<{
+export class SnapchefNotFoundError extends Data.TaggedError("SnapchefNotFoundError")<{
   readonly message: string;
-  readonly code: BusinessRuleErrorCode;
-}> {}
-
-export class ExternalSystemError extends Data.TaggedError("ExternalSystemError")<{
-  readonly message: string;
-  readonly cause: unknown;
+  readonly cause?: unknown;
 }> {
-  readonly code = "EXTERNAL_SYSTEM_FAILURE" as const;
+  readonly code = 404 as const;
 }
 
-export type ServerSnapchefError = ParseJsonError | ValidationError | BusinessRuleError | ExternalSystemError;
+export class SnapchefConflictError extends Data.TaggedError("SnapchefConflictError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 409 as const;
+}
+
+export class SnapchefBusinessRuleViolationError extends Data.TaggedError("SnapchefBusinessRuleViolationError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 422 as const;
+}
+
+export class ShapchefParseError extends Data.TaggedError("ShapchefParseError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 400 as const;
+}
+
+export class ShapchefInternalSystemError extends Data.TaggedError("ShapchefInternalSystemError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 502 as const;
+}
+
+export class ShapchefExternalSystemError extends Data.TaggedError("ShapchefExternalSystemError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 500 as const;
+}
+
+export class ShapchefValidationError extends Data.TaggedError("ShapchefValidationError")<{
+  readonly message: string;
+  readonly zodError: z.ZodError;
+  readonly cause?: unknown;
+}> {
+  readonly code = 400 as const;
+}
+
+export class SnapchefDatabaseError extends Data.TaggedError("SnapchefDatabaseError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 500 as const;
+}
+
+export class ShapchefUnexpectedError extends Data.TaggedError("ShapchefUnexpectedError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 500 as const;
+}
+
+export type SnapchefServerError =
+  | SnapchefAuthenticationError
+  | SnapchefAuthorizationError
+  | SnapchefNotFoundError
+  | SnapchefConflictError
+  | SnapchefBusinessRuleViolationError
+  | ShapchefParseError
+  | ShapchefValidationError
+  | SnapchefDatabaseError
+  | ShapchefExternalSystemError
+  | ShapchefInternalSystemError
+  | ShapchefUnexpectedError;

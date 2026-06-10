@@ -1,7 +1,7 @@
 import type { UserId } from "@/lib/core/model/auth";
-import type { ServerSnapchefError } from "@/lib/core/model/error";
+import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { SessionPhotoStorage } from "@/lib/core/boundry/recipe";
-import { tryErrorData } from "@/lib/utils/effect";
+import { tryErrorData } from "@/lib/utils/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect } from "effect";
 import type { Database } from "./types";
@@ -18,7 +18,7 @@ const buildPath = (userId: UserId, sessionId: string, file: File) => {
 
 const upload =
   (supabase: SupabaseClient<Database>) =>
-  (userId: UserId, sessionId: string, file: File): Effect.Effect<string, ServerSnapchefError> => {
+  (userId: UserId, sessionId: string, file: File): Effect.Effect<string, SnapchefServerError> => {
     const path = buildPath(userId, sessionId, file);
     return tryErrorData(() =>
       supabase.storage
@@ -30,7 +30,7 @@ const upload =
 
 const createPreviewUrls =
   (supabase: SupabaseClient<Database>) =>
-  (paths: string[]): Effect.Effect<{ path: string; previewUrl: string }[], ServerSnapchefError> =>
+  (paths: string[]): Effect.Effect<{ path: string; previewUrl: string }[], SnapchefServerError> =>
     tryErrorData(() =>
       supabase.storage
         .from(STORAGE_BUCKET)

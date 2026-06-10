@@ -1,16 +1,17 @@
-import type { UserId } from "@/lib/core/model/auth";
-import type { ServerSnapchefError } from "@/lib/core/model/error";
-import type { RecipeSession } from "@/lib/core/model/recipe";
-import { decodeWith, tryErrorData, tryErrorDataOption } from "@/lib/utils/effect";
-import { RecipeSessionFromRow } from "@/lib/utils/recipe";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, RecipeSessionRow, RecipeSessionUpdate } from "./types";
-import { Effect, Option } from "effect";
 import type { RecipeSessionRepository, RecipeSessionUpdatePayload } from "@/lib/core/boundry/recipe";
+import type { UserId } from "@/lib/core/model/auth";
+import type { SnapchefServerError } from "@/lib/core/model/error";
+import type { RecipeSession } from "@/lib/core/model/recipe";
+import { decodeWith } from "@/lib/utils/effect";
+import { RecipeSessionFromRow } from "@/lib/utils/recipe";
+import { tryErrorData, tryErrorDataOption } from "@/lib/utils/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { Effect, Option } from "effect";
+import type { Database, RecipeSessionRow, RecipeSessionUpdate } from "./types";
 
 const create =
   (supabase: SupabaseClient<Database>) =>
-  (userId: UserId): Effect.Effect<RecipeSession, ServerSnapchefError> =>
+  (userId: UserId): Effect.Effect<RecipeSession, SnapchefServerError> =>
     tryErrorData<RecipeSessionRow>(() =>
       supabase
         .from("recipe_sessions")
@@ -22,7 +23,7 @@ const create =
 
 const find =
   (supabase: SupabaseClient<Database>) =>
-  (userId: UserId, sessionId: string): Effect.Effect<Option.Option<RecipeSession>, ServerSnapchefError> =>
+  (userId: UserId, sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
     tryErrorDataOption<RecipeSessionRow>(() =>
       supabase
         .from("recipe_sessions")
@@ -52,7 +53,7 @@ const update =
     userId: UserId,
     sessionId: string,
     data: RecipeSessionUpdatePayload,
-  ): Effect.Effect<Option.Option<RecipeSession>, ServerSnapchefError> =>
+  ): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
     tryErrorDataOption<RecipeSessionRow>(() =>
       supabase
         .from("recipe_sessions")
