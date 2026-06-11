@@ -1,9 +1,5 @@
-import type { RecognizedItem } from "@/lib/core/boundry/recipe";
 import { RecipeSession } from "@/lib/core/model/recipe";
 import { z } from "zod";
-
-export const serializeItemsToMarkdown = (items: RecognizedItem[]): string =>
-  items.map((item) => `- ${item.name} — ${item.quantity}`).join("\n");
 
 const RecipeSessionRowSchema = z.object({
   id: z.string(),

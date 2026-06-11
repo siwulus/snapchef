@@ -242,7 +242,7 @@ import { Schema } from "effect"; // competing validator — forbidden
 
 ## Rule: Bridge Supabase calls through the shared `tryError…` helpers
 
-Every Supabase call returns `{ data, error }` and must be lifted into Effect through the helpers in `@/lib/utils/supabase` — never re-roll `Effect.tryPromise` + `flatMap(({ error }) => …)` at each call site. Pass a thunk that resolves to `{ data, error }` (use `.then(({ error, data }) => ({ error, data }))` on the Supabase builder so the types line up). The helpers map a thrown rejection or a non-null `error` to `SnapchefExternalSystemError`:
+Every Supabase call returns `{ data, error }` and must be lifted into Effect through the helpers in `@/lib/infrastructure/db/supabase-effect` — never re-roll `Effect.tryPromise` + `flatMap(({ error }) => …)` at each call site. Pass a thunk that resolves to `{ data, error }` (use `.then(({ error, data }) => ({ error, data }))` on the Supabase builder so the types line up). The helpers map a thrown rejection or a non-null `error` to `SnapchefExternalSystemError`:
 
 - `tryErrorData(fn)` → `Effect<T, …>` — fails `SnapchefNotFoundError` when `data` is null. Use when a row must exist.
 - `tryErrorDataOption(fn)` → `Effect<Option<T>, …>` — null `data` becomes `Option.none()`. Use for "find" queries that may legitimately miss.
@@ -250,7 +250,7 @@ Every Supabase call returns `{ data, error }` and must be lifted into Effect thr
 
 ```ts
 // ✓ good — adapter lifts the Supabase call through the shared helper, then decodes
-import { tryErrorDataOption } from "@/lib/utils/supabase";
+import { tryErrorDataOption } from "@/lib/infrastructure/db/supabase-effect";
 
 const find = (sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
   tryErrorDataOption<RecipeSessionRow>(() =>

@@ -56,9 +56,9 @@ Implement a port with a `create<PortName>(client) => <PortName>` factory. Build 
 ```ts
 // ✓ good — src/lib/infrastructure/db/RecipeSessionRepository.ts
 import type { RecipeSessionRepository } from "@/lib/core/boundry/recipe";
-import { tryErrorDataOption } from "@/lib/utils/supabase";
+import { tryErrorDataOption } from "@/lib/infrastructure/db/supabase-effect";
 import { decodeWith } from "@/lib/utils/effect";
-import { RecipeSessionFromRow } from "@/lib/utils/recipe";
+import { RecipeSessionFromRow } from "./recipe-session-row";
 
 const find =
   (supabase: SupabaseClient<Database>) =>
@@ -93,10 +93,10 @@ export class RecipeSessionRepositoryImpl {
 
 ## Rule: Cross the snake_case ⇄ domain boundary in a `…FromRow` decoder
 
-Supabase rows are snake_case; domain models are camelCase. Map between them with a zod `.transform(...).pipe(Model)` decoder (e.g. `RecipeSessionFromRow` in `utils/recipe.ts`), run through `decodeWith`. The adapter never returns a raw DB row — it returns a validated domain model. Derive write payloads from the model with `Model.pick({...}).partial()` (see `zod.md`).
+Supabase rows are snake_case; domain models are camelCase. Map between them with a zod `.transform(...).pipe(Model)` decoder (e.g. `RecipeSessionFromRow` in `infrastructure/db/recipe-session-row.ts`), run through `decodeWith`. The adapter never returns a raw DB row — it returns a validated domain model. Derive write payloads from the model with `Model.pick({...}).partial()` (see `zod.md`).
 
 ```ts
-// ✓ good — src/lib/utils/recipe.ts: row schema (unexported) → transform → domain model
+// ✓ good — src/lib/infrastructure/db/recipe-session-row.ts: row schema (unexported) → transform → domain model
 const RecipeSessionRowSchema = z.object({ id: z.string(), user_id: z.string() /* … */ });
 
 export const RecipeSessionFromRow = RecipeSessionRowSchema.transform((row) => ({

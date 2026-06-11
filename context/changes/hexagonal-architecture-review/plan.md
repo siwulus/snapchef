@@ -376,31 +376,31 @@ No DB migrations, no wire-contract changes (`ApiResponsePayload` envelope and `R
 
 #### Automated
 
-- [x] 2.1 Lint passes: `npm run lint`
-- [x] 2.2 Build passes: `npm run build`
-- [x] 2.3 Core is Supabase-free (`@supabase` grep in `src/lib/core` empty)
-- [x] 2.4 Core has no `utils/supabase` import (grep empty)
+- [x] 2.1 Lint passes: `npm run lint` — 77bffdd08
+- [x] 2.2 Build passes: `npm run build` — 77bffdd08
+- [x] 2.3 Core is Supabase-free (`@supabase` grep in `src/lib/core` empty) — 77bffdd08
+- [x] 2.4 Core has no `utils/supabase` import (grep empty) — 77bffdd08
 
 #### Manual
 
-- [x] 2.5 Sign-in → `/recipes`; sign-up → `/auth/confirm-email`; sign-out → `/`
-- [x] 2.6 Wrong password → 401 with auth message and `cause`
-- [x] 2.7 Supabase stopped → sign-in returns 500-family, not 401
-- [x] 2.8 Anonymous `/recipes` visit redirects to `/auth/signin`
+- [x] 2.5 Sign-in → `/recipes`; sign-up → `/auth/confirm-email`; sign-out → `/` — 77bffdd08
+- [x] 2.6 Wrong password → 401 with auth message and `cause` — 77bffdd08
+- [x] 2.7 Supabase stopped → sign-in returns 500-family, not 401 — 77bffdd08
+- [x] 2.8 Anonymous `/recipes` visit redirects to `/auth/signin` — 77bffdd08
 
 ### Phase 3: Disband the `utils/` Escape Hatch
 
 #### Automated
 
-- [ ] 3.1 Lint passes: `npm run lint`
-- [ ] 3.2 Build passes: `npm run build`
-- [ ] 3.3 Old `utils/supabase.ts` and `utils/recipe.ts` deleted
-- [ ] 3.4 No stale `utils/supabase`/`utils/recipe` references in `src`, `docs`, `CLAUDE.md`
-- [ ] 3.5 `src/lib/utils/` contains exactly `effect.ts`
+- [x] 3.1 Lint passes: `npm run lint`
+- [x] 3.2 Build passes: `npm run build`
+- [x] 3.3 Old `utils/supabase.ts` and `utils/recipe.ts` deleted
+- [x] 3.4 No stale `utils/supabase`/`utils/recipe` references in `src`, `docs`, `CLAUDE.md`
+- [x] 3.5 `src/lib/utils/` contains exactly `effect.ts`
 
 #### Manual
 
-- [ ] 3.6 Sign-in, session create, photo upload smoke test passes
+- [x] 3.6 Sign-in, session create, photo upload smoke test passes
 
 ### Phase 4: Settle the `boundry/` Taxonomy
 

@@ -29,6 +29,10 @@ May import:
 
 Strictly server-only. Never reachable from client code (`src/components/**`).
 
+### `utils/**`
+
+May contain **only** modules importable from both `core` and `infrastructure` without violating dependency direction — currently exactly `effect.ts` (`decodeWith`, the zod→Effect bridge). Anything Supabase-, DB-, or domain-specific is misplaced: Supabase `{ data, error }` lifting lives in `infrastructure/db/supabase-effect.ts`, row→model decoders in `infrastructure/db/`, and domain rules (e.g. markdown serialization) in `core/model/**`. When unsure where a helper goes, it almost certainly does **not** belong in `utils/`.
+
 ## Local Rules
 
 - **Named exports only.** No `export default`.

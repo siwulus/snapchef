@@ -1,7 +1,7 @@
 import type { Effect, Option } from "effect";
-import { z } from "zod";
+import type { z } from "zod";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import { RecipeSession } from "@/lib/core/model/recipe";
+import { RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
 import type { UserId } from "@/lib/core/model/auth";
 
 export const RecipeSessionUpdatePayload = RecipeSession.pick({
@@ -28,13 +28,6 @@ export interface SessionPhotoStorage {
   upload(userId: UserId, sessionId: string, file: File): Effect.Effect<string, SnapchefServerError>;
   createPreviewUrls(paths: string[]): Effect.Effect<{ path: string; previewUrl: string }[], SnapchefServerError>;
 }
-
-export const RecognizedItem = z.object({
-  name: z.string().min(1).max(120).trim(),
-  quantity: z.string().min(1).max(60),
-});
-
-export type RecognizedItem = z.infer<typeof RecognizedItem>;
 
 export interface ProductRecognizer {
   recognizePhoto(url: string): Effect.Effect<RecognizedItem[], SnapchefServerError>;

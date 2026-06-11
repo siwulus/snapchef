@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { UserId } from "../auth";
 
+export * from "./markdown";
+
 export const RecipeSessionState = z.enum([
   "created",
   "photos_uploaded",
@@ -27,6 +29,13 @@ export const RecipeSession = z.object({
 });
 
 export type RecipeSession = z.infer<typeof RecipeSession>;
+
+export const RecognizedItem = z.object({
+  name: z.string().min(1).max(120).trim(),
+  quantity: z.string().min(1).max(60),
+});
+
+export type RecognizedItem = z.infer<typeof RecognizedItem>;
 
 export const RecipeId = z.uuid();
 export type RecipeId = z.infer<typeof RecipeId>;

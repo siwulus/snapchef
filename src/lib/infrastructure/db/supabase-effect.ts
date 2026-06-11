@@ -1,7 +1,7 @@
+import { SnapchefExternalSystemError, SnapchefNotFoundError, type SnapchefServerError } from "@/lib/core/model/error";
+import { decodeWith } from "@/lib/utils/effect";
 import { Effect, Option } from "effect";
 import type z from "zod";
-import { SnapchefExternalSystemError, SnapchefNotFoundError, type SnapchefServerError } from "../core/model/error";
-import { decodeWith } from "./effect";
 
 export const tryErrorDataWithSchema =
   <Schema extends z.ZodType>(schema: Schema) =>
