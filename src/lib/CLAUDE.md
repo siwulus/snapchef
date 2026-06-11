@@ -25,9 +25,9 @@ May import:
 - `core/uc/**` (use-case classes — but routes consume the **instances** from `context.locals`, wired by `src/middleware.ts`; import the class only for types. See `docs/reference/conventions/use-cases.md`)
 - `infrastructure/**` (all adapters: db, api, …)
 
-### `infrastructure/db/**`
+### `infrastructure/db/**` and `infrastructure/auth/**`
 
-Strictly server-only. Never reachable from client code (`src/components/**`).
+Strictly server-only. Never reachable from client code (`src/components/**`). `infrastructure/auth/` holds the Supabase-backed `Authenticator` adapter (`SupabaseAuthenticator.ts`); `infrastructure/db/` holds the Supabase persistence/storage adapters and the shared `{ data, error }` Effect bridge (`supabase-effect.ts`). All `infrastructure/**` subdirectories follow the same rule — server-only, the only layer that may name Supabase.
 
 ### `utils/**`
 

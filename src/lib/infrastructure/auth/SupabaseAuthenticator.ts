@@ -6,7 +6,7 @@ import {
   type SnapchefServerError,
 } from "@/lib/core/model/error";
 import { decodeWith } from "@/lib/utils/effect";
-import { isAuthApiError, type SupabaseClient } from "@supabase/supabase-js";
+import { isAuthApiError, isAuthSessionMissingError, type SupabaseClient } from "@supabase/supabase-js";
 import { Effect } from "effect";
 import { z } from "zod";
 
@@ -16,11 +16,16 @@ const AuthUser = z.object({
   user: SnapchefUser,
 });
 
-// A 4xx AuthApiError is a genuine auth rejection (bad credentials, missing session,
-// unconfirmed email) → 401. Anything else (5xx, network, non-auth error, or a thrown
-// rejection) is an infrastructure failure → 500. The cause is always forwarded.
+// A genuine auth rejection — a missing session (getUser on an anonymous request) or a
+// 4xx AuthApiError (bad credentials, unconfirmed email) — maps to 401. Note a missing
+// session surfaces as AuthSessionMissingError, which is NOT an AuthApiError, so it needs
+// its own guard. Everything else (5xx, AuthRetryableFetchError / network, non-auth or
+// thrown) is an infrastructure failure → 500. The cause is always forwarded.
+const isAuthRejection = (error: unknown): boolean =>
+  isAuthSessionMissingError(error) || (isAuthApiError(error) && error.status < 500);
+
 const toAuthFailure = (error: unknown, message: string): SnapchefServerError =>
-  isAuthApiError(error) && error.status < 500
+  isAuthRejection(error)
     ? new SnapchefAuthenticationError({ message, cause: error })
     : new SnapchefExternalSystemError({ message: "Authentication service failed", cause: error });
 

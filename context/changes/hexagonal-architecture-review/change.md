@@ -1,7 +1,7 @@
 ---
 change_id: hexagonal-architecture-review
 title: Hexagonal architecture review
-status: implemented
+status: impl_reviewed
 created: 2026-06-11
 updated: 2026-06-11
 archived_at: null
