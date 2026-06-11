@@ -4,14 +4,15 @@
 
 ## Active Domains
 
-| Domain        | File              | Summary                                                                                                   |
-| ------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
-| Generic style | `./generic.md`    | File naming (PascalCase for class/component files, kebab-case otherwise); arrow functions; FP over loops  |
-| Zod naming    | `./zod.md`        | Schema and inferred type share the same name                                                              |
-| Effect-TS     | `./effect.md`     | First-choice FP approach: pipe-first pipelines, typed errors, wrap Promises at the edge                   |
-| Use cases     | `./use-cases.md`  | Business logic in `core/uc` classes; constructor DI; middleware composes onto `context.locals`            |
-| API — server  | `./api-server.md` | Astro routes: `runApiRoute` is the only exit; `parseRequestBody` for input; typed error→status mapping    |
-| API — client  | `./api-client.md` | Browser HTTP via `components/api` helpers; envelope validated with zod; Effects run once at the form edge |
+| Domain           | File                      | Summary                                                                                                             |
+| ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Generic style    | `./generic.md`            | File naming (PascalCase for class/component/adapter files, kebab-case otherwise); arrow functions; FP over loops    |
+| Zod naming       | `./zod.md`                | Schema and inferred type share the same name; `.pick().partial()` payloads; `…FromRow` transform decoders           |
+| Effect-TS        | `./effect.md`             | Pipe-first pipelines; typed `Snapchef…Error` family with numeric `code`; `decodeWith` + `tryError…` bridges         |
+| Use cases        | `./use-cases.md`          | Business logic in `core/uc` classes; constructor DI (ports preferred); middleware composes onto `context.locals`    |
+| Ports & adapters | `./ports-and-adapters.md` | Port `interface`s in `core/boundry`; factory adapters in `infrastructure`; `Option` for maybe-missing               |
+| API — server     | `./api-server.md`         | Astro routes: `runApiRoute` is the only exit; `parseRequestBody`/`parseMultipartFiles`/`validateAuthUser`           |
+| API — client     | `./api-client.md`         | Browser HTTP via `components/api` helpers; nested-`error` envelope validated with zod; one `runPromise` at the edge |
 
 @./generic.md
 
@@ -20,6 +21,8 @@
 @./effect.md
 
 @./use-cases.md
+
+@./ports-and-adapters.md
 
 @./api-server.md
 

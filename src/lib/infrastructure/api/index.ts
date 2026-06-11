@@ -1,8 +1,8 @@
 import { ACCEPTED_IMAGE_TYPES, MAX_LLM_IMAGE_BYTES, MAX_PHOTO_BYTES, MAX_PHOTOS } from "@/lib/core/boundry/recipe";
 import { SnapchefUser } from "@/lib/core/model/auth";
 import {
-  ShapchefParseError,
-  ShapchefUnexpectedError,
+  SnapchefParseError,
+  SnapchefUnexpectedError,
   SnapchefAuthenticationError,
   type SnapchefServerError,
 } from "@/lib/core/model/error";
@@ -50,7 +50,7 @@ const errorPayloadToResponse = (payload: ApiErrorResponsePayload): Effect.Effect
 
 const defectToResponse = (cause: unknown): Effect.Effect<Response> =>
   errorPayloadToResponse(
-    toErrorResponsePayload(new ShapchefUnexpectedError({ message: "Unexpected server error", cause })),
+    toErrorResponsePayload(new SnapchefUnexpectedError({ message: "Unexpected server error", cause })),
   );
 
 export const runApiRoute = <T>(effect: Effect.Effect<T, SnapchefServerError>): Promise<Response> =>
@@ -68,7 +68,7 @@ export const parseRequestBody = <S extends z.ZodType>(
 ): Effect.Effect<z.output<S>, SnapchefServerError> =>
   Effect.tryPromise({
     try: () => request.json(),
-    catch: (cause) => new ShapchefParseError({ message: "Invalid request body", cause }),
+    catch: (cause) => new SnapchefParseError({ message: "Invalid request body", cause }),
   }).pipe(Effect.flatMap((body) => decodeWith(schema)(body)));
 
 const uploadedFilesSchema = z
@@ -92,7 +92,7 @@ const uploadedFilesSchema = z
 export const parseMultipartFiles = (request: Request, fieldName: string): Effect.Effect<File[], SnapchefServerError> =>
   Effect.tryPromise({
     try: () => request.formData(),
-    catch: (cause) => new ShapchefParseError({ message: "Invalid multipart form data", cause }),
+    catch: (cause) => new SnapchefParseError({ message: "Invalid multipart form data", cause }),
   }).pipe(
     Effect.flatMap((formData) => {
       const values = formData.getAll(fieldName);

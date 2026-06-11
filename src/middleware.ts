@@ -4,7 +4,7 @@ import { createClient } from "@/lib/infrastructure/db/supabase";
 import type { APIContext, MiddlewareNext } from "astro";
 import { defineMiddleware } from "astro:middleware";
 import { Effect } from "effect";
-import { ShapchefExternalSystemError } from "./lib/core/model/error";
+import { SnapchefExternalSystemError } from "./lib/core/model/error";
 import { AuthenticatorUC } from "./lib/core/uc/auth/AuthenticatorUC";
 import { RecipeSessionUC } from "./lib/core/uc/recipe/RecipeSessionUC";
 
@@ -25,7 +25,7 @@ const injectDependencies = (context: APIContext) => {
       createSessionPhotoStorage(supabase),
     );
   } else {
-    throw new ShapchefExternalSystemError({ message: "Supabase is not configured" });
+    throw new SnapchefExternalSystemError({ message: "Supabase is not configured" });
   }
 };
 

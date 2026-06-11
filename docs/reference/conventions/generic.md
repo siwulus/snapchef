@@ -2,15 +2,17 @@
 
 ## Rule: File naming — filename mirrors the primary export; otherwise kebab-case
 
-When a file has one primary export, name the file exactly after that export: **PascalCase** for classes and React components (`AuthenticatorUC.ts`, `SignInForm.tsx`), **camelCase** for hooks (`useApiClient.ts`). Files without a single primary export (function modules, adapters, utilities) use **kebab-case** naming the responsibility. Never perform a case-only rename — macOS filesystems are case-insensitive while git and Linux CI are case-sensitive; pick the casing when the file is created.
+When a file has one primary export — or implements one named contract — name the file exactly after it: **PascalCase** for classes, React components, and **port-implementing adapters** (`AuthenticatorUC.ts`, `SignInForm.tsx`, `RecipeSessionRepository.ts`), **camelCase** for hooks (`useApiClient.ts`). An adapter file is PascalCase after the **port interface it implements** even though its exports are factory functions (`createRecipeSessionRepository`), because the port is the file's single conceptual export. Files with no single primary export (grab-bag helper/factory modules, utilities) use **kebab-case** naming the responsibility. Never perform a case-only rename — macOS filesystems are case-insensitive while git and Linux CI are case-sensitive; pick the casing when the file is created.
 
 ```text
 ✓ good
-src/lib/core/uc/auth/AuthenticatorUC.ts   — export class AuthenticatorUC
-src/components/auth/SignInForm.tsx        — export const SignInForm
-src/components/hooks/useApiClient.ts      — export const useApiClient
-src/lib/infrastructure/db/supabase.ts     — module of factory functions
-src/components/api/http.ts                — module of transport helpers
+src/lib/core/uc/auth/AuthenticatorUC.ts              — export class AuthenticatorUC
+src/components/auth/SignInForm.tsx                   — export const SignInForm
+src/components/hooks/useApiClient.ts                 — export const useApiClient
+src/lib/infrastructure/db/RecipeSessionRepository.ts — implements the RecipeSessionRepository port
+src/lib/infrastructure/db/supabase.ts                — grab-bag of client factory functions (no single port)
+src/components/api/http.ts                           — module of transport helpers
+src/lib/utils/effect.ts                              — utility module (decodeWith, …)
 ```
 
 ```text

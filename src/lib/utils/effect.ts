@@ -1,12 +1,12 @@
 import { Effect } from "effect";
 import type z from "zod";
-import { ShapchefValidationError } from "../core/model/error";
+import { SnapchefValidationError } from "../core/model/error";
 
 export const decodeWith =
   <Schema extends z.ZodType>(schema: Schema) =>
-  (input: unknown): Effect.Effect<z.output<Schema>, ShapchefValidationError> => {
+  (input: unknown): Effect.Effect<z.output<Schema>, SnapchefValidationError> => {
     const result = schema.safeParse(input);
     return result.success
       ? Effect.succeed(result.data)
-      : Effect.fail(new ShapchefValidationError({ message: "Validation failed", zodError: result.error }));
+      : Effect.fail(new SnapchefValidationError({ message: "Validation failed", zodError: result.error }));
   };

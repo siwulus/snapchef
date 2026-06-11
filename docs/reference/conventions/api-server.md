@@ -1,10 +1,10 @@
 # API Server Conventions (Astro Routes)
 
-These rules govern `src/pages/api/**`. The shared machinery lives in `src/lib/infrastructure/api/` (`runApiRoute`, `parseRequestBody`, the `ApiResponsePayload` envelope) and `src/lib/core/model/error/` (the `ServerSnapchefError` family). Business logic lives in `src/lib/core/uc/` use-case classes injected via `context.locals` — see `use-cases.md`. Layer-access rules (what a route may import) are defined in `src/lib/CLAUDE.md`.
+These rules govern `src/pages/api/**`. The shared machinery lives in `src/lib/infrastructure/api/` (`runApiRoute`, `parseRequestBody`, `parseMultipartFiles`, `validateAuthUser`, the `ApiResponsePayload` envelope) and `src/lib/core/model/error/` (the `SnapchefServerError` family). Business logic lives in `src/lib/core/uc/` use-case classes injected via `context.locals` — see `use-cases.md`. Layer-access rules (what a route may import) are defined in `src/lib/CLAUDE.md`.
 
 ## Rule: Route handlers delegate to `runApiRoute` — never build a `Response` by hand
 
-Express the handler as a single Effect pipeline passed to `runApiRoute` from `@/lib/infrastructure/api`. The effect succeeds with the domain payload; `runApiRoute` owns envelope wrapping (`{ ok: true, data }`), error→HTTP-status mapping, and defect→500 fallback. It is also the route's single `Effect.runPromise` site. The domain step is a method call on a use case from `context.locals` (see `use-cases.md`).
+Express the handler as a single Effect pipeline passed to `runApiRoute` from `@/lib/infrastructure/api`. The effect succeeds with the domain payload; `runApiRoute` owns envelope wrapping (`{ ok: true, data }`), error→HTTP-status mapping (it reads the failed error's numeric `code` field _directly_ as the response status — see "Fail with the `SnapchefServerError` family" below), and a defect→500 fallback (`SnapchefUnexpectedError`). It is also the route's single `Effect.runPromise` site. The domain step is a method call on a use case from `context.locals` (see `use-cases.md`).
 
 ```ts
 // ✓ good — the handler is one Effect pipeline; runApiRoute is the only exit
@@ -41,12 +41,12 @@ export const POST: APIRoute = async ({ request }) => {
 
 ## Rule: Parse request bodies with `parseRequestBody(request, schema)`
 
-Lift the request body into Effect with `parseRequestBody` from `@/lib/infrastructure/api`, passing the zod command schema from `core/boundry/` or `core/model/`. Do not call `request.json()` and validate manually — `parseRequestBody` already layers the typed failures: malformed JSON → `ParseJsonError`, schema mismatch → `ValidationError` (via `decodeWith`), and `runApiRoute` turns both into a 400 with `fieldErrors` for validation issues.
+Lift the request body into Effect with `parseRequestBody` from `@/lib/infrastructure/api`, passing the zod command schema from `core/boundry/` or `core/model/`. Do not call `request.json()` and validate manually — `parseRequestBody` already layers the typed failures: malformed JSON → `SnapchefParseError` (400), schema mismatch → `SnapchefValidationError` (400, via `decodeWith`), and `runApiRoute` turns the latter into a 400 with `fieldErrors` derived from the `zodError`.
 
 ```ts
 // ✓ good — one call yields a typed, validated command in the Effect channel
 const command = parseRequestBody(context.request, UserCredentials);
-// Effect.Effect<UserCredentials, ServerSnapchefError>
+// Effect.Effect<UserCredentials, SnapchefServerError>
 ```
 
 ```ts
@@ -57,38 +57,60 @@ const parsed = UserCredentials.parse(body); // throws ZodError → uncontrolled 
 
 ---
 
-## Rule: Fail with the `ServerSnapchefError` family — pick the error by meaning
+## Rule: Use the matching parser for multipart, and `validateAuthUser` to gate on the session user
 
-Signal failures with the error classes from `@/lib/core/model/error`, chosen by what went wrong, not where:
+The boundary layer provides a parser per input shape; pick the one that matches the request, and combine several with `Effect.all([...])` when a route needs more than one. All live in `@/lib/infrastructure/api`:
 
-- `BusinessRuleError` with a `BusinessRuleErrorCode` (`UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `BUSINESS_RULE_VIOLATED`) — domain outcomes the client should act on.
-- `ExternalSystemError` — Supabase / network / third-party failures. Its message is sanitized in the response payload; put the raw failure in `cause`.
-- `ParseJsonError` / `ValidationError` — produced by `parseRequestBody`; do not construct them in route logic.
-
-A new `ErrorCode` requires, in the same change: the enum entry in `core/model/error`, a row in `ERROR_STATUS`, and a branch in the ts-pattern `toErrorApiResponsePayload` mapper (both in `infrastructure/api/index.ts` — the `.exhaustive()` match makes the compiler enforce the last one).
-
-Code like the snippet below lives inside a `core/uc` use-case method (e.g. `AuthenticatorUC.signIn`), not in the route — the route only relays the typed failures the UC produces.
+- `parseRequestBody(request, schema)` — JSON body.
+- `parseMultipartFiles(request, fieldName)` — file uploads; validates count/type/size against the `core/boundry/recipe` limits and fails `SnapchefParseError` / `SnapchefValidationError`.
+- `validateAuthUser(locals.user)` — decode the middleware-populated `locals.user` into a `SnapchefUser`, failing `SnapchefAuthenticationError` (401) when absent/invalid. This is how a route requires authentication; do not read `locals.user` ad hoc.
+- `decodeWith(schema)(params.id)` — validate a path param (e.g. `RecipeSessionId`).
 
 ```ts
-// ✓ good — domain outcome vs. infrastructure failure are distinct, typed errors (inside a UC method)
-Effect.tryPromise({
-  try: () => supabase.auth.signInWithPassword(credentials),
-  catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
-}).pipe(
-  Effect.flatMap(({ error }) =>
-    error
-      ? Effect.fail(new BusinessRuleError({ code: "UNAUTHORIZED", message: error.message }))
-      : Effect.succeed({ redirect: "/recipes" }),
-  ),
+// ✓ good — src/pages/api/recipe-sessions/[id]/upload.ts: combine parsers, then delegate
+export const POST: APIRoute = ({ request, params, locals: { user, recipeSessions } }) =>
+  runApiRoute(
+    Effect.all([
+      validateAuthUser(user),
+      decodeWith(RecipeSessionId)(params.id),
+      parseMultipartFiles(request, "photos"),
+    ]).pipe(Effect.flatMap(([authUser, id, files]) => recipeSessions.attachPhotos(authUser.id, id, files))),
+  );
+```
+
+```ts
+// ✗ bad — ad-hoc auth/file handling: untyped, no envelope, wrong status on missing user
+const user = context.locals.user;
+if (!user) return new Response("unauthorized", { status: 401 });
+const form = await context.request.formData(); // no size/type validation
+```
+
+---
+
+## Rule: Fail with the `SnapchefServerError` family — pick the error by meaning
+
+Signal failures with the `Snapchef…Error` classes from `@/lib/core/model/error`, chosen by what went wrong, not where. Each class carries a numeric `code` that **is** the HTTP status `runApiRoute` returns — there is no `ErrorCode` enum, no `ERROR_STATUS` table, and no ts-pattern mapper to touch. Common choices (full table in `effect.md`):
+
+- `SnapchefAuthenticationError` (401) / `SnapchefAuthorizationError` (403) — not authenticated / not permitted.
+- `SnapchefNotFoundError` (404), `SnapchefConflictError` (409), `SnapchefBusinessRuleViolationError` (422) — domain outcomes the client should act on.
+- `SnapchefExternalSystemError` / `SnapchefDatabaseError` (500), `SnapchefInternalSystemError` (502) — infrastructure failures. The `message` is surfaced as-is; put the raw failure in `cause`.
+- `SnapchefParseError` / `SnapchefValidationError` (400) — produced by the parsers and `decodeWith`; do not construct them in route logic.
+
+Adding a new failure mode means adding a `Snapchef…Error` class (with its numeric `code`) to the union in `core/model/error` — nothing in `infrastructure/api/index.ts` changes, because the mapper is generic over `code`.
+
+Failure construction lives inside a `core/uc` use-case method (e.g. `AuthenticatorUC.signIn`), not in the route — the route only relays the typed failures the UC produces.
+
+```ts
+// ✓ good — inside a UC method: Supabase lifted via the shared helper, mapped to a meaningful error
+tryErrorDataWithSchema(AuthUser)(() => supabase.auth.signInWithPassword(credentials)).pipe(
+  Effect.as({ redirect: "/recipes" }),
+  Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign in" })),
 );
 ```
 
 ```ts
-// ✗ bad — generic errors erase meaning; runApiRoute can only answer 500
-Effect.tryPromise({
-  try: () => supabase.auth.signInWithPassword(credentials),
-  catch: () => new Error("sign-in failed"), // untyped, no code, no status mapping
-});
+// ✗ bad — generic error erases meaning + string code; runApiRoute cannot derive a status
+Effect.fail(new Error("sign-in failed")); // untyped, no numeric code → defect → 500
 ```
 
 ---
@@ -101,7 +123,7 @@ Make the route's success value an exported zod schema from `src/lib/core/boundry
 // ✓ good — the payload type is a shared boundary schema
 import { type RedirectTarget } from "@/lib/core/boundry/auth";
 
-const result: Effect.Effect<RedirectTarget, ServerSnapchefError> = authenticator.signIn(credentials);
+const result: Effect.Effect<RedirectTarget, SnapchefServerError> = authenticator.signIn(credentials);
 ```
 
 ```ts

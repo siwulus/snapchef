@@ -1,6 +1,6 @@
 # Use-Case Conventions (`core/uc`)
 
-**`src/lib/core/uc/<domain>/` is the central point for server-side business logic.** A use case (UC) is a class whose methods return `Effect.Effect<A, ServerSnapchefError>` pipelines. Routes and middleware stay thin — they parse input, delegate to a UC from `context.locals`, and hand the resulting Effect to the boundary machinery (`runApiRoute`). Dependency injection is wired in exactly one place: `src/middleware.ts`.
+**`src/lib/core/uc/<domain>/` is the central point for server-side business logic.** A use case (UC) is a class whose methods return `Effect.Effect<A, SnapchefServerError>` pipelines. Routes and middleware stay thin — they parse input, delegate to a UC from `context.locals`, and hand the resulting Effect to the boundary machinery (`runApiRoute`). Dependency injection is wired in exactly one place: `src/middleware.ts`. A UC depends on **ports** (the `interface` contracts in `core/boundry/<domain>/ports.ts`) or, for thin wrappers, directly on an adapter client — see `ports-and-adapters.md` for which to choose.
 
 ## Rule: Business logic lives in a `core/uc` use-case class — not in routes or middleware
 
@@ -11,16 +11,10 @@ Put every domain operation (auth, recipes, …) in a use-case class under `src/l
 export class AuthenticatorUC {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  signIn(credentials: UserCredentials): Effect.Effect<{ redirect: string }, ServerSnapchefError> {
-    return Effect.tryPromise({
-      try: () => this.supabase.auth.signInWithPassword(credentials),
-      catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
-    }).pipe(
-      Effect.flatMap(({ error }) =>
-        error
-          ? Effect.fail(new BusinessRuleError({ code: "UNAUTHORIZED", message: error.message }))
-          : Effect.succeed({ redirect: "/recipes" }),
-      ),
+  signIn(credentials: UserCredentials): Effect.Effect<{ redirect: string }, SnapchefServerError> {
+    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.signInWithPassword(credentials)).pipe(
+      Effect.as({ redirect: "/recipes" }),
+      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign in" })),
     );
   }
 }
@@ -34,7 +28,7 @@ export const POST: APIRoute = (context) =>
       Effect.flatMap((credentials) =>
         Effect.tryPromise({
           try: () => createClient(context.request.headers, context.cookies)!.auth.signInWithPassword(credentials),
-          catch: (cause) => new ExternalSystemError({ message: "Authentication service failed", cause }),
+          catch: (cause) => new SnapchefExternalSystemError({ message: "Authentication service failed", cause }),
         }),
       ),
     ),
@@ -47,12 +41,27 @@ export const POST: APIRoute = (context) =>
 
 ---
 
-## Rule: Inject dependencies through the constructor — adapters enter `core/uc` as types only
+## Rule: Inject dependencies through the constructor — prefer ports, type-only
 
-A UC receives its adapters (e.g. `SupabaseClient`) as constructor parameters typed via `import type`. Never instantiate clients, read env, or import from `src/lib/infrastructure/**` inside `core/uc` — `core/` stays free of runtime framework dependencies; only type-level contracts cross the boundary.
+A UC receives its dependencies as constructor parameters typed via `import type`. Never instantiate clients, read env, or import a runtime value from `src/lib/infrastructure/**` inside `core/uc` — `core/` stays free of runtime framework dependencies; only type-level contracts cross the boundary. Two shapes of dependency, in order of preference:
+
+1. **Ports (preferred for domain logic).** Inject the `interface` contracts from `core/boundry/<domain>/ports.ts` (e.g. `RecipeSessionRepository`, `SessionPhotoStorage`). The UC never names Supabase; infrastructure provides the implementation. This is the default for any UC that touches persistence or external systems — see `ports-and-adapters.md`.
+2. **A raw adapter client (thin wrappers only).** A UC that is essentially a thin pass-through over one SDK (e.g. `AuthenticatorUC` over Supabase Auth) may take the client type directly. Reach for a port the moment the UC coordinates more than one collaborator or you want it unit-testable without Supabase.
 
 ```ts
-// ✓ good — type-only adapter import; the instance arrives from outside
+// ✓ good — RecipeSessionUC depends on ports (interfaces from core/boundry), not Supabase
+import type { RecipeSessionRepository, SessionPhotoStorage } from "@/lib/core/boundry/recipe";
+
+export class RecipeSessionUC {
+  constructor(
+    private readonly sessionRepository: RecipeSessionRepository,
+    private readonly photosStorage: SessionPhotoStorage,
+  ) {}
+}
+```
+
+```ts
+// ✓ good — a thin Auth wrapper may take the client type directly (type-only import)
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export class AuthenticatorUC {
@@ -76,16 +85,20 @@ export class AuthenticatorUC {
 
 ## Rule: Middleware composes the object graph — UCs ride on `context.locals`
 
-`src/middleware.ts` is the single composition root: per request, `injectDependencies` builds the adapters (`createClient`) and instantiates the UCs onto `context.locals`. Every UC exposed this way is declared on `App.Locals` in `src/env.d.ts`. If a required dependency cannot be built (e.g. Supabase env missing), middleware fails fast by throwing `ExternalSystemError` — downstream code may assume `locals` is fully populated.
+`src/middleware.ts` is the single composition root: per request, `injectDependencies` builds the Supabase client, wraps it in the **adapter factories** (`createRecipeSessionRepository`, `createSessionPhotoStorage`), and instantiates the UCs onto `context.locals`. This is the one place where a port meets its concrete adapter. Every UC exposed this way is declared on `App.Locals` in `src/env.d.ts`. If a required dependency cannot be built (Supabase env missing), middleware fails fast by throwing `SnapchefExternalSystemError` — downstream code may assume `locals` is fully populated.
 
 ```ts
-// ✓ good — src/middleware.ts: one composition root, fail fast on missing config
+// ✓ good — src/middleware.ts: one composition root; ports meet adapters here
 const injectDependencies = (context: APIContext) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (supabase) {
     context.locals.authenticator = new AuthenticatorUC(supabase);
+    context.locals.recipeSessions = new RecipeSessionUC(
+      createRecipeSessionRepository(supabase),
+      createSessionPhotoStorage(supabase),
+    );
   } else {
-    throw new ExternalSystemError({ message: "Supabase is not configured", cause: null });
+    throw new SnapchefExternalSystemError({ message: "Supabase is not configured" });
   }
 };
 ```
@@ -96,7 +109,8 @@ declare global {
   namespace App {
     interface Locals {
       authenticator: AuthenticatorUC;
-      user: User | null;
+      recipeSessions: RecipeSessionUC;
+      user: SnapchefUser | null;
     }
   }
 }
