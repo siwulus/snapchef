@@ -7,15 +7,16 @@
 Put every domain operation (auth, recipes, …) in a use-case class under `src/lib/core/uc/<domain>/`, named `<Domain>UC` with a PascalCase filename matching the class (e.g. `AuthenticatorUC.ts`). Methods take domain commands and return Effects with typed errors. Routes must not call adapters (Supabase, fetch, …) directly.
 
 ```ts
-// ✓ good — src/lib/core/uc/auth/AuthenticatorUC.ts: the operation is a UC method
-export class AuthenticatorUC {
-  constructor(private readonly supabase: SupabaseClient) {}
+// ✓ good — src/lib/core/uc/auth/AuthenticatorUC.ts: the operation is a UC method over a port
+import type { Authenticator } from "@/lib/core/boundry/auth";
 
-  signIn(credentials: UserCredentials): Effect.Effect<{ redirect: string }, SnapchefServerError> {
-    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.signInWithPassword(credentials)).pipe(
-      Effect.as({ redirect: "/recipes" }),
-      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign in" })),
-    );
+export class AuthenticatorUC {
+  constructor(private readonly authenticator: Authenticator) {}
+
+  // Returns the domain outcome (SnapchefUser). The route maps it to a RedirectTarget;
+  // Supabase wire details + error classification live in the SupabaseAuthenticator adapter.
+  signIn(credentials: UserCredentials): Effect.Effect<SnapchefUser, SnapchefServerError> {
+    return this.authenticator.signIn(credentials);
   }
 }
 ```
@@ -46,7 +47,7 @@ export const POST: APIRoute = (context) =>
 A UC receives its dependencies as constructor parameters typed via `import type`. Never instantiate clients, read env, or import a runtime value from `src/lib/infrastructure/**` inside `core/uc` — `core/` stays free of runtime framework dependencies; only type-level contracts cross the boundary. Two shapes of dependency, in order of preference:
 
 1. **Ports (preferred for domain logic).** Inject the `interface` contracts from `core/boundry/<domain>/ports.ts` (e.g. `RecipeSessionRepository`, `SessionPhotoStorage`). The UC never names Supabase; infrastructure provides the implementation. This is the default for any UC that touches persistence or external systems — see `ports-and-adapters.md`.
-2. **A raw adapter client (thin wrappers only).** A UC that is essentially a thin pass-through over one SDK (e.g. `AuthenticatorUC` over Supabase Auth) may take the client type directly. Reach for a port the moment the UC coordinates more than one collaborator or you want it unit-testable without Supabase.
+2. **A raw adapter client (thin wrappers only).** A UC that is a thin pass-through over a single SDK _may_ take the client type directly rather than defining a port. **No UC currently does** — `AuthenticatorUC` was migrated to the `Authenticator` port (`core/boundry/auth/ports.ts`) once auth gained domain meaning (a `SnapchefUser` model, the route guard, pending email-verification rules). Reserve this escape hatch for a UC that will never coordinate more than one collaborator and never needs unit-testing without the SDK.
 
 ```ts
 // ✓ good — RecipeSessionUC depends on ports (interfaces from core/boundry), not Supabase
@@ -61,11 +62,11 @@ export class RecipeSessionUC {
 ```
 
 ```ts
-// ✓ good — a thin Auth wrapper may take the client type directly (type-only import)
-import type { SupabaseClient } from "@supabase/supabase-js";
+// ✓ good — AuthenticatorUC depends on the Authenticator port too (type-only import)
+import type { Authenticator } from "@/lib/core/boundry/auth";
 
 export class AuthenticatorUC {
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly authenticator: Authenticator) {}
 }
 ```
 
@@ -85,14 +86,14 @@ export class AuthenticatorUC {
 
 ## Rule: Middleware composes the object graph — UCs ride on `context.locals`
 
-`src/middleware.ts` is the single composition root: per request, `injectDependencies` builds the Supabase client, wraps it in the **adapter factories** (`createRecipeSessionRepository`, `createSessionPhotoStorage`), and instantiates the UCs onto `context.locals`. This is the one place where a port meets its concrete adapter. Every UC exposed this way is declared on `App.Locals` in `src/env.d.ts`. If a required dependency cannot be built (Supabase env missing), middleware fails fast by throwing `SnapchefExternalSystemError` — downstream code may assume `locals` is fully populated.
+`src/middleware.ts` is the single composition root: per request, `injectDependencies` builds the Supabase client, wraps it in the **adapter factories** (`createSupabaseAuthenticator`, `createRecipeSessionRepository`, `createSessionPhotoStorage`), and instantiates the UCs onto `context.locals`. This is the one place where a port meets its concrete adapter. Every UC exposed this way is declared on `App.Locals` in `src/env.d.ts`. If a required dependency cannot be built (Supabase env missing), middleware fails fast by throwing `SnapchefExternalSystemError` — downstream code may assume `locals` is fully populated.
 
 ```ts
 // ✓ good — src/middleware.ts: one composition root; ports meet adapters here
 const injectDependencies = (context: APIContext) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (supabase) {
-    context.locals.authenticator = new AuthenticatorUC(supabase);
+    context.locals.authenticator = new AuthenticatorUC(createSupabaseAuthenticator(supabase));
     context.locals.recipeSessions = new RecipeSessionUC(
       createRecipeSessionRepository(supabase),
       createSessionPhotoStorage(supabase),
@@ -120,7 +121,7 @@ declare global {
 // ✗ bad — a second composition site; the route re-derives what middleware already built
 export const POST: APIRoute = (context) => {
   const supabase = createClient(context.request.headers, context.cookies); // duplicate wiring
-  const authenticator = new AuthenticatorUC(supabase!);
+  const authenticator = new AuthenticatorUC(createSupabaseAuthenticator(supabase!));
   // ...
 };
 ```
@@ -134,10 +135,13 @@ export const POST: APIRoute = (context) => {
 A route handler destructures the UC from `locals` and composes its Effects into the `runApiRoute` pipeline. The route contributes only boundary concerns: input parsing, UC delegation, payload shaping.
 
 ```ts
-// ✓ good — src/pages/api/auth/signin.ts: thin route, UC from locals
+// ✓ good — src/pages/api/auth/signin.ts: thin route, UC from locals, redirect mapped here
 export const POST: APIRoute = ({ request, locals: { authenticator } }) =>
   runApiRoute(
-    parseRequestBody(request, UserCredentials).pipe(Effect.flatMap((credentials) => authenticator.signIn(credentials))),
+    parseRequestBody(request, UserCredentials).pipe(
+      Effect.flatMap((credentials) => authenticator.signIn(credentials)),
+      Effect.as<RedirectTarget>({ redirect: "/recipes" }),
+    ),
   );
 ```
 
@@ -145,7 +149,7 @@ export const POST: APIRoute = ({ request, locals: { authenticator } }) =>
 // ✗ bad — route instantiates the UC, bypassing the middleware composition root
 export const POST: APIRoute = (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
-  const authenticator = new AuthenticatorUC(supabase!); // wiring belongs in middleware
+  const authenticator = new AuthenticatorUC(createSupabaseAuthenticator(supabase!)); // wiring belongs in middleware
   return runApiRoute(
     parseRequestBody(context.request, UserCredentials).pipe(Effect.flatMap((c) => authenticator.signIn(c))),
   );

@@ -1,45 +1,24 @@
-import {
-  SnapchefExternalSystemError,
-  SnapchefAuthenticationError,
-  type SnapchefServerError,
-} from "@/lib/core/model/error";
-import { tryErrorDataWithSchema } from "@/lib/utils/supabase";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { Effect } from "effect";
-import z from "zod";
-import { SnapchefUser, type UserCredentials } from "../../model/auth";
+import type { Authenticator } from "@/lib/core/boundry/auth";
+import type { SnapchefUser, UserCredentials } from "@/lib/core/model/auth";
+import type { SnapchefServerError } from "@/lib/core/model/error";
+import type { Effect } from "effect";
 
-const AuthUser = z.object({
-  user: SnapchefUser,
-});
 export class AuthenticatorUC {
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly authenticator: Authenticator) {}
 
-  signIn(credentials: UserCredentials): Effect.Effect<{ redirect: string }, SnapchefServerError> {
-    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.signInWithPassword(credentials)).pipe(
-      Effect.as({ redirect: "/recipes" }),
-      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign in" })),
-    );
+  signIn(credentials: UserCredentials): Effect.Effect<SnapchefUser, SnapchefServerError> {
+    return this.authenticator.signIn(credentials);
   }
 
-  signUp(credentials: UserCredentials): Effect.Effect<{ redirect: string }, SnapchefServerError> {
-    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.signUp(credentials)).pipe(
-      Effect.as({ redirect: "/auth/confirm-email" }),
-      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to sign up" })),
-    );
+  signUp(credentials: UserCredentials): Effect.Effect<SnapchefUser, SnapchefServerError> {
+    return this.authenticator.signUp(credentials);
   }
 
   signOut(): Effect.Effect<void, SnapchefServerError> {
-    return Effect.tryPromise({
-      try: () => this.supabase.auth.signOut(),
-      catch: (cause) => new SnapchefExternalSystemError({ message: "Authentication service failed", cause }),
-    });
+    return this.authenticator.signOut();
   }
 
   getUser(): Effect.Effect<SnapchefUser, SnapchefServerError> {
-    return tryErrorDataWithSchema(AuthUser)(() => this.supabase.auth.getUser()).pipe(
-      Effect.mapError(() => new SnapchefAuthenticationError({ message: "Failed to get user" })),
-      Effect.map(({ user }) => user),
-    );
+    return this.authenticator.getUser();
   }
 }

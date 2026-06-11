@@ -361,32 +361,32 @@ No DB migrations, no wire-contract changes (`ApiResponsePayload` envelope and `R
 
 #### Automated
 
-- [x] 1.1 Lint passes: `npm run lint`
-- [x] 1.2 Build passes: `npm run build`
-- [x] 1.3 No blanket rewrite remains (`andThen((session) => session)` grep empty)
-- [x] 1.4 Dead members gone (`recognizeProducts`/`_productRecognizer` grep empty)
+- [x] 1.1 Lint passes: `npm run lint` — ada43ac63
+- [x] 1.2 Build passes: `npm run build` — ada43ac63
+- [x] 1.3 No blanket rewrite remains (`andThen((session) => session)` grep empty) — ada43ac63
+- [x] 1.4 Dead members gone (`recognizeProducts`/`_productRecognizer` grep empty) — ada43ac63
 
 #### Manual
 
-- [x] 1.5 Photo upload to existing session succeeds end-to-end
-- [x] 1.6 Upload to random session id returns 404 "Session not found"
-- [x] 1.7 Upload with Supabase stopped returns 500-family error, not 404
+- [x] 1.5 Photo upload to existing session succeeds end-to-end — ada43ac63
+- [x] 1.6 Upload to random session id returns 404 "Session not found" — ada43ac63
+- [x] 1.7 Upload with Supabase stopped returns 500-family error, not 404 — ada43ac63
 
 ### Phase 2: Auth Port + Supabase Adapter, Auth Error Fidelity, Domain Outcomes
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `npm run lint`
-- [ ] 2.2 Build passes: `npm run build`
-- [ ] 2.3 Core is Supabase-free (`@supabase` grep in `src/lib/core` empty)
-- [ ] 2.4 Core has no `utils/supabase` import (grep empty)
+- [x] 2.1 Lint passes: `npm run lint`
+- [x] 2.2 Build passes: `npm run build`
+- [x] 2.3 Core is Supabase-free (`@supabase` grep in `src/lib/core` empty)
+- [x] 2.4 Core has no `utils/supabase` import (grep empty)
 
 #### Manual
 
-- [ ] 2.5 Sign-in → `/recipes`; sign-up → `/auth/confirm-email`; sign-out → `/`
-- [ ] 2.6 Wrong password → 401 with auth message and `cause`
-- [ ] 2.7 Supabase stopped → sign-in returns 500-family, not 401
-- [ ] 2.8 Anonymous `/recipes` visit redirects to `/auth/signin`
+- [x] 2.5 Sign-in → `/recipes`; sign-up → `/auth/confirm-email`; sign-out → `/`
+- [x] 2.6 Wrong password → 401 with auth message and `cause`
+- [x] 2.7 Supabase stopped → sign-in returns 500-family, not 401
+- [x] 2.8 Anonymous `/recipes` visit redirects to `/auth/signin`
 
 ### Phase 3: Disband the `utils/` Escape Hatch
 
