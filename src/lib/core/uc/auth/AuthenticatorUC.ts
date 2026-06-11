@@ -1,5 +1,5 @@
-import type { Authenticator } from "@/lib/core/boundry/auth";
-import type { SnapchefUser, UserCredentials } from "@/lib/core/model/auth";
+import type { Authenticator, UserCredentials } from "@/lib/core/boundry/auth";
+import type { SnapchefUser } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { Effect } from "effect";
 

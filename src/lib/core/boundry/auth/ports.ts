@@ -1,6 +1,7 @@
 import type { Effect } from "effect";
-import type { SnapchefUser, UserCredentials } from "@/lib/core/model/auth";
+import type { SnapchefUser } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
+import type { UserCredentials } from "./commands";
 
 export interface Authenticator {
   signIn(credentials: UserCredentials): Effect.Effect<SnapchefUser, SnapchefServerError>;

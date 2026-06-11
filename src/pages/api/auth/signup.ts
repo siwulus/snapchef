@@ -1,5 +1,4 @@
-import { type RedirectTarget } from "@/lib/core/boundry/auth";
-import { UserCredentials } from "@/lib/core/model/auth";
+import { UserCredentials, type RedirectTarget } from "@/lib/core/boundry/auth";
 import { parseRequestBody, runApiRoute } from "@/lib/infrastructure/api";
 import type { APIRoute } from "astro";
 import { Effect } from "effect";

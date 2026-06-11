@@ -392,26 +392,26 @@ No DB migrations, no wire-contract changes (`ApiResponsePayload` envelope and `R
 
 #### Automated
 
-- [x] 3.1 Lint passes: `npm run lint`
-- [x] 3.2 Build passes: `npm run build`
-- [x] 3.3 Old `utils/supabase.ts` and `utils/recipe.ts` deleted
-- [x] 3.4 No stale `utils/supabase`/`utils/recipe` references in `src`, `docs`, `CLAUDE.md`
-- [x] 3.5 `src/lib/utils/` contains exactly `effect.ts`
+- [x] 3.1 Lint passes: `npm run lint` — 503fce6ba
+- [x] 3.2 Build passes: `npm run build` — 503fce6ba
+- [x] 3.3 Old `utils/supabase.ts` and `utils/recipe.ts` deleted — 503fce6ba
+- [x] 3.4 No stale `utils/supabase`/`utils/recipe` references in `src`, `docs`, `CLAUDE.md` — 503fce6ba
+- [x] 3.5 `src/lib/utils/` contains exactly `effect.ts` — 503fce6ba
 
 #### Manual
 
-- [x] 3.6 Sign-in, session create, photo upload smoke test passes
+- [x] 3.6 Sign-in, session create, photo upload smoke test passes — 503fce6ba
 
 ### Phase 4: Settle the `boundry/` Taxonomy
 
 #### Automated
 
-- [ ] 4.1 Lint passes: `npm run lint`
-- [ ] 4.2 Build passes: `npm run build`
-- [ ] 4.3 `UserCredentials` removed from `core/model/auth`
-- [ ] 4.4 `boundry/auth/` contains `commands.ts`, `index.ts`, `ports.ts`, `responses.ts`
-- [ ] 4.5 No stale `SignInCommand` reference in `CLAUDE.md`/`docs`
+- [x] 4.1 Lint passes: `npm run lint`
+- [x] 4.2 Build passes: `npm run build`
+- [x] 4.3 `UserCredentials` removed from `core/model/auth`
+- [x] 4.4 `boundry/auth/` contains `commands.ts`, `index.ts`, `ports.ts`, `responses.ts`
+- [x] 4.5 No stale `SignInCommand` reference in `CLAUDE.md`/`docs`
 
 #### Manual
 
-- [ ] 4.6 Sign-in and sign-up forms validate and submit successfully
+- [x] 4.6 Sign-in and sign-up forms validate and submit successfully

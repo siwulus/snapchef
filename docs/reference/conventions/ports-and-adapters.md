@@ -2,6 +2,32 @@
 
 The app separates **what** the domain needs (ports) from **how** it is fulfilled (adapters). A port is a TypeScript `interface` living in `core/boundry/<domain>/ports.ts`; an adapter is a factory function under `src/lib/infrastructure/**` that returns an object implementing that interface. Use cases depend on ports only; `src/middleware.ts` is the single place where a port is bound to its adapter. This keeps `core/` free of Supabase/IO and makes UCs testable with a fake port.
 
+## Rule: `core/boundry/<domain>/` splits contracts by direction — one taxonomy across all domains
+
+Every `boundry/<domain>/` folder uses the same four-file taxonomy, and the per-domain `index.ts` is a **pure barrel** re-exporting them. Driving-side schemas (commands in, responses out) and driven-side port interfaces live in separate files so the folder has one meaning; a sibling that imports from another sibling does so **directly** (e.g. `ports.ts` → `./commands`), never through the barrel (that would be a circular import).
+
+| File           | Direction | Holds                                                                            |
+| -------------- | --------- | -------------------------------------------------------------------------------- |
+| `ports.ts`     | driven    | Port `interface`s + their write-payload DTOs (e.g. `RecipeSessionUpdatePayload`) |
+| `commands.ts`  | driving   | Input schemas shared by React forms and API routes (e.g. `UserCredentials`)      |
+| `responses.ts` | driving   | Response/wire schemas the client validates against (e.g. `RedirectTarget`)       |
+| `dto.ts`       | shared    | Genuinely shared constants (e.g. upload limits)                                  |
+
+Create `commands.ts` / `responses.ts` only when a domain has such schemas — do not leave empty files. Domain **models** (`SnapchefUser`, `RecipeSession`, `RecognizedItem`, branded ids) stay in `core/model/<domain>/`, not `boundry/`.
+
+```ts
+// ✓ good — src/lib/core/boundry/auth/index.ts: a pure barrel
+export * from "./commands"; // UserCredentials  (driving, in)
+export * from "./ports"; // Authenticator    (driven)
+export * from "./responses"; // RedirectTarget   (driving, out)
+```
+
+```ts
+// ✗ bad — a command schema marooned in core/model, or a sibling importing through the barrel
+// core/model/auth/index.ts → export const UserCredentials = …   (driving contract, wrong layer)
+// boundry/auth/ports.ts    → import { UserCredentials } from "."  (barrel cycle — use "./commands")
+```
+
 ## Rule: Declare ports as `interface`s in `core/boundry/<domain>/ports.ts`
 
 A port is an `interface` whose methods return `Effect.Effect<A, SnapchefServerError>`. It imports `Effect`/`Option` and the error union **as types only** and references domain models from `core/model/**`. It never imports from `infrastructure/**`.
