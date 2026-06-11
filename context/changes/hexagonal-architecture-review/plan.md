@@ -406,12 +406,12 @@ No DB migrations, no wire-contract changes (`ApiResponsePayload` envelope and `R
 
 #### Automated
 
-- [x] 4.1 Lint passes: `npm run lint`
-- [x] 4.2 Build passes: `npm run build`
-- [x] 4.3 `UserCredentials` removed from `core/model/auth`
-- [x] 4.4 `boundry/auth/` contains `commands.ts`, `index.ts`, `ports.ts`, `responses.ts`
-- [x] 4.5 No stale `SignInCommand` reference in `CLAUDE.md`/`docs`
+- [x] 4.1 Lint passes: `npm run lint` — e88f1e3a4
+- [x] 4.2 Build passes: `npm run build` — e88f1e3a4
+- [x] 4.3 `UserCredentials` removed from `core/model/auth` — e88f1e3a4
+- [x] 4.4 `boundry/auth/` contains `commands.ts`, `index.ts`, `ports.ts`, `responses.ts` — e88f1e3a4
+- [x] 4.5 No stale `SignInCommand` reference in `CLAUDE.md`/`docs` — e88f1e3a4
 
 #### Manual
 
-- [x] 4.6 Sign-in and sign-up forms validate and submit successfully
+- [x] 4.6 Sign-in and sign-up forms validate and submit successfully — e88f1e3a4
