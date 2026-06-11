@@ -1,20 +1,14 @@
-import {
-  type ProductRecognizer,
-  type RecipeSessionRepository,
-  type SessionPhotoStorage,
-} from "@/lib/core/boundry/recipe";
+import { type RecipeSessionRepository, type SessionPhotoStorage } from "@/lib/core/boundry/recipe";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import { SnapchefBusinessRuleViolationError, SnapchefNotFoundError } from "@/lib/core/model/error";
+import { SnapchefNotFoundError } from "@/lib/core/model/error";
 import type { RecipeSession } from "@/lib/core/model/recipe";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 
 export class RecipeSessionUC {
   constructor(
     private readonly sessionRepository: RecipeSessionRepository,
     private readonly photosStorage: SessionPhotoStorage,
   ) {}
-
-  private _productRecognizer: ProductRecognizer | null = null;
 
   createSession(userId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.sessionRepository.create(userId);
@@ -27,14 +21,14 @@ export class RecipeSessionUC {
     );
   }
 
-  recognizeProducts(_userId: string, _sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return Effect.fail(new SnapchefBusinessRuleViolationError({ message: "Not implemented" }));
-  }
-
   private fetchRecipeSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.sessionRepository.find(userId, sessionId).pipe(
-      Effect.andThen((session) => session),
-      Effect.mapError(() => new SnapchefNotFoundError({ message: "Session not found" })),
+      Effect.flatMap(
+        Option.match({
+          onNone: () => Effect.fail(new SnapchefNotFoundError({ message: "Session not found" })),
+          onSome: Effect.succeed,
+        }),
+      ),
     );
   }
 
@@ -54,8 +48,12 @@ export class RecipeSessionUC {
     return this.sessionRepository
       .update(session.userId, session.id, { photoPaths: paths, state: "photos_uploaded" })
       .pipe(
-        Effect.andThen((session) => session),
-        Effect.mapError(() => new SnapchefNotFoundError({ message: "Session not found" })),
+        Effect.flatMap(
+          Option.match({
+            onNone: () => Effect.fail(new SnapchefNotFoundError({ message: "Session not found" })),
+            onSome: Effect.succeed,
+          }),
+        ),
       );
   }
 }
