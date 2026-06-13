@@ -33,6 +33,10 @@ export type RecipeSession = z.infer<typeof RecipeSession>;
 export const RecognizedItem = z.object({
   name: z.string().min(1).max(120).trim(),
   quantity: z.string().min(1).max(60),
+  // Distinguishing context (where/how the product was spotted) produced during per-photo
+  // recognition. Used only as an extra signal for the merge/dedupe step — it is NOT persisted
+  // (serializeItemsToMarkdown emits only name + quantity).
+  context: z.string().max(280),
 });
 
 export type RecognizedItem = z.infer<typeof RecognizedItem>;

@@ -4,15 +4,15 @@
 
 ## Active Domains
 
-| Domain           | File                      | Summary                                                                                                             |
-| ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Generic style    | `./generic.md`            | File naming (PascalCase for class/component/adapter files, kebab-case otherwise); arrow functions; FP over loops    |
-| Zod naming       | `./zod.md`                | Schema and inferred type share the same name; `.pick().partial()` payloads; `…FromRow` transform decoders           |
-| Effect-TS        | `./effect.md`             | Pipe-first pipelines; typed `Snapchef…Error` family with numeric `code`; `decodeWith` + `tryError…` bridges         |
-| Use cases        | `./use-cases.md`          | Business logic in `core/uc` classes; constructor DI (ports preferred); middleware composes onto `context.locals`    |
-| Ports & adapters | `./ports-and-adapters.md` | Port `interface`s in `core/boundry`; factory adapters in `infrastructure`; `Option` for maybe-missing               |
-| API — server     | `./api-server.md`         | Astro routes: `runApiRoute` is the only exit; `parseRequestBody`/`parseMultipartFiles`/`validateAuthUser`           |
-| API — client     | `./api-client.md`         | Browser HTTP via `components/api` helpers; nested-`error` envelope validated with zod; one `runPromise` at the edge |
+| Domain           | File                      | Summary                                                                                                                                                        |
+| ---------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Generic style    | `./generic.md`            | File naming (PascalCase for class/component/adapter files, kebab-case otherwise); arrow functions; FP over loops; ts-pattern `match` over `switch`/`if`-chains |
+| Zod naming       | `./zod.md`                | Schema and inferred type share the same name; `.pick().partial()` payloads; `…FromRow` transform decoders                                                      |
+| Effect-TS        | `./effect.md`             | Pipe-first pipelines; typed `Snapchef…Error` family with numeric `code`; `decodeWith` + `tryError…` bridges                                                    |
+| Use cases        | `./use-cases.md`          | Business logic in `core/uc` classes; constructor DI (ports preferred); middleware composes onto `context.locals`                                               |
+| Ports & adapters | `./ports-and-adapters.md` | Port `interface`s in `core/boundry`; factory adapters in `infrastructure`; `Option` for maybe-missing                                                          |
+| API — server     | `./api-server.md`         | Astro routes: `runApiRoute` is the only exit; `parseRequestBody`/`parseMultipartFiles`/`validateAuthUser`                                                      |
+| API — client     | `./api-client.md`         | Browser HTTP via `components/api` helpers; nested-`error` envelope validated with zod; one `runPromise` at the edge                                            |
 
 @./generic.md
 

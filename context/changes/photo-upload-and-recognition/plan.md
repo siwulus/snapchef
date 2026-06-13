@@ -390,24 +390,24 @@ Single additive migration (Phase 1, landed). Backward-compatible per the hard ru
 
 #### Remaining — Automated
 
-- [x] 2.1 `pnpm lint` and `pnpm build` pass
+- [x] 2.1 `pnpm lint` and `pnpm build` pass — 98a875a0b
 
 #### Remaining — Manual
 
-- [ ] 2.2 Re-upload replaces prior files; `photo_paths` reflects only the new set
+- [x] 2.2 Re-upload replaces prior files; `photo_paths` reflects only the new set — 98a875a0b
 - [x] 2.3 `use-cases.md` documents the ports-and-adapters pattern; conventions README updated — c641e2606
 
 ### Phase 3: Recognition — ProductRecognizer Adapter + UC Orchestration
 
 #### Automated
 
-- [ ] 3.1 `pnpm lint` and `pnpm build` pass
+- [x] 3.1 `pnpm lint` and `pnpm build` pass
 
 #### Manual
 
-- [ ] 3.2 2-photo session → Polish unambiguous `recognizedItemsMd`, state persisted, ≲ 30 s
-- [ ] 3.3 Retry overwrites; no-photos session → 422; unknown/foreign id → 404; invalid id → 400; missing key → 500
-- [ ] 3.4 One unreadable photo → 200 with the other photo's items (partial failure tolerated)
+- [x] 3.2 2-photo session → Polish unambiguous `recognizedItemsMd`, state persisted, ≲ 30 s
+- [x] 3.3 Retry overwrites; no-photos session → 422; unknown/foreign id → 404; invalid id → 400; missing key → 500
+- [x] 3.4 One unreadable photo → 200 with the other photo's items (partial failure tolerated)
 
 ### Phase 4: Wizard Island — Step 1 (Upload)
 

@@ -103,3 +103,54 @@ orders.forEach((o) => {
 > - `for…of` is acceptable when the loop body has side effects that don't map cleanly to a functional expression (e.g., `await` inside a serial loop where parallel execution is not desired).
 > - `.forEach` is acceptable when the body is pure side-effect orchestration against an external API and produces no value — e.g., registering form errors (`form.setError` per entry in `SignInForm.tsx`) or setting cookies (`cookies.set` in `infrastructure/db/supabase.ts`). The rule targets data transformation, not effect fan-out.
 > - Plain `if` statements for non-collection branching (e.g., early returns, single-value guards) are fine — this rule targets collection iteration and data transformation, not all conditionals.
+
+---
+
+## Rule: Branch over values with ts-pattern `match` — avoid `switch` and `if`/`else if` chains
+
+**ts-pattern (`match` from `ts-pattern`) is the intended, deliberate way to express multi-way branching in this codebase** — it is a dependency (`ts-pattern@^5`) chosen on purpose, not an incidental import. When a decision branches over the shape, state, or value of a datum (a discriminated-union `_tag`, a domain state string, an enum, a numeric case), express it as a `match(value).with(...).exhaustive()` pipeline rather than a `switch` statement or an `if`/`else if` ladder. Prefer `.exhaustive()` over `.otherwise()` whenever the input is a finite union — the compiler then rejects the branch if a new variant is added and left unhandled, turning a silent fall-through into a type error. Use `.otherwise()` only for a genuine open-ended default (e.g. "any count other than 0 or 1"). This is the branching counterpart to the functional-mappings rule above: that rule replaces imperative iteration, this one replaces imperative branching.
+
+```ts
+// ✓ good — src/lib/core/uc/recipe/RecipeSessionUC.ts: branch over a value with match
+import { match } from "ts-pattern";
+
+const resolveItems = (lists: RecognizedItem[][]): Effect.Effect<RecognizedItem[], SnapchefServerError> => {
+  const nonEmpty = lists.filter((list) => list.length > 0);
+  return match(nonEmpty.length)
+    .with(0, () =>
+      Effect.fail<SnapchefServerError>(new SnapchefExternalSystemError({ message: "Recognition produced no items" })),
+    )
+    .with(1, () => Effect.succeed(nonEmpty.flat()))
+    .otherwise(() => this.productRecognizer.mergeItems(nonEmpty.flat())); // open-ended default: any count ≥ 2
+};
+
+// ✓ good — finite union: .exhaustive() makes an unhandled new state a compile error
+const label = (state: RecipeSessionState): string =>
+  match(state)
+    .with("created", () => "Draft")
+    .with("photos_uploaded", () => "Photos ready")
+    .with("recognized", () => "Items recognized")
+    .exhaustive();
+```
+
+```ts
+// ✗ bad — if/else ladder over a value; no exhaustiveness guarantee, drifts as states grow
+const label = (state: RecipeSessionState): string => {
+  if (state === "created") return "Draft";
+  else if (state === "photos_uploaded") return "Photos ready";
+  else if (state === "recognized") return "Items recognized";
+  return "Unknown"; // a newly added state silently lands here — the bug ships
+};
+
+// ✗ bad — switch statement: same problem, plus fall-through and break footguns
+switch (state) {
+  case "created":
+    return "Draft";
+  // missing cases compile fine; no signal when the union grows
+}
+```
+
+> **Exceptions:**
+>
+> - This rule targets branching over a value's shape/state/value. A single boolean guard or early return (`if (!user) return …`) stays a plain `if` — do not wrap two-way nothing-branches in `match`.
+> - `Option.match` / `Effect.match` (from `effect`) are the right tools for unwrapping an `Option` or an `Effect`'s success/failure channels — keep using them. ts-pattern `match` is for branching over **domain values**, not over Effect/Option containers. See `effect.md`.

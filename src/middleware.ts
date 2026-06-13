@@ -2,6 +2,7 @@ import { createSupabaseAuthenticator } from "@/lib/infrastructure/auth/SupabaseA
 import { createRecipeSessionRepository } from "@/lib/infrastructure/db/RecipeSessionRepository";
 import { createSessionPhotoStorage } from "@/lib/infrastructure/db/SessionPhotoStorage";
 import { createClient } from "@/lib/infrastructure/db/supabase";
+import { createProductRecognizer } from "@/lib/infrastructure/llm/openrouter";
 import type { APIContext, MiddlewareNext } from "astro";
 import { defineMiddleware } from "astro:middleware";
 import { Effect } from "effect";
@@ -24,6 +25,7 @@ const injectDependencies = (context: APIContext) => {
     context.locals.recipeSessions = new RecipeSessionUC(
       createRecipeSessionRepository(supabase),
       createSessionPhotoStorage(supabase),
+      createProductRecognizer(),
     );
   } else {
     throw new SnapchefExternalSystemError({ message: "Supabase is not configured" });

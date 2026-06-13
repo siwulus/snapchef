@@ -5,6 +5,7 @@ import {
   SnapchefExternalSystemError,
   type SnapchefServerError,
 } from "@/lib/core/model/error";
+import type { Database } from "@/lib/infrastructure/db/types";
 import { decodeWith } from "@/lib/utils/effect";
 import {
   isAuthApiError,
@@ -79,7 +80,7 @@ const signOut = (supabase: SupabaseClient) => (): Effect.Effect<void, SnapchefSe
     catch: (cause) => new SnapchefExternalSystemError({ message: "Authentication service failed", cause }),
   }).pipe(Effect.asVoid);
 
-export const createSupabaseAuthenticator = (supabase: SupabaseClient): Authenticator => ({
+export const createSupabaseAuthenticator = (supabase: SupabaseClient<Database>): Authenticator => ({
   signIn: signIn(supabase),
   signUp: signUp(supabase),
   signOut: signOut(supabase),
