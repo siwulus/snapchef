@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { UserId } from "../auth";
 
-export * from "./markdown";
-
 export const RecipeSessionState = z.enum([
   "created",
   "photos_uploaded",
@@ -35,7 +33,7 @@ export const RecognizedItem = z.object({
   quantity: z.string().min(1).max(60),
   // Distinguishing context (where/how the product was spotted) produced during per-photo
   // recognition. Used only as an extra signal for the merge/dedupe step — it is NOT persisted
-  // (serializeItemsToMarkdown emits only name + quantity).
+  // (only name + quantity are written to the recognized-items markdown).
   context: z.string().max(280),
 });
 

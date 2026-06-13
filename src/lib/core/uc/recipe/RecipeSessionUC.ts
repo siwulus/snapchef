@@ -9,7 +9,7 @@ import {
   SnapchefExternalSystemError,
   SnapchefNotFoundError,
 } from "@/lib/core/model/error";
-import { serializeItemsToMarkdown, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
+import { type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
 import { getOrThrowNotFound } from "@/lib/utils/effect";
 import { Effect, Option } from "effect";
 import { isNotEmpty } from "ramda";
@@ -130,9 +130,13 @@ export class RecipeSessionUC {
   ): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.sessionRepository
       .update(session.userId, session.id, {
-        recognizedItemsMd: serializeItemsToMarkdown(items),
+        recognizedItemsMd: this.serializeItemsToMarkdown(items),
         state: "products_recognized",
       })
       .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
+  }
+
+  private serializeItemsToMarkdown(items: RecognizedItem[]): string {
+    return items.map((item) => `- ${item.name} - ${item.quantity}`).join("\n");
   }
 }

@@ -401,19 +401,19 @@ Single additive migration (Phase 1, landed). Backward-compatible per the hard ru
 
 #### Automated
 
-- [x] 3.1 `pnpm lint` and `pnpm build` pass
+- [x] 3.1 `pnpm lint` and `pnpm build` pass — 68b0d6621
 
 #### Manual
 
-- [x] 3.2 2-photo session → Polish unambiguous `recognizedItemsMd`, state persisted, ≲ 30 s
-- [x] 3.3 Retry overwrites; no-photos session → 422; unknown/foreign id → 404; invalid id → 400; missing key → 500
-- [x] 3.4 One unreadable photo → 200 with the other photo's items (partial failure tolerated)
+- [x] 3.2 2-photo session → Polish unambiguous `recognizedItemsMd`, state persisted, ≲ 30 s — 68b0d6621
+- [x] 3.3 Retry overwrites; no-photos session → 422; unknown/foreign id → 404; invalid id → 400; missing key → 500 — 68b0d6621
+- [x] 3.4 One unreadable photo → 200 with the other photo's items (partial failure tolerated) — 68b0d6621
 
 ### Phase 4: Wizard Island — Step 1 (Upload)
 
 #### Automated
 
-- [ ] 4.1 `pnpm lint` and `pnpm build` pass
+- [x] 4.1 `pnpm lint` and `pnpm build` pass
 
 #### Manual
 
