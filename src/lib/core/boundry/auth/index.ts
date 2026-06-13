@@ -1,7 +1,3 @@
-import { z } from "zod";
-
-export const RedirectTarget = z.object({
-  redirect: z.string(),
-});
-
-export type RedirectTarget = z.infer<typeof RedirectTarget>;
+export * from "./commands";
+export * from "./ports";
+export * from "./responses";

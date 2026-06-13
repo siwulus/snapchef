@@ -242,7 +242,7 @@ import { Schema } from "effect"; // competing validator — forbidden
 
 ## Rule: Bridge Supabase calls through the shared `tryError…` helpers
 
-Every Supabase call returns `{ data, error }` and must be lifted into Effect through the helpers in `@/lib/utils/supabase` — never re-roll `Effect.tryPromise` + `flatMap(({ error }) => …)` at each call site. Pass a thunk that resolves to `{ data, error }` (use `.then(({ error, data }) => ({ error, data }))` on the Supabase builder so the types line up). The helpers map a thrown rejection or a non-null `error` to `SnapchefExternalSystemError`:
+Every Supabase call returns `{ data, error }` and must be lifted into Effect through the helpers in `@/lib/infrastructure/db/supabase-effect` — never re-roll `Effect.tryPromise` + `flatMap(({ error }) => …)` at each call site. Pass a thunk that resolves to `{ data, error }` (use `.then(({ error, data }) => ({ error, data }))` on the Supabase builder so the types line up). The helpers map a thrown rejection or a non-null `error` to `SnapchefExternalSystemError`:
 
 - `tryErrorData(fn)` → `Effect<T, …>` — fails `SnapchefNotFoundError` when `data` is null. Use when a row must exist.
 - `tryErrorDataOption(fn)` → `Effect<Option<T>, …>` — null `data` becomes `Option.none()`. Use for "find" queries that may legitimately miss.
@@ -250,7 +250,7 @@ Every Supabase call returns `{ data, error }` and must be lifted into Effect thr
 
 ```ts
 // ✓ good — adapter lifts the Supabase call through the shared helper, then decodes
-import { tryErrorDataOption } from "@/lib/utils/supabase";
+import { tryErrorDataOption } from "@/lib/infrastructure/db/supabase-effect";
 
 const find = (sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
   tryErrorDataOption<RecipeSessionRow>(() =>
@@ -273,4 +273,5 @@ Effect.tryPromise({
 
 > **Exceptions:**
 >
-> - Supabase Auth calls (`auth.signOut()` etc.) that return only `{ error }` with no meaningful `data` may use a bare `Effect.tryPromise` with an explicit `SnapchefExternalSystemError` catch — there is nothing for the `tryError…` helpers to decode (see `AuthenticatorUC.signOut`).
+> - Supabase Auth calls (`auth.signOut()` etc.) that return only `{ error }` with no meaningful `data` may use a bare `Effect.tryPromise` with an explicit `SnapchefExternalSystemError` catch — there is nothing for the `tryError…` helpers to decode (see `SupabaseAuthenticator.signOut`).
+> - Supabase **Auth** calls that _do_ return a user (`signInWithPassword`, `signUp`, `getUser`) need their failure **classified**, not folded: a 4xx `AuthApiError` is a genuine auth rejection (→ `SnapchefAuthenticationError`, 401) while a 5xx / network / thrown failure is infrastructure (→ `SnapchefExternalSystemError`, 500). The generic `tryError…` helpers fold every `{ error }` into `SnapchefExternalSystemError`, which would erase that distinction — so the auth adapter (`infrastructure/auth/SupabaseAuthenticator.ts`) lifts these calls with its own helper that branches on `isAuthApiError(error)` before constructing the typed failure, always forwarding `cause`. A wire-schema decode failure here is a driven-side contract drift → `SnapchefExternalSystemError` (500), never a `SnapchefValidationError` (400).

@@ -79,7 +79,7 @@ export const RecipeSessionUpdatePayload = z.object({
 DB rows are snake_case; domain models are camelCase. Bridge them with a zod **transform decoder**: an unexported `…RowSchema` (the raw row shape) → `.transform(row => ({ …camelCase }))` → `.pipe(Model)` so the output is re-validated against the domain schema. Export only the final decoder, named `<Model>FromRow` (the unexported row schema may use any internal name — same exception as `.refine()`/`.extend()` above). Run it through `decodeWith` (see `effect.md`); adapters never return a raw row.
 
 ```ts
-// ✓ good — src/lib/utils/recipe.ts: row schema (private) → transform → re-validate as the model
+// ✓ good — src/lib/infrastructure/db/recipe-session-row.ts: row schema (private) → transform → re-validate as the model
 const RecipeSessionRowSchema = z.object({
   id: z.string(),
   user_id: z.string(),

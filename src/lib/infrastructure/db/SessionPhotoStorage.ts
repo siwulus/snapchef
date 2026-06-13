@@ -1,7 +1,7 @@
 import type { UserId } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { SessionPhotoStorage } from "@/lib/core/boundry/recipe";
-import { tryErrorData } from "@/lib/utils/supabase";
+import { tryErrorData } from "./supabase-effect";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect } from "effect";
 import type { Database } from "./types";
