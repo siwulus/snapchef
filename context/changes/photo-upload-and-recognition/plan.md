@@ -413,23 +413,30 @@ Single additive migration (Phase 1, landed). Backward-compatible per the hard ru
 
 #### Automated
 
-- [x] 4.1 `pnpm lint` and `pnpm build` pass
+- [x] 4.1 `pnpm lint` and `pnpm build` pass — 53dd15244
 
 #### Manual
 
-- [ ] 4.2 Auth redirect works; upload UI mobile-clean
-- [ ] 4.3 Validation matrix inline errors; previews + remove work
-- [ ] 4.4 Two-stage loader; mid-flight failure → error + recognition-only retry; success lands on review with parsed items
-- [ ] 4.5 Leave-guard fires with unsaved selection
+- [x] 4.2 Auth redirect works; upload UI mobile-clean — 53dd15244
+- [x] 4.3 Validation matrix inline errors; previews + remove work — 53dd15244
+- [x] 4.4 Two-stage loader; mid-flight failure → error + recognition-only retry; success lands on review with parsed items — 53dd15244
+- [x] 4.5 Leave-guard fires with unsaved selection — 53dd15244
 
 ### Phase 5: Wizard Island — Step 2 (Review List)
 
+> **Pivot (2026-06-13):** the structured, editable `ReviewStep` (name/quantity rows, add/delete)
+> was **superseded by a plain editable `<textarea>`** over the recognized markdown, built in Phase 4
+> (commit `53dd15244`). Rationale (user decision): the list is plain text with no formatting, is
+> dictation-friendly on mobile, and round-trips losslessly as markdown. Edits stay client-side — the
+> corrected list is **not** persisted (S-01 scope unchanged). The roadmap/parked bookkeeping
+> (Phase 5 change #2) is deferred — not done as part of this change.
+
 #### Automated
 
-- [ ] 5.1 `pnpm lint` and `pnpm build` pass
+- [x] 5.1 `pnpm lint` and `pnpm build` pass — 53dd15244
 
 #### Manual
 
-- [ ] 5.2 Full E2E with real photos: edit/delete/add all work in-place
-- [ ] 5.3 Cross-photo dedupe produces one entry; single-photo session correct
-- [ ] 5.4 ~30 s flow with continuous feedback; a11y spot-check passes
+- [x] 5.2 Full E2E with real photos: edit/delete/add all work in-place (via textarea) — 53dd15244
+- [x] 5.3 Cross-photo dedupe produces one entry; single-photo session correct — 53dd15244
+- [x] 5.4 ~30 s flow with continuous feedback; a11y spot-check passes — 53dd15244

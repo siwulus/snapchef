@@ -1,7 +1,7 @@
 ---
 change_id: photo-upload-and-recognition
 title: Uphoto upload and recognition
-status: implementing
+status: implemented
 created: 2026-06-06
 updated: 2026-06-13
 archived_at: null
