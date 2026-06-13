@@ -29,6 +29,9 @@ export default defineConfig({
         access: "public",
         default: "openai/gpt-4o-mini",
       }),
+      // Effect LogLevel label: All | Trace | Debug | Info | Warning | Error | Fatal | None
+      LOG_LEVEL: envField.string({ context: "server", access: "public", default: "Info" }),
+      LOG_HTTP_BODIES: envField.boolean({ context: "server", access: "public", default: false }),
     },
   },
 });

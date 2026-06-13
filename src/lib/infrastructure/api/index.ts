@@ -7,6 +7,7 @@ import {
   type SnapchefServerError,
 } from "@/lib/core/model/error";
 import type { ApiErrorResponsePayload, ApiSuccessResponsePayload } from "@/lib/infrastructure/api/types";
+import { runWithLogging } from "@/lib/infrastructure/logging/logger";
 import { decodeWith } from "@/lib/utils/effect";
 import { Effect } from "effect";
 import { z } from "zod";
@@ -57,9 +58,10 @@ export const runApiRoute = <T>(effect: Effect.Effect<T, SnapchefServerError>): P
   effect.pipe(
     Effect.map(toSuccessResponsePayload),
     Effect.flatMap(successPayloadToResponse),
+    Effect.tapErrorCause((cause) => Effect.logError("api.error", cause)),
     Effect.catchAll((error) => errorPayloadToResponse(toErrorResponsePayload(error))),
     Effect.catchAllDefect(defectToResponse),
-    Effect.runPromise,
+    runWithLogging,
   );
 
 export const parseRequestBody = <S extends z.ZodType>(
