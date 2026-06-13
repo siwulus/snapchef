@@ -2,12 +2,11 @@ import type { RecipeSessionRepository, RecipeSessionUpdatePayload } from "@/lib/
 import type { UserId } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { RecipeSession } from "@/lib/core/model/recipe";
-import { decodeWith } from "@/lib/utils/effect";
-import { RecipeSessionFromRow } from "./recipe-session-row";
-import { tryErrorData, tryErrorDataOption } from "./supabase-effect";
+import type { Database, RecipeSessionRow, RecipeSessionUpdate } from "@/lib/infrastructure/db/types";
+import { RecipeSessionFromRow } from "@/lib/infrastructure/db/types/converters";
+import { decodeWith, tryErrorData, tryErrorDataOption } from "@/lib/utils/effect";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect, Option } from "effect";
-import type { Database, RecipeSessionRow, RecipeSessionUpdate } from "./types";
 
 const create =
   (supabase: SupabaseClient<Database>) =>

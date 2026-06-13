@@ -1,10 +1,10 @@
+import type { SessionPhotoStorage } from "@/lib/core/boundry/recipe";
 import type { UserId } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import type { SessionPhotoStorage } from "@/lib/core/boundry/recipe";
-import { tryErrorData } from "./supabase-effect";
+import type { Database } from "@/lib/infrastructure/db/types";
+import { tryErrorData } from "@/lib/utils/effect";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect } from "effect";
-import type { Database } from "./types";
 
 const STORAGE_BUCKET = "session-photos";
 const PREVIEW_URL_TTL_SECONDS = 30 * 60;

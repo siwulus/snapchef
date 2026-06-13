@@ -6,7 +6,13 @@ import {
   type SnapchefServerError,
 } from "@/lib/core/model/error";
 import { decodeWith } from "@/lib/utils/effect";
-import { isAuthApiError, isAuthSessionMissingError, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  isAuthApiError,
+  isAuthSessionMissingError,
+  type SignInWithPasswordCredentials,
+  type SignUpWithPasswordCredentials,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 import { Effect } from "effect";
 import { z } from "zod";
 
@@ -39,9 +45,7 @@ const liftAuthUser =
       Effect.flatMap(({ data, error }) =>
         error
           ? Effect.fail(toAuthFailure(error, authMessage))
-          : // A decode failure here means Supabase's response shape drifted — a driven-side
-            // contract break, not a client error. Report 500, not 400.
-            decodeWith(AuthUser)(data).pipe(
+          : decodeWith(AuthUser)(data).pipe(
               Effect.mapError(
                 (cause) => new SnapchefExternalSystemError({ message: "Unexpected authentication response", cause }),
               ),
@@ -54,14 +58,16 @@ const signIn =
   (supabase: SupabaseClient) =>
   (credentials: UserCredentials): Effect.Effect<SnapchefUser, SnapchefServerError> =>
     liftAuthUser("Failed to sign in")(() =>
-      supabase.auth.signInWithPassword(credentials).then(({ data, error }) => ({ data, error })),
+      supabase.auth
+        .signInWithPassword(credentials as SignInWithPasswordCredentials)
+        .then(({ data, error }) => ({ data, error })),
     );
 
 const signUp =
   (supabase: SupabaseClient) =>
   (credentials: UserCredentials): Effect.Effect<SnapchefUser, SnapchefServerError> =>
     liftAuthUser("Failed to sign up")(() =>
-      supabase.auth.signUp(credentials).then(({ data, error }) => ({ data, error })),
+      supabase.auth.signUp(credentials as SignUpWithPasswordCredentials).then(({ data, error }) => ({ data, error })),
     );
 
 const getUser = (supabase: SupabaseClient) => (): Effect.Effect<SnapchefUser, SnapchefServerError> =>
