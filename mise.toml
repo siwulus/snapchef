@@ -3,6 +3,9 @@
 
 [tools]
 node = "24"
+# npm: backend (not the default aqua) — aqua ships no darwin/amd64 pnpm build, which
+# would break Intel-Mac dev while still passing on Linux CI / Apple Silicon.
+"npm:pnpm" = "11.6.0"
 
 [env]
 NODE_ENV = "development"
@@ -10,32 +13,32 @@ _.file = ".env"
 
 [tasks.dev]
 description = "Run Astro dev server"
-run = "npm run dev"
+run = "pnpm dev"
 
 [tasks.build]
 description = "Build for Cloudflare Workers"
-run = "npm run build"
+run = "pnpm build"
 
 [tasks.preview]
 description = "Preview built site"
-run = "npm run preview"
+run = "pnpm preview"
 
 [tasks.lint]
 description = "ESLint (type-checked)"
-run = "npm run lint"
+run = "pnpm lint"
 
 [tasks.format]
 description = "Prettier write"
-run = "npm run format"
+run = "pnpm format"
 
 [tasks.tail]
 description = "Tail live Cloudflare Worker logs (read-only)"
-run = "npx wrangler tail"
+run = "pnpm exec wrangler tail"
 
 [tasks.db-start]
 description = "Start local Supabase stack (requires Docker)"
-run = "npx supabase start"
+run = "pnpm exec supabase start"
 
 [tasks.db-stop]
 description = "Stop local Supabase stack"
-run = "npx supabase stop"
+run = "pnpm exec supabase stop"

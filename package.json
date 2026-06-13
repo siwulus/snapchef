@@ -2,6 +2,7 @@
   "name": "snapchef",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "pnpm@11.6.0",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -66,8 +67,5 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.0",
     "wrangler": "^4.94.0"
-  },
-  "overrides": {
-    "vite": "^7.3.3"
   }
 }

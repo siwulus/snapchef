@@ -1,0 +1,17 @@
+# pnpm settings (pnpm 11 reads overrides + the build-script allowlist here, not from package.json).
+
+# Pin Vite across the dependency tree (formerly package.json "overrides").
+overrides:
+  vite: ^7.3.3
+
+# Dependencies allowed to run install/build scripts. pnpm 11 blocks these by default
+# (this `allowBuilds` map replaces the old `onlyBuiltDependencies`). Each shipped a build
+# step the app relied on under npm: native binaries for the bundler / Cloudflare runtime /
+# image processing, plus git-hook and SDK setup.
+allowBuilds:
+  esbuild: true
+  workerd: true
+  sharp: true
+  lefthook: true
+  msw: true
+  "@openrouter/sdk": true

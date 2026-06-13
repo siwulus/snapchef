@@ -17,7 +17,7 @@ Rules for `src/components/`. See `@AGENTS.md` at the repo root for repo-wide rul
 
 ## Adding a New Component
 
-0. **Interactive components use shadcn.** Before building any interactive component (dialog, dropdown, popover, input, select, etc.) run `npx shadcn@latest add <name>` and extend the copied primitive. Do not hand-roll interactive behavior from scratch or introduce a second component library alongside shadcn.
+0. **Interactive components use shadcn.** Before building any interactive component (dialog, dropdown, popover, input, select, etc.) run `pnpm dlx shadcn@latest add <name>` and extend the copied primitive. Do not hand-roll interactive behavior from scratch or introduce a second component library alongside shadcn.
 1. Pick `.astro` vs `.tsx` by the rule above.
 2. For `.tsx`: declare `interface <Name>Props` immediately above the function (`@./auth/FormField.tsx:8-20`).
 3. Use a **named export** for leaf / utility components (`FormField`, `PasswordToggle`, `Button`); use **`export default`** only for top-level feature components a page mounts directly (`@./auth/SignInForm.tsx:12`).

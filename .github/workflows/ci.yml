@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v4
-      - run: npm ci
-      - run: npx astro sync
-      - run: npm run lint
-      - run: npm run build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec astro sync
+      - run: pnpm lint
+      - run: pnpm build
