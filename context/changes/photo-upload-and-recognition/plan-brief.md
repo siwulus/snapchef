@@ -19,7 +19,7 @@ On `/recipes/new`, a user picks photos (inline Polish errors for over-limit/wron
 
 | Decision               | Choice                                                                                               | Why                                                                        | Source     |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------- |
-| Model                  | `gemini-3.1-flash-lite` + `gpt-5.4-mini` fallback, env-configurable                                  | Cheap strong-vision tier with structured outputs; graceful outage          | change.md  |
+| Model                  | `gemini-2.0-flash-lite` + `gpt-4o-mini` fallback, env-configurable (astro.config defaults)           | Cheap strong-vision tier with structured outputs; graceful outage          | change.md  |
 | Image→LLM transport    | 30-min signed URLs (user-scoped client) + `data_collection: deny`                                    | No bytes through Worker memory; RLS proves ownership; privacy NFR          | change.md  |
 | Multi-photo pipeline   | Parallel per-photo fan-out → single LLM merge call (skipped for 1 photo)                             | Per-image precision + semantic dedupe; wall-clock ≈ slowest photo          | change.md  |
 | Orchestration          | Manual Effect pipeline, **not** `@openrouter/agent`                                                  | Zero decision points; latency, cost, testability, conventions              | change.md  |

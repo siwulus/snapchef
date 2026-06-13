@@ -27,6 +27,7 @@ export interface RecipeSessionRepository {
 export interface SessionPhotoStorage {
   upload(userId: UserId, sessionId: string, file: File): Effect.Effect<string, SnapchefServerError>;
   createPreviewUrls(paths: string[]): Effect.Effect<{ path: string; previewUrl: string }[], SnapchefServerError>;
+  remove(paths: string[]): Effect.Effect<void, SnapchefServerError>;
 }
 
 export interface ProductRecognizer {

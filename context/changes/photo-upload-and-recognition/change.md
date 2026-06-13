@@ -3,7 +3,7 @@ change_id: photo-upload-and-recognition
 title: Uphoto upload and recognition
 status: implementing
 created: 2026-06-06
-updated: 2026-06-10
+updated: 2026-06-13
 archived_at: null
 ---
 
@@ -17,8 +17,8 @@ OpenRouter is the communication layer to the multimodal LLM. Three decisions, ba
 
 **1. Model selection**
 
-- Primary: `google/gemini-3.1-flash-lite` ($0.25/M input, $1.50/M output; vision + `structured_outputs`).
-- Fallback via OpenRouter `models` routing array: `["google/gemini-3.1-flash-lite", "openai/gpt-5.4-mini"]` — provider outage degrades gracefully instead of failing S-01.
+- Primary: `google/gemini-2.0-flash-lite` (vision + `structured_outputs`) — the `OPENROUTER_RECOGNITION_MODEL` default in `astro.config.mjs`.
+- Fallback via OpenRouter `models` routing array: `["google/gemini-2.0-flash-lite", "openai/gpt-4o-mini"]` (`openai/gpt-4o-mini` is the `OPENROUTER_RECOGNITION_FALLBACK_MODEL` default) — provider outage degrades gracefully instead of failing S-01.
 - Model ID is env-configurable from day one (S-02 risk note anticipates model swap if the 30 s NFR is blown).
 - FR-004 (one product per item, no "lemon or lime" alternatives) is enforced in the prompt — the schema cannot express it.
 - Client-side resize before upload (canvas, max edge ~1568 px) — vision models downscale anyway; cuts storage, upload time, and LLM latency.
@@ -70,3 +70,14 @@ Phase 1 + most of Phase 2 landed manually with a **ports-and-adapters** architec
 - **#15 Recognized items persist to `recognized_items_md`**; the wizard reconstructs the editable list by parsing it (`deserializeRecognizedItems`). Consequence: no `photosFailed` count on the wire → the partial-failure notice is dropped for S-01 (server still proceeds on partial success). Recognition reuses `createPreviewUrls` (30-min signed URLs) for the LLM fetch — collapses the original two-TTL design into one lifetime.
 
 Domain renamed `recipe-session` → `recipe` across `core/boundry|model|uc`. Shared helpers: `utils/effect.ts` (Supabase→Effect bridge), `utils/recipe.ts` (row↔model map + markdown serializer); `utils/index.ts` deleted.
+
+### Plan re-alignment (2026-06-13)
+
+After the 2026-06-10 revalidation, the `hexagonal-architecture-review` refactor (7 commits) + the pnpm migration landed and moved more ground. The plan was re-aligned against the live code (see `reviews/plan-review.md`). Net corrections:
+
+- **Error model**: the typed family is now `Snapchef…Error` with a numeric `code` per class (`core/model/error`). The plan's old `ServerSnapchefError` / `BusinessRuleError` / `ExternalSystemError` / `NOT_FOUND` / `ErrorCode` tokens were renamed throughout.
+- **Route auth-gating**: routes use `validateAuthUser(user)` (401) + `decodeWith(RecipeSessionId)(params.id)` (400) — not `Effect.fromNullable` + a 422 `BusinessRuleError`. Decision #14's "no per-error route typing" is superseded.
+- **`AuthenticatorUC` migrated to the `Authenticator` port** (not kept as a `SupabaseClient` exception). Decision #12's "→ use-cases.md to be updated… `AuthenticatorUC(supabase)` kept as exception" is **done differently**: `use-cases.md` landed (`c641e2606`) blessing ports, and the auth UC was ported.
+- **Helper homes**: `RecipeSessionFromRow` → `infrastructure/db/types/converters.ts`; `serializeItemsToMarkdown` / `deserializeRecognizedItems` → `core/model/recipe/markdown.ts`. There is no `utils/recipe.ts` (the 2026-06-10 line above is point-in-time). `RecognizedItem` is a `core/model/recipe` model, not a boundary schema.
+- **UC state**: `RecipeSessionUC` has no `recognizeProducts` stub and no `_productRecognizer` placeholder (both removed) — Phase 3 _adds_ the method + a third constructor param.
+- **Tooling**: verification commands are `pnpm …`; model defaults in `astro.config.mjs` are `gemini-2.0-flash-lite` + `gpt-4o-mini`.

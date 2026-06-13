@@ -44,7 +44,18 @@ const createPreviewUrls =
       ),
     );
 
+const remove =
+  (supabase: SupabaseClient<Database>) =>
+  (paths: string[]): Effect.Effect<void, SnapchefServerError> =>
+    tryErrorData(() =>
+      supabase.storage
+        .from(STORAGE_BUCKET)
+        .remove(paths)
+        .then(({ error, data }) => ({ error, data })),
+    ).pipe(Effect.asVoid);
+
 export const createSessionPhotoStorage = (supabase: SupabaseClient<Database>): SessionPhotoStorage => ({
   upload: upload(supabase),
   createPreviewUrls: createPreviewUrls(supabase),
+  remove: remove(supabase),
 });

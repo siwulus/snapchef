@@ -3,6 +3,7 @@ import type { SnapchefServerError } from "@/lib/core/model/error";
 import { SnapchefNotFoundError } from "@/lib/core/model/error";
 import type { RecipeSession } from "@/lib/core/model/recipe";
 import { Effect, Option } from "effect";
+import { match } from "ts-pattern";
 
 export class RecipeSessionUC {
   constructor(
@@ -16,9 +17,19 @@ export class RecipeSessionUC {
 
   attachPhotos(userId: string, sessionId: string, files: File[]): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.fetchRecipeSession(userId, sessionId).pipe(
+      Effect.tap((session) => this.removeExistingPhotos(session)),
       Effect.flatMap((session) => this.uploadPhotos(session, files)),
       Effect.flatMap(({ session, paths }) => this.updateRecipeSessionWithPhotos(session, paths)),
     );
+  }
+
+  // Re-upload replacement: when a session already has photos, drop them before
+  // attaching the new set so we reduce orphans (Decision #8). Best-effort —
+  // a failed cleanup must never fail the upload.
+  private removeExistingPhotos(session: RecipeSession): Effect.Effect<void> {
+    return match(session.photoPaths.length)
+      .with(0, () => Effect.void)
+      .otherwise(() => this.photosStorage.remove(session.photoPaths).pipe(Effect.catchAll(() => Effect.void)));
   }
 
   private fetchRecipeSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
