@@ -1,7 +1,7 @@
 ---
 change_id: email-verification-gating
 title: Email verification gating
-status: implementing
+status: implemented
 created: 2026-06-14
 updated: 2026-06-14
 archived_at: null

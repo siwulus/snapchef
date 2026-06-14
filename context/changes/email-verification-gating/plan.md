@@ -384,12 +384,12 @@ Make the user-facing surfaces correct: a truthful confirm-email page with resend
 
 #### Automated
 
-- [x] 4.1 Unit/component tests pass: `pnpm test`
-- [x] 4.2 Lint passes: `pnpm lint`
-- [x] 4.3 Build passes: `pnpm build`
+- [x] 4.1 Unit/component tests pass: `pnpm test` — dac990876
+- [x] 4.2 Lint passes: `pnpm lint` — dac990876
+- [x] 4.3 Build passes: `pnpm build` — dac990876
 
 #### Manual
 
-- [x] 4.4 Unconfirmed sign-in shows inline verify message + working resend (verified: `/api/auth/signin` → `403 SnapchefEmailNotConfirmedError` envelope; `SignInForm.test.tsx` locks the verify-message + resend render on that envelope)
-- [x] 4.5 `confirm-email.astro` shows "Check your email" in dev with working resend (verified: server HTML shows "Check your email" + mounted resend island; the `import.meta.env.DEV` guess copy removed)
-- [x] 4.6 Confirmed user reaches `/recipes` with no regression (verified: `/api/auth/signin` for a confirmed user → `{ ok: true, data: { redirect: "/recipes" } }`)
+- [x] 4.4 Unconfirmed sign-in shows inline verify message + working resend (verified: `/api/auth/signin` → `403 SnapchefEmailNotConfirmedError` envelope; `SignInForm.test.tsx` locks the verify-message + resend render on that envelope) — dac990876
+- [x] 4.5 `confirm-email.astro` shows "Check your email" in dev with working resend (verified: server HTML shows "Check your email" + mounted resend island; the `import.meta.env.DEV` guess copy removed) — dac990876
+- [x] 4.6 Confirmed user reaches `/recipes` with no regression (verified: `/api/auth/signin` for a confirmed user → `{ ok: true, data: { redirect: "/recipes" } }`) — dac990876
