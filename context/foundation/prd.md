@@ -52,8 +52,8 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
 
 #### Acceptance Criteria
 
-- Wgranie 1–N zdjęć kończy się prezentacją listy rozpoznanych pozycji w formacie [nazwa, ilość].
-- Użytkownik może zmodyfikować rozpoznaną listę przed generacją przepisu (edycja nazwy/ilości, usunięcie pozycji, dodanie produktu spoza zdjęć).
+- Wgranie 1–5 zdjęć kończy się: prezentacją rozpoznania per zdjęcie (każde zdjęcie wraz z rozpoznanymi na nim pozycjami [nazwa, ilość]) oraz finalną, skonsolidowaną listą [nazwa, ilość] scaloną ze wszystkich zdjęć, bez zduplikowanych pozycji wynikających z nakładania się zdjęć.
+- Użytkownik może zmodyfikować finalną (skonsolidowaną) listę przed generacją przepisu (edycja nazwy/ilości, usunięcie pozycji, dodanie produktu spoza zdjęć).
 - Wygenerowany przepis zawiera składniki i instrukcje wykonania, dopasowane do podanego kontekstu posiłku.
 - Zapisany przepis jest później dostępny do podglądu na koncie użytkownika.
 
@@ -70,10 +70,10 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
 
 - FR-003: Zalogowany użytkownik może wgrać od 1 do 5 zdjęć produktów w jednej sesji uploadu, każde do 5 MB. Próba wgrania pliku przekraczającego limit kończy się czytelnym komunikatem o błędzie. Priority: must-have
   > Socratic: Counter-argument considered: "tylko 1 zdjęcie / problemy z dużymi plikami HEIC" — odrzucone; 1–5 pozostaje. Limity (5 zdjęć × 5 MB) ustalone przez użytkownika (OQ3) — kompromis między pokryciem typowej szafki a kosztem przetwarzania.
-- FR-004: System rozpoznaje na zdjęciach produkty wraz z szacowaną ilością i prezentuje listę [nazwa, ilość]. Każda pozycja jest deklarowana jednoznacznie (jeden produkt na pozycję) — system nie zwraca alternatyw typu "cytryna lub limonka". Priority: must-have
-  > Socratic: Counter-argument considered: "ilość ze zdjęcia jest nierzetelna / halucynacje produktów / sygnalizacja niepewności per pozycja" — odrzucone; FR-005 (edycja listy) łapie błędy rozpoznania, więc imperfect output i jednoznaczna deklaracja są akceptowalne. Decyzja jednoznaczności potwierdzona przez użytkownika (OQ4) — prostszy UX, korekta przez edycję.
-- FR-005: Użytkownik może edytować rozpoznaną listę: poprawić nazwę / ilość, usunąć pozycję, dodać produkt spoza zdjęć. Priority: must-have
-  > Socratic: Counter-argument considered: "edycja komplikuje UI / brak dodawania poza zdjęciami" — odrzucone; bez ręcznego dodania soli/oliwy/przypraw rekomendacja byłaby nierealistyczna.
+- FR-004: System rozpoznaje produkty na wgranych zdjęciach w trzech etapach. (a) **Rozpoznanie per zdjęcie**: dla każdego wgranego w FR-003 zdjęcia system rozpoznaje widoczne produkty wraz z ich szacowaną ilością; każda pozycja jest deklarowana jednoznacznie (jeden produkt na pozycję) — system nie zwraca alternatyw typu "cytryna lub limonka". (b) **Prezentacja per zdjęcie**: system prezentuje dla każdego zdjęcia parę — samo zdjęcie oraz rozpoznane na nim pozycje [nazwa, ilość] — czytelny zapis (log) tego, co zostało rozpoznane na danym zdjęciu. (c) **Scalenie i konsolidacja**: po przetworzeniu wszystkich zdjęć system scala wyniki ze wszystkich zdjęć w jedną finalną listę, usuwając potencjalne duplikaty wynikające z nakładania się zdjęć (ten sam produkt uchwycony na kilku zdjęciach nie jest liczony wielokrotnie). Wynikiem jest finalne podsumowanie rozpoznania — skonsolidowana lista [nazwa, ilość], która stanowi wejście do edycji w FR-005. Priority: must-have
+  > Socratic: Counter-argument considered: "ilość ze zdjęcia jest nierzetelna / halucynacje produktów / sygnalizacja niepewności per pozycja" — odrzucone; FR-005 (edycja listy) łapie błędy rozpoznania, więc imperfect output i jednoznaczna deklaracja są akceptowalne. Decyzja jednoznaczności potwierdzona przez użytkownika (OQ4) — prostszy UX, korekta przez edycję. Etap konsolidacji (c) jest konieczny, bo kilka zdjęć może częściowo pokrywać te same produkty; bez deduplikacji finalna lista byłaby zmultiplikowana (ten sam produkt policzony tyle razy, na ilu zdjęciach się pojawił). Reguła rozstrzygania konfliktu ilości przy deduplikacji pozostaje do doprecyzowania — patrz OQ7.
+- FR-005: Użytkownik może edytować finalną (skonsolidowaną) listę rozpoznanych produktów z FR-004c: poprawić nazwę / ilość, usunąć pozycję, dodać produkt spoza zdjęć. Priority: must-have
+  > Socratic: Counter-argument considered: "edycja komplikuje UI / brak dodawania poza zdjęciami" — odrzucone; bez ręcznego dodania soli/oliwy/przypraw rekomendacja byłaby nierealistyczna. Edycja operuje na finalnej liście po scaleniu (FR-004c), a nie na pojedynczych per-zdjęciowych rozpoznaniach.
 
 ### Recipe generation
 
@@ -108,11 +108,11 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
 
 **Aplikacja generuje przepis kulinarny dopasowany do rzeczywiście posiadanych przez użytkownika produktów oraz do swobodnego opisu kontekstu posiłku.**
 
-**Wejście użytkownika**: zestaw zdjęć produktów + (po rozpoznaniu i edycji) lista [nazwa, ilość] + swobodny opis kontekstu posiłku (typ posiłku, styl, smaki, ograniczenia — wszystko w jednym polu tekstowym).
+**Wejście użytkownika**: zestaw zdjęć produktów + (po rozpoznaniu per zdjęcie, scaleniu w jedną skonsolidowaną listę i edycji) lista [nazwa, ilość] + swobodny opis kontekstu posiłku (typ posiłku, styl, smaki, ograniczenia — wszystko w jednym polu tekstowym).
 
 **Wyjście aplikacji**: jeden przepis kulinarny zawierający nazwę dania, listę składników z ilościami (z listy lub powszechnie dostępne dodatki) oraz instrukcję wykonania krok po kroku, dopasowany do opisanego kontekstu.
 
-**Jak user encountuje regułę w flow**: po wgraniu zdjęć i akceptacji listy produktów oraz po wpisaniu opisu kontekstu, użytkownik widzi wygenerowany przepis na ekranie. Reguła jest istotą produktu — bez niej aplikacja byłaby tylko galerią zdjęć z notatką tekstową.
+**Jak user encountuje regułę w flow**: po wgraniu zdjęć, przejrzeniu rozpoznania per zdjęcie i akceptacji finalnej (skonsolidowanej) listy produktów oraz po wpisaniu opisu kontekstu, użytkownik widzi wygenerowany przepis na ekranie. Reguła jest istotą produktu — bez niej aplikacja byłaby tylko galerią zdjęć z notatką tekstową.
 
 ## Access Control
 
@@ -132,7 +132,11 @@ Model ról: **płaska struktura** — brak rozróżnienia admin / user. Każdy u
 
 ## Open Questions
 
-Brak. Wszystkie pytania z poprzedniej iteracji zostały rozstrzygnięte przez właściciela produktu (2026-05-26) i wprowadzone do treści PRD:
+Jedno otwarte pytanie wprowadzone w iteracji rozpoznawania wielozdjęciowego (2026-06-14); pytania z poprzedniej iteracji pozostają rozstrzygnięte:
+
+- OQ7 (scalenie / konsolidacja, FR-004c): Jaką regułą etap konsolidacji rozstrzyga, że pozycje z różnych zdjęć to ten sam produkt, oraz jak ustala finalną ilość, gdy zdjęcia podają różne ilości tego samego produktu (np. te same cytryny sfotografowane dwukrotnie vs. dwie odrębne porcje na dwóch zdjęciach)? — TBD przez właściciela produktu. Block: nie — FR-004c określa cel (usunięcie duplikatów z nakładających się zdjęć); reguła rozstrzygania konfliktu ilości to detal do doprecyzowania przed implementacją etapu konsolidacji.
+
+Rozstrzygnięte wcześniej (właściciel produktu, 2026-05-26):
 
 - ~~OQ1 Weryfikacja emaila~~ → rozstrzygnięte: wymagana od v1 (FR-001).
 - ~~OQ2 Format wyjściowy przepisu~~ → rozstrzygnięte: minimum — nazwa + składniki + instrukcja (FR-008, Business Logic).
