@@ -31,7 +31,7 @@ export const jsonConsoleLogger = Logger.map(Logger.structuredLogger, (structured
 /** Build the logger Layer for a given mode + minimum level. Exported so tests can pin prod output. */
 export const makeLoggerLayer = (mode: "production" | "development", level: LogLevel.LogLevel): Layer.Layer<never> =>
   Layer.merge(
-    mode === "production" ? Logger.replace(Logger.defaultLogger, jsonConsoleLogger) : Logger.pretty,
+    mode === "production" ? Logger.replace(Logger.defaultLogger, jsonConsoleLogger) : Logger.structured,
     Logger.minimumLogLevel(level),
   );
 
