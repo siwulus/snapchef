@@ -7,8 +7,11 @@ import { defineConfig } from "vitest/config";
 // test stub so server modules resolve their env imports without the full Astro pipeline.
 export default defineConfig({
   test: {
+    // `node` stays the default so the existing server/util tests and the `astro:env/server`
+    // stub are untouched. Component tests opt into jsdom per-file via `// @vitest-environment jsdom`.
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    setupFiles: ["src/test/setup.ts"],
   },
   resolve: {
     alias: {
