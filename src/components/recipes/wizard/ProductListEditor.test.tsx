@@ -113,6 +113,14 @@ describe("itemFieldHints", () => {
     expect(hints.quantity).toMatch(/za długa/);
   });
 
+  it("measures over-length on the trimmed value, matching the projection's accept boundary", () => {
+    // Raw length 122 / 62 but trims to exactly the max (120 / 60) — the projection trims and accepts,
+    // so the hint must not flag these as over-length.
+    const hints = itemFieldHints({ name: `  ${"x".repeat(120)}`, quantity: ` ${"y".repeat(60)} ` });
+    expect(hints.name).toBeUndefined();
+    expect(hints.quantity).toBeUndefined();
+  });
+
   it("returns no hints for a valid item", () => {
     expect(itemFieldHints({ name: "Mleko", quantity: "1 l" })).toEqual({});
   });

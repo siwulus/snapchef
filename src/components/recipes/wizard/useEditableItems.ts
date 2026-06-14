@@ -34,10 +34,14 @@ const QUANTITY_MAX = 60;
 // be unit-tested directly; it never mutates and returns Polish hint strings for empty / over-length.
 export const itemFieldHints = (item: { name: string; quantity: string }): FieldHints => {
   const hints: FieldHints = {};
+  // Over-length is measured on the trimmed value to match toCorrectedItems(), which trims before
+  // validating — so the hint flags exactly what the projection would reject (no boundary-whitespace
+  // disagreement between the inline hint and the server-ready projection).
   if (item.name.trim().length === 0) hints.name = "Nazwa nie może być pusta.";
-  else if (item.name.length > NAME_MAX) hints.name = `Nazwa jest za długa (maks. ${NAME_MAX} znaków).`;
+  else if (item.name.trim().length > NAME_MAX) hints.name = `Nazwa jest za długa (maks. ${NAME_MAX} znaków).`;
   if (item.quantity.trim().length === 0) hints.quantity = "Podaj ilość.";
-  else if (item.quantity.length > QUANTITY_MAX) hints.quantity = `Ilość jest za długa (maks. ${QUANTITY_MAX} znaków).`;
+  else if (item.quantity.trim().length > QUANTITY_MAX)
+    hints.quantity = `Ilość jest za długa (maks. ${QUANTITY_MAX} znaków).`;
   return hints;
 };
 
