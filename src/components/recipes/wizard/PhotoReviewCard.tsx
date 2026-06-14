@@ -11,13 +11,13 @@ export const PhotoReviewCard = ({ photo }: PhotoReviewCardProps) => (
     <img
       src={photo.photoUrl}
       alt="Przesłane zdjęcie produktów"
-      className="aspect-square w-full rounded-md object-cover sm:w-40"
+      className="bg-muted aspect-square w-full rounded-md object-contain sm:w-1/3"
     />
     {photo.recognizedItems && photo.recognizedItems.length > 0 ? (
       <ul className="flex-1 list-disc space-y-1 pl-5 text-sm">
         {photo.recognizedItems.map((item, index) => (
           <li key={index}>
-            {item.name} — {item.quantity}
+            {item.name} — {item.quantity} / {item.context}
           </li>
         ))}
       </ul>
