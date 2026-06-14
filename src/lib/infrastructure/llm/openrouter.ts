@@ -1,7 +1,7 @@
 import type { ProductRecognizer } from "@/lib/core/boundry/recipe";
 import { SnapchefExternalSystemError, type SnapchefServerError } from "@/lib/core/model/error";
 import { RecognizedItem } from "@/lib/core/model/recipe";
-import { decodeWith, fromNullable } from "@/lib/utils/effect";
+import { decodeWith, fromNullable, logResult } from "@/lib/utils/effect";
 import { OpenRouter } from "@openrouter/sdk";
 import type { ChatMessages, ChatResult } from "@openrouter/sdk/models";
 import {
@@ -96,14 +96,20 @@ const recognizePhoto = (url: string): Effect.Effect<RecognizedItem[], SnapchefSe
     messages: buildRecognitionMessages(url),
     schema: RecognizedItemsResult,
     schemaName: "recognized_items",
-  }).pipe(Effect.map((result) => result.items));
+  }).pipe(
+    Effect.map((result) => result.items),
+    logResult("llm.recognize"),
+  );
 
 const mergeItems = (lists: RecognizedItem[]): Effect.Effect<RecognizedItem[], SnapchefServerError> =>
   completeStructured({
     messages: buildMergeMessages(lists),
     schema: RecognizedItemsResult,
     schemaName: "merged_items",
-  }).pipe(Effect.map((result) => result.items));
+  }).pipe(
+    Effect.map((result) => result.items),
+    logResult("llm.merge"),
+  );
 
 export const createProductRecognizer = (): ProductRecognizer => ({
   recognizePhoto,

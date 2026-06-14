@@ -300,29 +300,29 @@ Add the reusable pipeline result-logging combinators and wire them into the two 
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `pnpm lint`
-- [x] 2.2 Build succeeds: `pnpm build`
-- [x] 2.3 Existing tests still pass: `pnpm test`
+- [x] 2.1 Type checking passes: `pnpm lint` — 989b801e0
+- [x] 2.2 Build succeeds: `pnpm build` — 989b801e0
+- [x] 2.3 Existing tests still pass: `pnpm test` — 989b801e0
 
 #### Manual
 
-- [x] 2.4 Every request emits one `http.request` access log with method/path/status/`http=<ms>ms`
-- [x] 2.5 Protected-route redirect still works and is logged with status 302
-- [x] 2.6 `cf-ray` used as correlation id; `crypto.randomUUID()` fallback in plain dev
-- [x] 2.7 `LOG_HTTP_BODIES=true` logs JSON bodies, never multipart; default logs no bodies
-- [x] 2.8 Supabase-misconfigured case still fails fast and logs the failure
+- [x] 2.4 Every request emits one `http.request` access log with method/path/status/`http=<ms>ms` — 989b801e0
+- [x] 2.5 Protected-route redirect still works and is logged with status 302 — 989b801e0
+- [x] 2.6 `cf-ray` used as correlation id; `crypto.randomUUID()` fallback in plain dev — 989b801e0
+- [x] 2.7 `LOG_HTTP_BODIES=true` logs JSON bodies, never multipart; default logs no bodies — 989b801e0
+- [x] 2.8 Supabase-misconfigured case still fails fast and logs the failure — 989b801e0
 
 ### Phase 3: Result-Logging Combinators + Instrumentation
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `pnpm lint`
-- [ ] 3.2 Combinator unit tests pass
-- [ ] 3.3 Full test suite passes: `pnpm test`
-- [ ] 3.4 Build succeeds: `pnpm build`
+- [x] 3.1 Type checking passes: `pnpm lint`
+- [x] 3.2 Combinator unit tests pass
+- [x] 3.3 Full test suite passes: `pnpm test`
+- [x] 3.4 Build succeeds: `pnpm build`
 
 #### Manual
 
-- [ ] 3.5 Recognition flow emits `llm.recognize` logs with per-call duration
-- [ ] 3.6 Upload→recognize emits `recipe.attachPhotos` and `recipe.recognize` result logs with timing
-- [ ] 3.7 Log volume reasonable at default `LOG_LEVEL=Info`
+- [x] 3.5 Recognition flow emits `llm.recognize` logs with per-call duration
+- [x] 3.6 Upload→recognize emits `recipe.attachPhotos` and `recipe.recognize` result logs with timing
+- [x] 3.7 Log volume reasonable at default `LOG_LEVEL=Info`

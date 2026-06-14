@@ -66,3 +66,24 @@ export const fromNullable = <T>(value: T | null | undefined): Effect.Effect<T, S
     Effect.flatMap((value) => Effect.succeed(value)),
     Effect.mapError(() => new SnapchefNotFoundError({ message: "Value is null" })),
   );
+
+// Pipe-ready result-logging combinators (identity on value/error/requirement channels) — drop into
+// any `.pipe(...)` to observe a step's outcome and timing without changing what it returns.
+
+/** Log the success value under `label` (no-op on failure). */
+export const logStep =
+  (label: string) =>
+  <A, E, R>(eff: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+    eff.pipe(Effect.tap((a) => Effect.logInfo(label, a)));
+
+/** Log success as `label.ok` and failure as `label.fail`, and record a `label=<ms>ms` span. */
+export const logResult =
+  (label: string) =>
+  <A, E, R>(eff: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+    eff.pipe(
+      Effect.tapBoth({
+        onSuccess: (a) => Effect.logInfo(`${label}.ok`, a),
+        onFailure: (e) => Effect.logError(`${label}.fail`, e),
+      }),
+      Effect.withLogSpan(label),
+    );

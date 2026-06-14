@@ -10,7 +10,7 @@ import {
   SnapchefNotFoundError,
 } from "@/lib/core/model/error";
 import { type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
-import { getOrThrowNotFound } from "@/lib/utils/effect";
+import { getOrThrowNotFound, logResult } from "@/lib/utils/effect";
 import { Effect, Option } from "effect";
 import { isNotEmpty } from "ramda";
 import { match } from "ts-pattern";
@@ -23,7 +23,7 @@ export class RecipeSessionUC {
   ) {}
 
   createSession(userId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.sessionRepository.create(userId);
+    return this.sessionRepository.create(userId).pipe(logResult("recipe.createSession"));
   }
 
   attachPhotos(userId: string, sessionId: string, files: File[]): Effect.Effect<RecipeSession, SnapchefServerError> {
@@ -31,6 +31,7 @@ export class RecipeSessionUC {
       Effect.tap((session) => this.removeExistingPhotos(session)),
       Effect.flatMap((session) => this.uploadPhotos(session, files)),
       Effect.flatMap(({ session, paths }) => this.updateRecipeSessionWithPhotos(session, paths)),
+      logResult("recipe.attachPhotos"),
     );
   }
 
@@ -46,6 +47,7 @@ export class RecipeSessionUC {
           Effect.flatMap((items) => this.persistRecognizedItems(session, items)),
         ),
       ),
+      logResult("recipe.recognize"),
     );
   }
 
