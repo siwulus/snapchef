@@ -286,31 +286,31 @@ Add the reusable pipeline result-logging combinators and wire them into the two 
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `pnpm lint`
-- [x] 1.2 Logger unit tests pass (JSON shape + level mapping)
-- [x] 1.3 Build succeeds: `pnpm build`
+- [x] 1.1 Type checking passes: `pnpm lint` — 7200edb4b
+- [x] 1.2 Logger unit tests pass (JSON shape + level mapping) — 7200edb4b
+- [x] 1.3 Build succeeds: `pnpm build` — 7200edb4b
 
 #### Manual
 
-- [x] 1.4 Failing API route prints structured `api.error` log with rendered cause
-- [x] 1.5 `LOG_LEVEL` toggles info-level visibility (Warning suppresses, Debug shows)
-- [x] 1.6 Production build emits single-line JSON
+- [x] 1.4 Failing API route prints structured `api.error` log with rendered cause — 7200edb4b
+- [x] 1.5 `LOG_LEVEL` toggles info-level visibility (Warning suppresses, Debug shows) — 7200edb4b
+- [x] 1.6 Production build emits single-line JSON — 7200edb4b
 
 ### Phase 2: Middleware Refactor + HTTP Access Log
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `pnpm lint`
-- [ ] 2.2 Build succeeds: `pnpm build`
-- [ ] 2.3 Existing tests still pass: `pnpm test`
+- [x] 2.1 Type checking passes: `pnpm lint`
+- [x] 2.2 Build succeeds: `pnpm build`
+- [x] 2.3 Existing tests still pass: `pnpm test`
 
 #### Manual
 
-- [ ] 2.4 Every request emits one `http.request` access log with method/path/status/`http=<ms>ms`
-- [ ] 2.5 Protected-route redirect still works and is logged with status 302
-- [ ] 2.6 `cf-ray` used as correlation id; `crypto.randomUUID()` fallback in plain dev
-- [ ] 2.7 `LOG_HTTP_BODIES=true` logs JSON bodies, never multipart; default logs no bodies
-- [ ] 2.8 Supabase-misconfigured case still fails fast and logs the failure
+- [x] 2.4 Every request emits one `http.request` access log with method/path/status/`http=<ms>ms`
+- [x] 2.5 Protected-route redirect still works and is logged with status 302
+- [x] 2.6 `cf-ray` used as correlation id; `crypto.randomUUID()` fallback in plain dev
+- [x] 2.7 `LOG_HTTP_BODIES=true` logs JSON bodies, never multipart; default logs no bodies
+- [x] 2.8 Supabase-misconfigured case still fails fast and logs the failure
 
 ### Phase 3: Result-Logging Combinators + Instrumentation
 
