@@ -2,6 +2,7 @@ import { SnapchefClientUploadStepError, type SnapchefClientError } from "@/compo
 import { useApiClient } from "@/components/hooks/useApiClient";
 import { prepareForUpload, validateFiles } from "@/components/recipes/image-processing";
 import { Button } from "@/components/ui/button";
+import { RecognitionResult } from "@/lib/core/boundry/recipe";
 import { RecipeSession } from "@/lib/core/model/recipe";
 import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
 import { Effect } from "effect";
@@ -9,7 +10,7 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface UploadStepProps {
-  onComplete: (session: RecipeSession, recognizedItemsMd: string) => void;
+  onComplete: (result: RecognitionResult) => void;
   onDirtyChange: (dirty: boolean) => void;
 }
 
@@ -83,11 +84,11 @@ export const UploadStep = ({ onComplete, onDirtyChange }: UploadStepProps) => {
       setPhase("recognizing");
       setRecognitionError(null);
     }).pipe(
-      Effect.flatMap(() => post(`/api/recipe-sessions/${session.id}/recognition`, {}, RecipeSession)),
+      Effect.flatMap(() => post(`/api/recipe-sessions/${session.id}/recognition`, {}, RecognitionResult)),
       Effect.flatMap((result) =>
         Effect.sync(() => {
           if (result.ok) {
-            onComplete(result.data, result.data.recognizedItemsMd ?? "");
+            onComplete(result.data);
           } else {
             setPhase("idle");
             setRecognitionError(result.error.message);

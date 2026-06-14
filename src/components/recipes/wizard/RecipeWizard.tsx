@@ -1,18 +1,16 @@
+import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import type { RecipeSession } from "@/lib/core/model/recipe";
+import type { RecognitionResult } from "@/lib/core/boundry/recipe";
 import { useEffect, useState } from "react";
 
 type Step = "upload" | "review";
 
+// Orchestrates the "create new recipe" flow: owns the step machine, the upload→review handoff
+// payload, and the leave-guard. Each step renders itself (UploadStep / ReviewStep) — this
+// component only decides which one is shown.
 const RecipeWizard = () => {
   const [step, setStep] = useState<Step>("upload");
-  // The current session is updated from every API response; the recognized markdown is held
-  // separately so the customer can edit it freely (no formatting — it's a plain bullet list).
-  const [, setSession] = useState<RecipeSession | null>(null);
-  const [recognizedItemsMd, setRecognizedItemsMd] = useState("");
+  const [result, setResult] = useState<RecognitionResult | null>(null);
   const [dirty, setDirty] = useState(false);
 
   // Leave-guard: warn before navigating away once photos have been selected (unsaved work).
@@ -29,37 +27,16 @@ const RecipeWizard = () => {
     };
   }, [dirty]);
 
-  const handleComplete = (recognizedSession: RecipeSession, markdown: string) => {
-    setSession(recognizedSession);
-    setRecognizedItemsMd(markdown);
+  const handleRecognitionComplete = (recognitionResult: RecognitionResult) => {
+    setResult(recognitionResult);
     setStep("review");
   };
 
-  if (step === "upload") {
-    return <UploadStep onComplete={handleComplete} onDirtyChange={setDirty} />;
+  if (step === "upload" || !result) {
+    return <UploadStep onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
   }
 
-  // The recognized items are plain markdown (a `- {name} — {quantity}` list); present them in a
-  // simple editable textarea. Edits stay client-side (S-01 scope — no persistence).
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Rozpoznane produkty</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        <Label htmlFor="recognized-items">Sprawdź i popraw listę produktów</Label>
-        <Textarea
-          id="recognized-items"
-          value={recognizedItemsMd}
-          onChange={(event) => {
-            setRecognizedItemsMd(event.target.value);
-          }}
-          rows={Math.max(6, recognizedItemsMd.split("\n").length + 1)}
-          placeholder="Nie rozpoznano żadnych produktów."
-        />
-      </CardContent>
-    </Card>
-  );
+  return <ReviewStep result={result} />;
 };
 
 export default RecipeWizard;

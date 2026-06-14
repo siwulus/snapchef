@@ -461,36 +461,36 @@ Update the client island to decode `RecognitionResult`, render per-photo read-on
 
 #### Automated
 
-- [x] 3.1 `tsc --noEmit` errors confined to UC + recognition route + client; adapters/converters/types type-check
-- [x] 3.2 `pnpm lint` clean on changed infra files (modulo known cross-file type errors)
+- [x] 3.1 `tsc --noEmit` errors confined to UC + recognition route + client; adapters/converters/types type-check — 2cc99fa62
+- [x] 3.2 `pnpm lint` clean on changed infra files (modulo known cross-file type errors) — 2cc99fa62
 
 #### Manual
 
-- [ ] 3.3 `listBySession` returns photos with a non-empty `photoUrl`
+- [x] 3.3 `listBySession` returns photos with a non-empty `photoUrl` — 2cc99fa62
 
 ### Phase 4: Use Case, Routes & Prompts
 
 #### Automated
 
-- [x] 4.1 `tsc --noEmit` passes for all server code (`src/lib/**`, `src/pages/**`, `src/middleware.ts`)
-- [x] 4.2 `pnpm lint` passes for server surfaces
+- [x] 4.1 `tsc --noEmit` passes for all server code (`src/lib/**`, `src/pages/**`, `src/middleware.ts`) — 2cc99fa62
+- [x] 4.2 `pnpm lint` passes for server surfaces — 2cc99fa62
 
 #### Manual
 
-- [x] 4.3 `POST /recipe-sessions/:id/recognition` returns `{ ok, data: { session, photos: [{ id, photoUrl, recognizedItems }] } }`; `photos` rows carry per-photo `recognized_items`
+- [x] 4.3 `POST /recipe-sessions/:id/recognition` returns `{ ok, data: { session, photos: [{ id, photoUrl, recognizedItems }] } }`; `photos` rows carry per-photo `recognized_items` — 2cc99fa62
 
 ### Phase 5: Presentation & Integration
 
 #### Automated
 
-- [ ] 5.1 `tsc --noEmit` passes for the entire project
-- [ ] 5.2 `pnpm lint` passes with no errors
-- [ ] 5.3 `pnpm build` succeeds
+- [x] 5.1 `tsc --noEmit` passes for the entire project
+- [x] 5.2 `pnpm lint` passes with no errors
+- [x] 5.3 `pnpm build` succeeds
 
 #### Manual
 
-- [ ] 5.4 Full flow: per-photo cards (images via signed URL) + read-only lists + merged editable textarea
-- [ ] 5.5 Textarea editable; per-photo lists not editable
-- [ ] 5.6 Re-upload replaces previous photos (storage + rows)
-- [ ] 5.7 Empty/failed recognition shows correct empty-state / retry
-- [ ] 5.8 Second user cannot access the first user's photos
+- [x] 5.4 Full flow: per-photo cards (images via signed URL) + read-only lists + merged editable textarea
+- [x] 5.5 Textarea editable; per-photo lists not editable
+- [x] 5.6 Re-upload replaces previous photos (storage + rows)
+- [x] 5.7 Empty/failed recognition shows correct empty-state / retry
+- [x] 5.8 Second user cannot access the first user's photos
