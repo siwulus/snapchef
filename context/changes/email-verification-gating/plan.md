@@ -359,26 +359,26 @@ Make the user-facing surfaces correct: a truthful confirm-email page with resend
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `pnpm test`
-- [x] 2.2 Type-checked lint passes: `pnpm lint`
-- [x] 2.3 Build passes: `pnpm build`
+- [x] 2.1 Unit tests pass: `pnpm test` — 035b516c3
+- [x] 2.2 Type-checked lint passes: `pnpm lint` — 035b516c3
+- [x] 2.3 Build passes: `pnpm build` — 035b516c3
 
 #### Manual
 
-- [x] 2.4 `email_not_confirmed` classification matches the real failure captured in Phase 1 (HTTP 400, `code = "email_not_confirmed"`; pinned in `SupabaseAuthenticator.test.ts`)
+- [x] 2.4 `email_not_confirmed` classification matches the real failure captured in Phase 1 (HTTP 400, `code = "email_not_confirmed"`; pinned in `SupabaseAuthenticator.test.ts`) — 035b516c3
 
 ### Phase 3: Confirmation Callback Page & Resend Route
 
 #### Automated
 
-- [ ] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build`
-- [ ] 3.2 Lint passes: `pnpm lint`
+- [x] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build`
+- [x] 3.2 Lint passes: `pnpm lint`
 
 #### Manual
 
-- [ ] 3.3 Inbucket link → `/auth/confirm` sets session and redirects to `/recipes` signed in
-- [ ] 3.4 Tampered/expired `token_hash` renders the error card with working links
-- [ ] 3.5 `POST /api/auth/resend` returns `{ ok: true, data: { email } }` and a fresh Inbucket email
+- [x] 3.3 Inbucket link → `/auth/confirm` sets session and redirects to `/recipes` signed in (verified: `302 → /recipes` + `Set-Cookie: sb-…-auth-token`, dev server pointed at the local stack)
+- [x] 3.4 Tampered/expired `token_hash` renders the error card with working links (verified: `200` with "This link is invalid or has expired" + resend/sign-in links)
+- [x] 3.5 `POST /api/auth/resend` returns `{ ok: true, data: { email } }` and a fresh Inbucket email (verified through the running app; invalid email → `400` validation envelope)
 
 ### Phase 4: UI Wiring (Confirm-Email Page, Resend Island, Sign-In)
 
