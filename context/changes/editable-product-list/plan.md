@@ -314,11 +314,11 @@ None — no persisted state, schema, or API contract changes. `correctedItems` a
 
 #### Automated
 
-- [x] 3.1 New component tests pass (`pnpm test`)
-- [x] 3.2 Type checking passes (`tsc --noEmit`)
-- [x] 3.3 Linting passes (`pnpm lint`)
+- [x] 3.1 New component tests pass (`pnpm test`) — 1ce4dc89e
+- [x] 3.2 Type checking passes (`tsc --noEmit`) — 1ce4dc89e
+- [x] 3.3 Linting passes (`pnpm lint`) — 1ce4dc89e
 
 #### Manual
 
-- [x] 3.4 Tests use role/label locators, no waitForTimeout, assert outcomes
-- [x] 3.5 Temporary smoke test removed; suite still green
+- [x] 3.4 Tests use role/label locators, no waitForTimeout, assert outcomes — 1ce4dc89e
+- [x] 3.5 Temporary smoke test removed; suite still green — 1ce4dc89e
