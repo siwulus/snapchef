@@ -295,30 +295,30 @@ None — no persisted state, schema, or API contract changes. `correctedItems` a
 
 #### Automated
 
-- [x] 2.1 Type checking passes (`tsc --noEmit`)
-- [x] 2.2 Linting passes (`pnpm lint`)
-- [x] 2.3 Existing tests pass (`pnpm test`)
-- [x] 2.4 Production build succeeds (`pnpm build`)
+- [x] 2.1 Type checking passes (`tsc --noEmit`) — 1524187c2
+- [x] 2.2 Linting passes (`pnpm lint`) — 1524187c2
+- [x] 2.3 Existing tests pass (`pnpm test`) — 1524187c2
+- [x] 2.4 Production build succeeds (`pnpm build`) — 1524187c2
 
 #### Manual
 
-- [ ] 2.5 Structured rows with editable name + quantity (no textarea)
-- [ ] 2.6 Context shown as small text — right on desktop, below on mobile
-- [ ] 2.7 Add product appends a blank row at the bottom and focuses its name input
-- [ ] 2.8 Delete removes only the targeted row; others keep their values
-- [ ] 2.9 Empty/over-length fields show inline hints
-- [ ] 2.10 Empty recognition shows hint + add button (zero rows)
-- [ ] 2.11 Per-photo cards unchanged; no wizard regressions
+- [x] 2.5 Structured rows with editable name + quantity (no textarea) — 1524187c2
+- [x] 2.6 Context shown as small text — right on desktop, below on mobile — 1524187c2
+- [x] 2.7 Add product appends a blank row at the bottom and focuses its name input — 1524187c2
+- [x] 2.8 Delete removes only the targeted row; others keep their values — 1524187c2
+- [x] 2.9 Empty/over-length fields show inline hints — 1524187c2
+- [x] 2.10 Empty recognition shows hint + add button (zero rows) — 1524187c2
+- [x] 2.11 Per-photo cards unchanged; no wizard regressions — 1524187c2
 
 ### Phase 3: Component tests
 
 #### Automated
 
-- [ ] 3.1 New component tests pass (`pnpm test`)
-- [ ] 3.2 Type checking passes (`tsc --noEmit`)
-- [ ] 3.3 Linting passes (`pnpm lint`)
+- [x] 3.1 New component tests pass (`pnpm test`)
+- [x] 3.2 Type checking passes (`tsc --noEmit`)
+- [x] 3.3 Linting passes (`pnpm lint`)
 
 #### Manual
 
-- [ ] 3.4 Tests use role/label locators, no waitForTimeout, assert outcomes
-- [ ] 3.5 Temporary smoke test removed; suite still green
+- [x] 3.4 Tests use role/label locators, no waitForTimeout, assert outcomes
+- [x] 3.5 Temporary smoke test removed; suite still green
