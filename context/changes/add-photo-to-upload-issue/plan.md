@@ -149,17 +149,17 @@ None — no persisted state, schema, or API contract changes.
 
 #### Automated
 
-- [x] 1.1 Type checking passes (`tsc --noEmit`)
-- [x] 1.2 Linting passes (`pnpm lint`)
-- [x] 1.3 Existing unit tests pass (`pnpm test`)
-- [x] 1.4 Production build succeeds (`pnpm build`)
+- [x] 1.1 Type checking passes (`tsc --noEmit`) — f01b66a93
+- [x] 1.2 Linting passes (`pnpm lint`) — f01b66a93
+- [x] 1.3 Existing unit tests pass (`pnpm test`) — f01b66a93
+- [x] 1.4 Production build succeeds (`pnpm build`) — f01b66a93
 
 #### Manual
 
-- [x] 1.5 One-at-a-time picks accumulate (bug fixed)
-- [x] 1.6 Single multi-file pick still works (no regression)
-- [x] 1.7 Same file across picks is de-duplicated
-- [x] 1.8 Remove-then-re-pick re-adds the file (input reset)
-- [x] 1.9 Over-limit (>5) shows error and disables submit
-- [x] 1.10 Wrong-type / oversized file shows per-file error and blocks submit
-- [x] 1.11 No object-URL leak/revoke warnings; previews render throughout
+- [x] 1.5 One-at-a-time picks accumulate (bug fixed) — f01b66a93
+- [x] 1.6 Single multi-file pick still works (no regression) — f01b66a93
+- [x] 1.7 Same file across picks is de-duplicated — f01b66a93
+- [x] 1.8 Remove-then-re-pick re-adds the file (input reset) — f01b66a93
+- [x] 1.9 Over-limit (>5) shows error and disables submit — f01b66a93
+- [x] 1.10 Wrong-type / oversized file shows per-file error and blocks submit — f01b66a93
+- [x] 1.11 No object-URL leak/revoke warnings; previews render throughout — f01b66a93
