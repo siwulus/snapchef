@@ -1,4 +1,5 @@
 import { createSupabaseAuthenticator } from "@/lib/infrastructure/auth/SupabaseAuthenticator";
+import { createPhotoRepository } from "@/lib/infrastructure/db/PhotoRepository";
 import { createRecipeSessionRepository } from "@/lib/infrastructure/db/RecipeSessionRepository";
 import { createSessionPhotoStorage } from "@/lib/infrastructure/db/SessionPhotoStorage";
 import { createClient } from "@/lib/infrastructure/db/supabase";
@@ -41,6 +42,7 @@ const injectDependencies = (context: APIContext): Effect.Effect<void, SnapchefEx
         context.locals.authenticator = new AuthenticatorUC(createSupabaseAuthenticator(supabase));
         context.locals.recipeSessions = new RecipeSessionUC(
           createRecipeSessionRepository(supabase),
+          createPhotoRepository(supabase),
           createSessionPhotoStorage(supabase),
           createProductRecognizer(),
         );

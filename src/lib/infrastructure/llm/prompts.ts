@@ -3,7 +3,8 @@ import type { ChatMessages } from "@openrouter/sdk/models";
 
 // FR-004: commit to one product per entry, the single most likely identification —
 // never "lemon or lime". Quantity is free-text (Decision #6). Output values are Polish (Decision #7).
-// The `context` field carries the merge-relevant distinguishing cues for the later dedupe step.
+// The `context` field is the recognition judgment — the cues + identification reasoning for why this
+// product was spotted on this photo. It is PERSISTED with the per-photo list and also fuels the merge.
 const RECOGNITION_SYSTEM_PROMPT = [
   "You are a culinary assistant that recognizes food products and kitchen items in a photo (e.g. the inside of a fridge, a countertop, a pantry).",
   "Rules:",
@@ -12,8 +13,8 @@ const RECOGNITION_SYSTEM_PROMPT = [
   '- Always choose a single, most likely product name. Never provide alternatives (e.g. do not write "lemon or lime") or question marks.',
   "- IMPORTANT: All output values must be written in Polish. Give product names in Polish, in the nominative singular.",
   '- The quantity field is a short, free-text estimate of the amount, written in Polish (e.g. "1 sztuka", "ok. 500 g", "1 karton", "pęczek"). If the amount cannot be estimated, use "1 sztuka".',
-  "- The context field is a short Polish description of HOW you identified this product. Put the most distinguishing cues there: packaging type and color, brand or label text, size, position in the photo, and neighboring products.",
-  "  This description is used in the next step to merge products recognized across different photos — pick the details that best help decide whether two entries are the same physical product or two different ones. If you have no certain cues, briefly describe what you see.",
+  "- The context field is your recognition judgment: a short Polish note on WHY/HOW you identified this product. Put the most distinguishing cues and your identification reasoning there: packaging type and color, brand or label text, size, position in the photo, and neighboring products.",
+  "  This judgment is shown next to the product and is also used in the next step to merge products recognized across different photos — pick the details that best help decide whether two entries are the same physical product or two different ones. If you have no certain cues, briefly describe what you see.",
   "- If there are no recognizable food products in the photo, return an empty list.",
 ].join("\n");
 
@@ -22,7 +23,8 @@ const RECOGNITION_USER_PROMPT =
 
 // Text-only merge over the concatenated per-photo lists: semantic dedupe across photos and
 // phrasings, sensible quantity summing, re-enforce one entry per product (FR-004). The per-item
-// `context` (distinguishing cues from recognition) is the key extra signal for the dedupe decision.
+// `context` (each photo's recognition judgment) is the key extra signal for the dedupe decision;
+// on the merged output the `context` becomes the consolidation judgment (why the item is in the final set).
 const MERGE_SYSTEM_PROMPT = [
   "You are a culinary assistant that merges lists of products recognized across several photos into one coherent list.",
   "Each input item has a context field describing how and where the product was identified (packaging, brand, size, position, neighbors).",
@@ -32,7 +34,7 @@ const MERGE_SYSTEM_PROMPT = [
   '- Sum quantities sensibly when the same product appears multiple times (e.g. two "1 sztuka" entries → "2 sztuki").',
   "- Each entry is exactly one product; IMPORTANT: product names must be in Polish, in the nominative singular.",
   "- Keep the free-text, short quantity description in Polish in the quantity field.",
-  "- For each merged entry, set the context field to a short Polish note combining the distinguishing cues of the merged source items.",
+  "- For each merged entry, set the context field to your consolidation judgment: a short Polish note on why this item belongs in the final set — which per-photo sources were merged into it and the dedupe rationale.",
   "- Do not add products that were not in the input list. If the input list is empty, return an empty list.",
 ].join("\n");
 

@@ -1,23 +1,21 @@
 import {
+  type PhotoRepository,
   type ProductRecognizer,
   type RecipeSessionRepository,
   type SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import {
-  SnapchefBusinessRuleViolationError,
-  SnapchefExternalSystemError,
-  SnapchefNotFoundError,
-} from "@/lib/core/model/error";
-import { type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
+import { SnapchefBusinessRuleViolationError, SnapchefExternalSystemError } from "@/lib/core/model/error";
+import { type Photo, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
 import { getOrThrowNotFound, logResult } from "@/lib/utils/effect";
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import { isNotEmpty } from "ramda";
 import { match } from "ts-pattern";
 
 export class RecipeSessionUC {
   constructor(
     private readonly sessionRepository: RecipeSessionRepository,
+    private readonly photoRepository: PhotoRepository,
     private readonly photosStorage: SessionPhotoStorage,
     private readonly productRecognizer: ProductRecognizer,
   ) {}
@@ -29,88 +27,113 @@ export class RecipeSessionUC {
   attachPhotos(userId: string, sessionId: string, files: File[]): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.fetchRecipeSession(userId, sessionId).pipe(
       Effect.tap((session) => this.removeExistingPhotos(session)),
-      Effect.flatMap((session) => this.uploadPhotos(session, files)),
-      Effect.flatMap(({ session, paths }) => this.updateRecipeSessionWithPhotos(session, paths)),
+      Effect.flatMap((session) => this.uploadAndPersistPhotos(session, files)),
+      Effect.flatMap((session) => this.markPhotosUploaded(session)),
       logResult("recipe.attachPhotos"),
     );
   }
 
   // Fan-out one LLM call per photo (concurrent, timed, retried once, per-photo failure → []),
-  // merge across photos when more than one produced items, persist the markdown + state.
-  // Retry-safe: any state with photos may re-run (overwrites recognized_items_md).
-  recognizeProducts(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
+  // persist each photo's recognized items, merge across photos when more than one produced items,
+  // and persist the merged list on the session. Retry-safe: any state with photos may re-run.
+  recognizeProducts(
+    userId: string,
+    sessionId: string,
+  ): Effect.Effect<{ session: RecipeSession; photos: Photo[] }, SnapchefServerError> {
     return this.fetchRecipeSession(userId, sessionId).pipe(
-      Effect.tap((session) => this.guardHasPhotos(session)),
       Effect.flatMap((session) =>
-        this.recognizeAllPhotos(session.photoPaths).pipe(
-          Effect.flatMap((lists) => this.resolveItems(lists)),
-          Effect.flatMap((items) => this.persistRecognizedItems(session, items)),
+        this.photoRepository.listBySession(session.userId, session.id).pipe(
+          Effect.tap((photos) => this.guardHasPhotos(photos)),
+          Effect.flatMap((photos) => this.recognizeEachPhoto(session.userId, photos)),
+          Effect.flatMap((recognized) =>
+            this.resolveItems(recognized.map((entry) => entry.items)).pipe(
+              Effect.flatMap((merged) => this.persistRecognizedItems(session, merged)),
+              Effect.map((updatedSession) => ({
+                session: updatedSession,
+                photos: recognized.map((entry) => ({ ...entry.photo, recognizedItems: entry.items })),
+              })),
+            ),
+          ),
         ),
       ),
       logResult("recipe.recognize"),
     );
   }
 
-  // Re-upload replacement: when a session already has photos, drop them before
-  // attaching the new set so we reduce orphans (Decision #8). Best-effort —
-  // a failed cleanup must never fail the upload.
-  private removeExistingPhotos(session: RecipeSession): Effect.Effect<void> {
-    return match(session.photoPaths.length)
-      .with(0, () => Effect.void)
-      .otherwise(() => this.photosStorage.remove(session.photoPaths).pipe(Effect.catchAll(() => Effect.void)));
-  }
-
   private fetchRecipeSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.sessionRepository.find(userId, sessionId).pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
   }
 
-  private uploadPhotos(
-    session: RecipeSession,
-    files: File[],
-  ): Effect.Effect<{ session: RecipeSession; paths: string[] }, SnapchefServerError> {
-    return Effect.all(files.map((file) => this.photosStorage.upload(session.userId, session.id, file))).pipe(
-      Effect.map((paths) => ({ session, paths })),
+  // Re-upload replacement: when a session already has photos, drop them (storage + rows) before
+  // attaching the new set so we reduce orphans (Decision #8). Best-effort —
+  // a failed cleanup must never fail the upload.
+  private removeExistingPhotos(session: RecipeSession): Effect.Effect<void> {
+    return this.photoRepository.listBySession(session.userId, session.id).pipe(
+      Effect.flatMap((photos) =>
+        match(photos.length)
+          .with(0, () => Effect.void)
+          .otherwise(() =>
+            this.photosStorage
+              .remove(photos.map((photo) => photo.storagePath))
+              .pipe(Effect.flatMap(() => this.photoRepository.deleteBySession(session.userId, session.id))),
+          ),
+      ),
+      Effect.catchAll(() => Effect.void),
     );
   }
 
-  private updateRecipeSessionWithPhotos(
+  private uploadAndPersistPhotos(
     session: RecipeSession,
-    paths: string[],
+    files: File[],
   ): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.sessionRepository
-      .update(session.userId, session.id, { photoPaths: paths, state: "photos_uploaded" })
-      .pipe(
-        Effect.flatMap(
-          Option.match({
-            onNone: () => Effect.fail(new SnapchefNotFoundError({ message: "Session not found" })),
-            onSome: Effect.succeed,
+    return Effect.forEach(files, (file) =>
+      this.photosStorage.upload(session.userId, session.id, file).pipe(
+        Effect.flatMap((stored) =>
+          this.photoRepository.create({
+            sessionId: session.id,
+            userId: session.userId,
+            storagePath: stored.path,
+            storageObjectId: stored.objectId,
+            contentType: file.type,
+            sizeBytes: file.size,
+            originalFilename: file.name,
           }),
         ),
-      );
+      ),
+    ).pipe(Effect.as(session));
   }
 
-  private guardHasPhotos(session: RecipeSession): Effect.Effect<void, SnapchefServerError> {
-    return match(session.photoPaths.length)
+  private markPhotosUploaded(session: RecipeSession): Effect.Effect<RecipeSession, SnapchefServerError> {
+    return this.sessionRepository
+      .update(session.userId, session.id, { state: "photos_uploaded" })
+      .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
+  }
+
+  private guardHasPhotos(photos: Photo[]): Effect.Effect<void, SnapchefServerError> {
+    return match(photos.length)
       .with(0, () => Effect.fail(new SnapchefBusinessRuleViolationError({ message: "No photos to recognize" })))
       .otherwise(() => Effect.void);
   }
 
   // Per photo: ~25 s timeout + one retry; a failing photo resolves to an empty list so a single
-  // bad photo never fails the batch. createPreviewUrls supplies the 30-min signed URLs the LLM fetches.
-  private recognizeAllPhotos(paths: string[]): Effect.Effect<RecognizedItem[][], SnapchefServerError> {
-    return this.photosStorage.createPreviewUrls(paths).pipe(
-      Effect.flatMap((entries) =>
-        Effect.forEach(
-          entries,
-          (entry) =>
-            this.productRecognizer.recognizePhoto(entry.previewUrl).pipe(
-              Effect.timeout("25 seconds"),
-              Effect.retry({ times: 1 }),
-              Effect.catchAll(() => Effect.succeed<RecognizedItem[]>([])),
-            ),
-          { concurrency: 5 },
+  // bad photo never fails the batch. Each photo's items are persisted to its row, and the
+  // (photo, items) pair is kept so the response can carry per-photo lists without a re-fetch.
+  private recognizeEachPhoto(
+    userId: string,
+    photos: Photo[],
+  ): Effect.Effect<{ photo: Photo; items: RecognizedItem[] }[], SnapchefServerError> {
+    return Effect.forEach(
+      photos,
+      (photo) =>
+        this.productRecognizer.recognizePhoto(photo.photoUrl).pipe(
+          Effect.timeout("25 seconds"),
+          Effect.retry({ times: 1 }),
+          Effect.catchAll(() => Effect.succeed<RecognizedItem[]>([])),
+          Effect.flatMap((items) =>
+            this.photoRepository.updateRecognizedItems(userId, photo.id, items).pipe(Effect.as({ photo, items })),
+          ),
         ),
-      ),
+      { concurrency: 5 },
     );
   }
 
@@ -131,14 +154,7 @@ export class RecipeSessionUC {
     items: RecognizedItem[],
   ): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.sessionRepository
-      .update(session.userId, session.id, {
-        recognizedItemsMd: this.serializeItemsToMarkdown(items),
-        state: "products_recognized",
-      })
+      .update(session.userId, session.id, { recognizedItems: items, state: "products_recognized" })
       .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
-  }
-
-  private serializeItemsToMarkdown(items: RecognizedItem[]): string {
-    return items.map((item) => `- ${item.name} - ${item.quantity}`).join("\n");
   }
 }

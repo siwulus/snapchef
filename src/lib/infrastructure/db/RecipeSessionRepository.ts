@@ -4,21 +4,21 @@ import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { RecipeSession } from "@/lib/core/model/recipe";
 import type { Database, RecipeSessionRow, RecipeSessionUpdate } from "@/lib/infrastructure/db/types";
 import { RecipeSessionFromRow } from "@/lib/infrastructure/db/types/converters";
-import { decodeWith, tryErrorData, tryErrorDataOption } from "@/lib/utils/effect";
+import { decodeWith, tryErrorDataOption, tryErrorDataWithSchema } from "@/lib/utils/effect";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect, Option } from "effect";
 
 const create =
   (supabase: SupabaseClient<Database>) =>
   (userId: UserId): Effect.Effect<RecipeSession, SnapchefServerError> =>
-    tryErrorData<RecipeSessionRow>(() =>
+    tryErrorDataWithSchema(RecipeSessionFromRow)(() =>
       supabase
         .from("recipe_sessions")
         .insert({ user_id: userId })
         .select("*")
         .single()
         .then(({ error, data }) => ({ error, data })),
-    ).pipe(Effect.flatMap(decodeWith(RecipeSessionFromRow)));
+    );
 
 const find =
   (supabase: SupabaseClient<Database>) =>
@@ -37,11 +37,10 @@ const toRecipeSessionUpdate = (data: RecipeSessionUpdatePayload): RecipeSessionU
   Object.fromEntries(
     (
       [
-        ["corrected_items_md", data.correctedItemsMd],
+        ["corrected_items", data.correctedItems],
         ["meal_context", data.mealContext],
-        ["recognized_items_md", data.recognizedItemsMd],
+        ["recognized_items", data.recognizedItems],
         ["state", data.state],
-        ["photo_paths", data.photoPaths],
       ] as const
     ).filter(([, value]) => value != null),
   ) as RecipeSessionUpdate;

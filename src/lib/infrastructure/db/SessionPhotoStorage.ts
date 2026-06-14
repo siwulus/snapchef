@@ -1,4 +1,4 @@
-import type { SessionPhotoStorage } from "@/lib/core/boundry/recipe";
+import type { SessionPhotoStorage, StoredObject } from "@/lib/core/boundry/recipe";
 import type { UserId } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { Database } from "@/lib/infrastructure/db/types";
@@ -18,14 +18,14 @@ const buildPath = (userId: UserId, sessionId: string, file: File) => {
 
 const upload =
   (supabase: SupabaseClient<Database>) =>
-  (userId: UserId, sessionId: string, file: File): Effect.Effect<string, SnapchefServerError> => {
+  (userId: UserId, sessionId: string, file: File): Effect.Effect<StoredObject, SnapchefServerError> => {
     const path = buildPath(userId, sessionId, file);
     return tryErrorData(() =>
       supabase.storage
         .from(STORAGE_BUCKET)
         .upload(path, file, { contentType: file.type, upsert: false })
         .then(({ error, data }) => ({ error, data })),
-    ).pipe(Effect.map(({ path }) => path));
+    ).pipe(Effect.map((data) => ({ path: data.path, objectId: data.id, fullPath: data.fullPath })));
   };
 
 const createPreviewUrls =

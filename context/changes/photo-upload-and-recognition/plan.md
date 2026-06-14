@@ -451,18 +451,18 @@ Update the client island to decode `RecognitionResult`, render per-photo read-on
 
 #### Automated
 
-- [x] 2.1 `tsc --noEmit` errors confined to known downstream consumers; model/boundary files internally type-check
+- [x] 2.1 `tsc --noEmit` errors confined to known downstream consumers; model/boundary files internally type-check — bbbbb57c5
 
 #### Manual
 
-- [x] 2.2 Schemas correct: `Photo` = `StoredPhoto` + `photoUrl`; payload drops `photoPaths`/md; `RecognitionResult` projects `{ id, photoUrl, recognizedItems }`
+- [x] 2.2 Schemas correct: `Photo` = `StoredPhoto` + `photoUrl`; payload drops `photoPaths`/md; `RecognitionResult` projects `{ id, photoUrl, recognizedItems }` — bbbbb57c5
 
 ### Phase 3: Infrastructure Adapters
 
 #### Automated
 
-- [ ] 3.1 `tsc --noEmit` errors confined to UC + recognition route + client; adapters/converters/types type-check
-- [ ] 3.2 `pnpm lint` clean on changed infra files (modulo known cross-file type errors)
+- [x] 3.1 `tsc --noEmit` errors confined to UC + recognition route + client; adapters/converters/types type-check
+- [x] 3.2 `pnpm lint` clean on changed infra files (modulo known cross-file type errors)
 
 #### Manual
 
@@ -472,12 +472,12 @@ Update the client island to decode `RecognitionResult`, render per-photo read-on
 
 #### Automated
 
-- [ ] 4.1 `tsc --noEmit` passes for all server code (`src/lib/**`, `src/pages/**`, `src/middleware.ts`)
-- [ ] 4.2 `pnpm lint` passes for server surfaces
+- [x] 4.1 `tsc --noEmit` passes for all server code (`src/lib/**`, `src/pages/**`, `src/middleware.ts`)
+- [x] 4.2 `pnpm lint` passes for server surfaces
 
 #### Manual
 
-- [ ] 4.3 `POST /recipe-sessions/:id/recognition` returns `{ ok, data: { session, photos: [{ id, photoUrl, recognizedItems }] } }`; `photos` rows carry per-photo `recognized_items`
+- [x] 4.3 `POST /recipe-sessions/:id/recognition` returns `{ ok, data: { session, photos: [{ id, photoUrl, recognizedItems }] } }`; `photos` rows carry per-photo `recognized_items`
 
 ### Phase 5: Presentation & Integration
 
