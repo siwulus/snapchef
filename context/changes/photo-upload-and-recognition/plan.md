@@ -438,24 +438,24 @@ Update the client island to decode `RecognitionResult`, render per-photo read-on
 
 #### Automated
 
-- [x] 1.1 `supabase db reset` applies all migrations with no error
-- [x] 1.2 `pnpm db:types` regenerates `generated.ts` with a `photos` table and no `photo_paths`
+- [x] 1.1 `supabase db reset` applies all migrations with no error — 1d5173fd6
+- [x] 1.2 `pnpm db:types` regenerates `generated.ts` with a `photos` table and no `photo_paths` — 1d5173fd6
 
 #### Manual
 
-- [x] 1.3 Two-user RLS isolation: user B cannot select user A's `photos` row
-- [x] 1.4 Drift-guard fires when `photos.user_id` ≠ session's `user_id`
-- [x] 1.5 `recipe_sessions` accepts JSON arrays in `recognized_items`/`corrected_items`
+- [x] 1.3 Two-user RLS isolation: user B cannot select user A's `photos` row — 1d5173fd6
+- [x] 1.4 Drift-guard fires when `photos.user_id` ≠ session's `user_id` — 1d5173fd6
+- [x] 1.5 `recipe_sessions` accepts JSON arrays in `recognized_items`/`corrected_items` — 1d5173fd6
 
 ### Phase 2: Domain Model & Boundary Contracts
 
 #### Automated
 
-- [ ] 2.1 `tsc --noEmit` errors confined to known downstream consumers; model/boundary files internally type-check
+- [x] 2.1 `tsc --noEmit` errors confined to known downstream consumers; model/boundary files internally type-check
 
 #### Manual
 
-- [ ] 2.2 Schemas correct: `Photo` = `StoredPhoto` + `photoUrl`; payload drops `photoPaths`/md; `RecognitionResult` projects `{ id, photoUrl, recognizedItems }`
+- [x] 2.2 Schemas correct: `Photo` = `StoredPhoto` + `photoUrl`; payload drops `photoPaths`/md; `RecognitionResult` projects `{ id, photoUrl, recognizedItems }`
 
 ### Phase 3: Infrastructure Adapters
 
