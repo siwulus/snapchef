@@ -483,14 +483,14 @@ Update the client island to decode `RecognitionResult`, render per-photo read-on
 
 #### Automated
 
-- [x] 5.1 `tsc --noEmit` passes for the entire project
-- [x] 5.2 `pnpm lint` passes with no errors
-- [x] 5.3 `pnpm build` succeeds
+- [x] 5.1 `tsc --noEmit` passes for the entire project — c8b383dc8
+- [x] 5.2 `pnpm lint` passes with no errors — c8b383dc8
+- [x] 5.3 `pnpm build` succeeds — c8b383dc8
 
 #### Manual
 
-- [x] 5.4 Full flow: per-photo cards (images via signed URL) + read-only lists + merged editable textarea
-- [x] 5.5 Textarea editable; per-photo lists not editable
-- [x] 5.6 Re-upload replaces previous photos (storage + rows)
-- [x] 5.7 Empty/failed recognition shows correct empty-state / retry
-- [x] 5.8 Second user cannot access the first user's photos
+- [x] 5.4 Full flow: per-photo cards (images via signed URL) + read-only lists + merged editable textarea — c8b383dc8
+- [x] 5.5 Textarea editable; per-photo lists not editable — c8b383dc8
+- [x] 5.6 Re-upload replaces previous photos (storage + rows) — c8b383dc8
+- [x] 5.7 Empty/failed recognition shows correct empty-state / retry — c8b383dc8
+- [x] 5.8 Second user cannot access the first user's photos — c8b383dc8

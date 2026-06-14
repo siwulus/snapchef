@@ -1,7 +1,7 @@
 ---
 change_id: photo-upload-and-recognition
 title: Photo upload and recognition
-status: implementing
+status: implemented
 created: 2026-06-14
 updated: 2026-06-14
 archived_at: null
