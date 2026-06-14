@@ -22,7 +22,7 @@ export default defineConfig({
       OPENROUTER_RECOGNITION_MODEL: envField.string({
         context: "server",
         access: "public",
-        default: "google/gemini-2.0-flash-lite",
+        default: "google/gemini-2.5-flash-lite",
       }),
       OPENROUTER_RECOGNITION_FALLBACK_MODEL: envField.string({
         context: "server",

@@ -4,7 +4,7 @@
 export const SUPABASE_URL: string | undefined = undefined;
 export const SUPABASE_KEY: string | undefined = undefined;
 export const OPENROUTER_API_KEY: string | undefined = undefined;
-export const OPENROUTER_RECOGNITION_MODEL = "google/gemini-2.0-flash-lite";
+export const OPENROUTER_RECOGNITION_MODEL = "google/gemini-2.5-flash-lite";
 export const OPENROUTER_RECOGNITION_FALLBACK_MODEL = "openai/gpt-4o-mini";
 export const LOG_LEVEL = "Info";
 export const LOG_HTTP_BODIES = false;
