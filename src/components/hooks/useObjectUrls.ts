@@ -36,6 +36,14 @@ export const useObjectUrls = () => {
     setPhotos(files.map((file) => ({ file, url: URL.createObjectURL(file) })));
   };
 
+  // Accumulate picks across selections: mint URLs for the new files only and append them, revoking
+  // nothing existing. URLs are minted here (in the caller's event-handler context), never inside the
+  // updater, so a StrictMode/compiler double-invoke of the updater can't double-create (and leak) them.
+  const append = (files: File[]) => {
+    const additions = files.map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setPhotos((current) => [...current, ...additions]);
+  };
+
   const removeAt = (index: number) => {
     URL.revokeObjectURL(photos[index].url);
     setPhotos((current) => current.filter((_, i) => i !== index));
@@ -48,5 +56,5 @@ export const useObjectUrls = () => {
     setPhotos([]);
   };
 
-  return { photos, replace, removeAt, clear };
+  return { photos, replace, append, removeAt, clear };
 };

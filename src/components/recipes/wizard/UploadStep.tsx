@@ -14,18 +14,28 @@ interface UploadStepProps {
   onDirtyChange: (dirty: boolean) => void;
 }
 
+// Treat two picks as the same file when name, size, and last-modified all match — enough to skip a
+// re-pick of an already-selected (or just-removed-then-re-added) photo without blocking distinct files.
+const isSameFile = (a: File, b: File): boolean =>
+  a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
+
 export const UploadStep = ({ onComplete, onDirtyChange }: UploadStepProps) => {
-  const { photos, replace, removeAt } = useObjectUrls();
+  const { photos, append, removeAt } = useObjectUrls();
   const { phase, recognitionError, isBusy, canRetry, submit, retry, clearRecognitionError } =
     useRecipeUpload(onComplete);
   const [errors, setErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) return;
-    replace(files);
-    setErrors(validateFiles(files));
+    const picked = Array.from(event.target.files ?? []);
+    // Reset so re-picking the same file (e.g. one just removed) fires `change` again.
+    event.target.value = "";
+    if (picked.length === 0) return;
+    const existing = photos.map((photo) => photo.file);
+    const toAdd = picked.filter((file) => !existing.some((current) => isSameFile(current, file)));
+    append(toAdd);
+    // Validate the merged list so the MAX_PHOTOS / per-file limits apply across picks, not per batch.
+    setErrors(validateFiles([...existing, ...toAdd]));
     clearRecognitionError();
     onDirtyChange(true);
   };
