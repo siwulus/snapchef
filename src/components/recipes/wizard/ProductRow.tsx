@@ -13,7 +13,8 @@ interface ProductRowProps {
 }
 
 // One editable item: a name Input, a quantity Input, the item's read-only `context` shown as smaller
-// muted text (to the right on sm+, below the inputs on mobile), and a delete control. Fields carry
+// muted text always below the inputs, and a delete control aligned with the inputs row. On sm+ the
+// layout is two columns (inputs + context | delete); on mobile it stacks into one column. Fields carry
 // Polish accessible labels so tests/E2E locate them by role/label rather than DOM structure.
 export const ProductRow = ({ item, onChange, onRemove, autoFocus, hints }: ProductRowProps) => {
   const nameRef = useRef<HTMLInputElement>(null);
@@ -26,35 +27,37 @@ export const ProductRow = ({ item, onChange, onRemove, autoFocus, hints }: Produ
 
   return (
     <div className="border-border flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-start sm:gap-4">
-      <div className="flex flex-col gap-2 sm:flex-1 sm:flex-row">
-        <div className="flex flex-1 flex-col gap-1">
-          <Input
-            ref={nameRef}
-            aria-label="Nazwa produktu"
-            placeholder="Nazwa produktu"
-            value={item.name}
-            aria-invalid={hints?.name ? true : undefined}
-            onChange={(event) => {
-              onChange("name", event.target.value);
-            }}
-          />
-          {hints?.name ? <p className="text-destructive text-xs">{hints.name}</p> : null}
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-1 flex-col gap-1">
+            <Input
+              ref={nameRef}
+              aria-label="Nazwa produktu"
+              placeholder="Nazwa produktu"
+              value={item.name}
+              aria-invalid={hints?.name ? true : undefined}
+              onChange={(event) => {
+                onChange("name", event.target.value);
+              }}
+            />
+            {hints?.name ? <p className="text-destructive text-xs">{hints.name}</p> : null}
+          </div>
+          <div className="flex flex-col gap-1 sm:w-28">
+            <Input
+              aria-label="Ilość"
+              placeholder="Ilość"
+              value={item.quantity}
+              aria-invalid={hints?.quantity ? true : undefined}
+              onChange={(event) => {
+                onChange("quantity", event.target.value);
+              }}
+            />
+            {hints?.quantity ? <p className="text-destructive text-xs">{hints.quantity}</p> : null}
+          </div>
         </div>
-        <div className="flex flex-col gap-1 sm:w-28">
-          <Input
-            aria-label="Ilość"
-            placeholder="Ilość"
-            value={item.quantity}
-            aria-invalid={hints?.quantity ? true : undefined}
-            onChange={(event) => {
-              onChange("quantity", event.target.value);
-            }}
-          />
-          {hints?.quantity ? <p className="text-destructive text-xs">{hints.quantity}</p> : null}
-        </div>
-      </div>
 
-      {item.context ? <p className="text-muted-foreground text-xs sm:flex-1 sm:pt-2">{item.context}</p> : null}
+        {item.context ? <p className="text-muted-foreground text-xs">{item.context}</p> : null}
+      </div>
 
       <Button
         type="button"
