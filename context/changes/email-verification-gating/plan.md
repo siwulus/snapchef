@@ -345,27 +345,27 @@ Make the user-facing surfaces correct: a truthful confirm-email page with resend
 
 #### Automated
 
-- [x] 1.1 Config parses / stack boots: `pnpm exec supabase stop && pnpm exec supabase start`
-- [x] 1.2 Repo still builds: `pnpm build`
+- [x] 1.1 Config parses / stack boots: `pnpm exec supabase stop && pnpm exec supabase start` — 92388dff1
+- [x] 1.2 Repo still builds: `pnpm build` — 92388dff1
 
 #### Manual
 
-- [x] 1.3 Sign-up produces a confirmation email in Inbucket (`http://127.0.0.1:54324`)
-- [x] 1.4 Email link points at `http://127.0.0.1:3000/auth/confirm?token_hash=…&type=email`
-- [x] 1.5 Pre-confirmation sign-in is rejected; record the `AuthApiError` `code`/`status` (verified: HTTP 400, `error_code = "email_not_confirmed"`)
-- [x] 1.6 `docs/runbooks/enable-email-confirmations-prod.md` is a complete ordered checklist
+- [x] 1.3 Sign-up produces a confirmation email in Inbucket (`http://127.0.0.1:54324`) — 92388dff1
+- [x] 1.4 Email link points at `http://127.0.0.1:3000/auth/confirm?token_hash=…&type=email` — 92388dff1
+- [x] 1.5 Pre-confirmation sign-in is rejected; record the `AuthApiError` `code`/`status` (verified: HTTP 400, `error_code = "email_not_confirmed"`) — 92388dff1
+- [x] 1.6 `docs/runbooks/enable-email-confirmations-prod.md` is a complete ordered checklist — 92388dff1
 
 ### Phase 2: Domain Error, Auth Adapter, Port & Use Case
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `pnpm test`
-- [ ] 2.2 Type-checked lint passes: `pnpm lint`
-- [ ] 2.3 Build passes: `pnpm build`
+- [x] 2.1 Unit tests pass: `pnpm test`
+- [x] 2.2 Type-checked lint passes: `pnpm lint`
+- [x] 2.3 Build passes: `pnpm build`
 
 #### Manual
 
-- [ ] 2.4 `email_not_confirmed` classification matches the real failure captured in Phase 1
+- [x] 2.4 `email_not_confirmed` classification matches the real failure captured in Phase 1 (HTTP 400, `code = "email_not_confirmed"`; pinned in `SupabaseAuthenticator.test.ts`)
 
 ### Phase 3: Confirmation Callback Page & Resend Route
 

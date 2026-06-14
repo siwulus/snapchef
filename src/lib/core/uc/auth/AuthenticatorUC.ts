@@ -1,4 +1,4 @@
-import type { Authenticator, UserCredentials } from "@/lib/core/boundry/auth";
+import type { Authenticator, EmailConfirmation, ResendConfirmation, UserCredentials } from "@/lib/core/boundry/auth";
 import type { SnapchefUser } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { Effect } from "effect";
@@ -20,5 +20,13 @@ export class AuthenticatorUC {
 
   getUser(): Effect.Effect<SnapchefUser, SnapchefServerError> {
     return this.authenticator.getUser();
+  }
+
+  confirmEmail(params: EmailConfirmation): Effect.Effect<SnapchefUser, SnapchefServerError> {
+    return this.authenticator.confirmEmail(params);
+  }
+
+  resendConfirmation(params: ResendConfirmation): Effect.Effect<void, SnapchefServerError> {
+    return this.authenticator.resendConfirmation(params);
   }
 }
