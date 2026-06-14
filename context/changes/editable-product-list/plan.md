@@ -282,23 +282,23 @@ None — no persisted state, schema, or API contract changes. `correctedItems` a
 
 #### Automated
 
-- [x] 1.1 Type checking passes (`tsc --noEmit`)
-- [x] 1.2 Linting passes (`pnpm lint`)
-- [x] 1.3 `pnpm test` runs jsdom smoke + existing node tests green
-- [x] 1.4 Production build succeeds (`pnpm build`)
+- [x] 1.1 Type checking passes (`tsc --noEmit`) — 1fb75c6d3
+- [x] 1.2 Linting passes (`pnpm lint`) — 1fb75c6d3
+- [x] 1.3 `pnpm test` runs jsdom smoke + existing node tests green — 1fb75c6d3
+- [x] 1.4 Production build succeeds (`pnpm build`) — 1fb75c6d3
 
 #### Manual
 
-- [x] 1.5 Smoke test genuinely runs under jsdom (break-then-restore check)
+- [x] 1.5 Smoke test genuinely runs under jsdom (break-then-restore check) — 1fb75c6d3
 
 ### Phase 2: Editable consolidated list (UI + client state)
 
 #### Automated
 
-- [ ] 2.1 Type checking passes (`tsc --noEmit`)
-- [ ] 2.2 Linting passes (`pnpm lint`)
-- [ ] 2.3 Existing tests pass (`pnpm test`)
-- [ ] 2.4 Production build succeeds (`pnpm build`)
+- [x] 2.1 Type checking passes (`tsc --noEmit`)
+- [x] 2.2 Linting passes (`pnpm lint`)
+- [x] 2.3 Existing tests pass (`pnpm test`)
+- [x] 2.4 Production build succeeds (`pnpm build`)
 
 #### Manual
 
