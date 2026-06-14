@@ -371,25 +371,25 @@ Make the user-facing surfaces correct: a truthful confirm-email page with resend
 
 #### Automated
 
-- [x] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build`
-- [x] 3.2 Lint passes: `pnpm lint`
+- [x] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build` — 4e6259bab
+- [x] 3.2 Lint passes: `pnpm lint` — 4e6259bab
 
 #### Manual
 
-- [x] 3.3 Inbucket link → `/auth/confirm` sets session and redirects to `/recipes` signed in (verified: `302 → /recipes` + `Set-Cookie: sb-…-auth-token`, dev server pointed at the local stack)
-- [x] 3.4 Tampered/expired `token_hash` renders the error card with working links (verified: `200` with "This link is invalid or has expired" + resend/sign-in links)
-- [x] 3.5 `POST /api/auth/resend` returns `{ ok: true, data: { email } }` and a fresh Inbucket email (verified through the running app; invalid email → `400` validation envelope)
+- [x] 3.3 Inbucket link → `/auth/confirm` sets session and redirects to `/recipes` signed in (verified: `302 → /recipes` + `Set-Cookie: sb-…-auth-token`, dev server pointed at the local stack) — 4e6259bab
+- [x] 3.4 Tampered/expired `token_hash` renders the error card with working links (verified: `200` with "This link is invalid or has expired" + resend/sign-in links) — 4e6259bab
+- [x] 3.5 `POST /api/auth/resend` returns `{ ok: true, data: { email } }` and a fresh Inbucket email (verified through the running app; invalid email → `400` validation envelope) — 4e6259bab
 
 ### Phase 4: UI Wiring (Confirm-Email Page, Resend Island, Sign-In)
 
 #### Automated
 
-- [ ] 4.1 Unit/component tests pass: `pnpm test`
-- [ ] 4.2 Lint passes: `pnpm lint`
-- [ ] 4.3 Build passes: `pnpm build`
+- [x] 4.1 Unit/component tests pass: `pnpm test`
+- [x] 4.2 Lint passes: `pnpm lint`
+- [x] 4.3 Build passes: `pnpm build`
 
 #### Manual
 
-- [ ] 4.4 Unconfirmed sign-in shows inline verify message + working resend
-- [ ] 4.5 `confirm-email.astro` shows "Check your email" in dev with working resend
-- [ ] 4.6 Confirmed user reaches `/recipes` with no regression
+- [x] 4.4 Unconfirmed sign-in shows inline verify message + working resend (verified: `/api/auth/signin` → `403 SnapchefEmailNotConfirmedError` envelope; `SignInForm.test.tsx` locks the verify-message + resend render on that envelope)
+- [x] 4.5 `confirm-email.astro` shows "Check your email" in dev with working resend (verified: server HTML shows "Check your email" + mounted resend island; the `import.meta.env.DEV` guess copy removed)
+- [x] 4.6 Confirmed user reaches `/recipes` with no regression (verified: `/api/auth/signin` for a confirmed user → `{ ok: true, data: { redirect: "/recipes" } }`)

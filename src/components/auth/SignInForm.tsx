@@ -1,5 +1,6 @@
 import { IconField } from "@/components/auth/IconField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
+import ResendConfirmation from "@/components/auth/ResendConfirmation";
 import { ServerError } from "@/components/auth/ServerError";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useApiClient } from "@/components/hooks/useApiClient";
@@ -22,6 +23,7 @@ type SignInFormModel = z.infer<typeof SignInFormModel>;
 const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [notConfirmed, setNotConfirmed] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
 
   const form = useZodForm(SignInFormModel, { email: "", password: "" });
@@ -34,6 +36,7 @@ const SignInForm = () => {
   const onSubmit = async (data: SignInFormModel) =>
     Effect.sync(() => {
       setServerMessage(null);
+      setNotConfirmed(false);
     }).pipe(
       Effect.flatMap(() => post("/api/auth/signin", data, RedirectTarget)),
       Effect.tap(handleSubmitResponse),
@@ -44,6 +47,12 @@ const SignInForm = () => {
     Effect.sync(() => {
       if (result.ok) {
         setPendingRedirect(result.data.redirect);
+      } else if (result.error.name === "SnapchefEmailNotConfirmedError") {
+        // Unconfirmed email: show a clear message + inline resend instead of the raw server error.
+        setNotConfirmed(true);
+        setServerMessage(
+          "Please confirm your email address before signing in — use the button below to resend the link.",
+        );
       } else {
         if (result.error.fieldErrors) {
           Object.entries(result.error.fieldErrors).forEach(([field, message]) => {
@@ -97,6 +106,8 @@ const SignInForm = () => {
         />
 
         <ServerError message={serverMessage} />
+
+        {notConfirmed && <ResendConfirmation defaultEmail={form.getValues("email")} />}
 
         <SubmitButton
           pendingText="Signing in..."
