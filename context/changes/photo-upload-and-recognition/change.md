@@ -1,0 +1,12 @@
+---
+change_id: photo-upload-and-recognition
+title: Photo upload and recognition
+status: implementing
+created: 2026-06-14
+updated: 2026-06-14
+archived_at: null
+---
+
+## Notes
+
+<!-- Free-form notes for this change: links, ad-hoc context, decisions that don't belong in research/frame/plan. -->
