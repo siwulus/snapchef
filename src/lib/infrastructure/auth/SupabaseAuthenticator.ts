@@ -1,7 +1,15 @@
-import type { Authenticator, EmailConfirmation, ResendConfirmation, UserCredentials } from "@/lib/core/boundry/auth";
+import type {
+  Authenticator,
+  EmailConfirmation,
+  RequestPasswordReset,
+  ResendConfirmation,
+  ResetPassword,
+  UserCredentials,
+} from "@/lib/core/boundry/auth";
 import { SnapchefUser } from "@/lib/core/model/auth";
 import {
   SnapchefAuthenticationError,
+  SnapchefBusinessRuleViolationError,
   SnapchefEmailNotConfirmedError,
   SnapchefExternalSystemError,
   type SnapchefServerError,
@@ -30,6 +38,12 @@ const AuthUser = z.object({
 // It must be classified BEFORE the generic 4xx fold below, otherwise it is swallowed as a plain 401.
 const isEmailNotConfirmed = (error: unknown): boolean => isAuthApiError(error) && error.code === "email_not_confirmed";
 
+// updateUser can reject a password that cleared the boundary min(6) when the (remote) project's
+// policy is stricter — a `weak_password` AuthApiError (HTTP 422). It must be classified BEFORE the
+// generic 4xx fold below, otherwise it is swallowed as a plain 401 ("link expired") instead of a
+// 422 the reset form can surface as a password message.
+const isWeakPassword = (error: unknown): boolean => isAuthApiError(error) && error.code === "weak_password";
+
 // A genuine auth rejection — a missing session (getUser on an anonymous request) or a
 // 4xx AuthApiError (bad credentials) — maps to 401. Note a missing session surfaces as
 // AuthSessionMissingError, which is NOT an AuthApiError, so it needs its own guard. Everything
@@ -41,6 +55,7 @@ const isAuthRejection = (error: unknown): boolean =>
 const toAuthFailure = (error: unknown, message: string): SnapchefServerError =>
   match(error)
     .when(isEmailNotConfirmed, (cause) => new SnapchefEmailNotConfirmedError({ message, cause }))
+    .when(isWeakPassword, (cause) => new SnapchefBusinessRuleViolationError({ message, cause }))
     .when(isAuthRejection, (cause) => new SnapchefAuthenticationError({ message, cause }))
     .otherwise((cause) => new SnapchefExternalSystemError({ message: "Authentication service failed", cause }));
 
@@ -119,6 +134,46 @@ const resendConfirmation =
       ),
     );
 
+// Sends the recovery (password-reset) email. Like resendConfirmation, resetPasswordForEmail returns
+// only { error } (no decodable user) and succeeds regardless of account existence (anti-enumeration),
+// so it uses a bare tryPromise and folds any failure — thrown or a non-null { error } such as the
+// max_frequency throttle — into SnapchefExternalSystemError. The committed recovery template builds
+// its link from {{ .SiteURL }}, so no redirectTo is needed.
+const requestPasswordReset =
+  (supabase: SupabaseClient) =>
+  ({ email }: RequestPasswordReset): Effect.Effect<void, SnapchefServerError> =>
+    Effect.tryPromise({
+      try: () => supabase.auth.resetPasswordForEmail(email),
+      catch: (cause) => new SnapchefExternalSystemError({ message: "Failed to send password reset email", cause }),
+    }).pipe(
+      Effect.flatMap(({ error }) =>
+        error
+          ? Effect.fail(
+              new SnapchefExternalSystemError({ message: "Failed to send password reset email", cause: error }),
+            )
+          : Effect.void,
+      ),
+    );
+
+// Redeems the recovery link's token_hash and sets the new password in one request. verifyOtp
+// (type "recovery") establishes the recovery session on the request-scoped client (writing the
+// session cookie as a side effect), so the immediately-following updateUser is authenticated within
+// the same request. Both calls reuse the AuthUser { user } decoder via liftAuthUser. Classification
+// falls out of toAuthFailure: expired/invalid token → 401, weak password from updateUser → 422,
+// service/network → 500.
+const resetPassword =
+  (supabase: SupabaseClient) =>
+  ({ tokenHash, newPassword }: ResetPassword): Effect.Effect<SnapchefUser, SnapchefServerError> =>
+    liftAuthUser("This password reset link is invalid or has expired")(() =>
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }).then(({ data, error }) => ({ data, error })),
+    ).pipe(
+      Effect.flatMap(() =>
+        liftAuthUser("Failed to update password")(() =>
+          supabase.auth.updateUser({ password: newPassword }).then(({ data, error }) => ({ data, error })),
+        ),
+      ),
+    );
+
 export const createSupabaseAuthenticator = (supabase: SupabaseClient<Database>): Authenticator => ({
   signIn: signIn(supabase),
   signUp: signUp(supabase),
@@ -126,4 +181,6 @@ export const createSupabaseAuthenticator = (supabase: SupabaseClient<Database>):
   getUser: getUser(supabase),
   confirmEmail: confirmEmail(supabase),
   resendConfirmation: resendConfirmation(supabase),
+  requestPasswordReset: requestPasswordReset(supabase),
+  resetPassword: resetPassword(supabase),
 });

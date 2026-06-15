@@ -12,3 +12,11 @@ export const ConfirmationResent = z.object({
 });
 
 export type ConfirmationResent = z.infer<typeof ConfirmationResent>;
+
+// Success payload echoed by POST /api/auth/forgot-password so the client can render a neutral,
+// anti-enumeration message naming the address the link was (or would be) sent to.
+export const PasswordResetRequested = z.object({
+  email: z.email(),
+});
+
+export type PasswordResetRequested = z.infer<typeof PasswordResetRequested>;

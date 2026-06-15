@@ -370,8 +370,8 @@ None of note. Each operation is a single user-initiated request with one or two 
 
 #### Automated
 
-- [x] 1.1 Config parses / stack boots: `pnpm exec supabase stop && pnpm exec supabase start`
-- [x] 1.2 Repo still builds: `pnpm build`
+- [x] 1.1 Config parses / stack boots: `pnpm exec supabase stop && pnpm exec supabase start` — bdf163a9f
+- [x] 1.2 Repo still builds: `pnpm build` — bdf163a9f
 
 #### Manual
 
@@ -383,9 +383,9 @@ None of note. Each operation is a single user-initiated request with one or two 
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `pnpm test`
-- [ ] 2.2 Type-checked lint passes: `pnpm lint`
-- [ ] 2.3 Build passes: `pnpm build`
+- [x] 2.1 Unit tests pass: `pnpm test`
+- [x] 2.2 Type-checked lint passes: `pnpm lint`
+- [x] 2.3 Build passes: `pnpm build`
 
 ### Phase 3: Forgot-Password & Reset-Password Routes
 
