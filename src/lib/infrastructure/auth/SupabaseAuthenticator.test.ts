@@ -1,6 +1,7 @@
 import { createSupabaseAuthenticator } from "@/lib/infrastructure/auth/SupabaseAuthenticator";
 import {
   SnapchefAuthenticationError,
+  SnapchefBusinessRuleViolationError,
   SnapchefEmailNotConfirmedError,
   SnapchefExternalSystemError,
 } from "@/lib/core/model/error";
@@ -18,6 +19,8 @@ interface FakeAuth {
   signInWithPassword?: () => AuthResult;
   verifyOtp?: () => AuthResult;
   resend?: () => AuthResult;
+  resetPasswordForEmail?: (email: string) => AuthResult;
+  updateUser?: (attributes: { password: string }) => AuthResult;
 }
 
 // The adapter only ever touches `supabase.auth.*`; a partial fake cast to the client is enough.
@@ -136,6 +139,113 @@ describe("createSupabaseAuthenticator — resendConfirmation", () => {
     if (Either.isLeft(result)) {
       expect(result.left).toBeInstanceOf(SnapchefExternalSystemError);
       expect(result.left.code).toBe(500);
+    }
+  });
+});
+
+describe("createSupabaseAuthenticator — requestPasswordReset", () => {
+  it("succeeds with void when resetPasswordForEmail returns no error", async () => {
+    const auth = fakeAuthenticator({
+      resetPasswordForEmail: () => Promise.resolve({ data: {}, error: null }),
+    });
+
+    const result = await runEither(auth.requestPasswordReset({ email: "a@b.com" }));
+
+    expect(Either.isRight(result)).toBe(true);
+    if (Either.isRight(result)) {
+      expect(result.right).toBeUndefined();
+    }
+  });
+
+  it("fails SnapchefExternalSystemError when resetPasswordForEmail returns an error (e.g. throttled)", async () => {
+    const auth = fakeAuthenticator({
+      resetPasswordForEmail: () =>
+        Promise.resolve({
+          data: null,
+          error: new AuthApiError("over_email_send_rate_limit", 429, "over_email_send_rate_limit"),
+        }),
+    });
+
+    const result = await runEither(auth.requestPasswordReset({ email: "a@b.com" }));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefExternalSystemError);
+      expect(result.left.code).toBe(500);
+    }
+  });
+});
+
+describe("createSupabaseAuthenticator — resetPassword", () => {
+  it("redeems the token then updates the password, decoding the updated user", async () => {
+    let updatePassword: string | undefined;
+    const auth = fakeAuthenticator({
+      verifyOtp: () => Promise.resolve({ data: { user: { id: USER_ID, email: "a@b.com" }, session: {} }, error: null }),
+      updateUser: ({ password }) => {
+        updatePassword = password;
+        return Promise.resolve({ data: { user: { id: USER_ID, email: "a@b.com" } }, error: null });
+      },
+    });
+
+    const result = await runEither(auth.resetPassword({ tokenHash: "tok", newPassword: "newpassword123" }));
+
+    expect(Either.isRight(result)).toBe(true);
+    if (Either.isRight(result)) {
+      expect(result.right.id).toBe(USER_ID);
+      expect(result.right.email).toBe("a@b.com");
+    }
+    expect(updatePassword).toBe("newpassword123");
+  });
+
+  it("fails SnapchefAuthenticationError (401) and does NOT call updateUser when verifyOtp rejects the token", async () => {
+    let updateUserCalled = false;
+    const auth = fakeAuthenticator({
+      verifyOtp: () =>
+        Promise.resolve({ data: null, error: new AuthApiError("Token has expired or is invalid", 401, "otp_expired") }),
+      updateUser: () => {
+        updateUserCalled = true;
+        return Promise.resolve({ data: { user: { id: USER_ID, email: "a@b.com" } }, error: null });
+      },
+    });
+
+    const result = await runEither(auth.resetPassword({ tokenHash: "tok", newPassword: "newpassword123" }));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefAuthenticationError);
+      expect(result.left.code).toBe(401);
+    }
+    expect(updateUserCalled).toBe(false);
+  });
+
+  it("fails SnapchefExternalSystemError (500) on a 5xx from verifyOtp", async () => {
+    const auth = fakeAuthenticator({
+      verifyOtp: () =>
+        Promise.resolve({ data: null, error: new AuthApiError("Internal error", 500, "unexpected_failure") }),
+    });
+
+    const result = await runEither(auth.resetPassword({ tokenHash: "tok", newPassword: "newpassword123" }));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefExternalSystemError);
+      expect(result.left.code).toBe(500);
+    }
+  });
+
+  it("fails SnapchefBusinessRuleViolationError (422) when updateUser rejects a weak_password", async () => {
+    const auth = fakeAuthenticator({
+      verifyOtp: () => Promise.resolve({ data: { user: { id: USER_ID, email: "a@b.com" }, session: {} }, error: null }),
+      updateUser: () =>
+        Promise.resolve({ data: null, error: new AuthApiError("Password is too weak", 422, "weak_password") }),
+    });
+
+    const result = await runEither(auth.resetPassword({ tokenHash: "tok", newPassword: "short" }));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefBusinessRuleViolationError);
+      expect(result.left.code).toBe(422);
     }
   });
 });
