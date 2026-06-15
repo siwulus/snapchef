@@ -15,6 +15,13 @@ export class SnapchefAuthorizationError extends Data.TaggedError("SnapchefAuthor
   readonly code = 403 as const;
 }
 
+export class SnapchefEmailNotConfirmedError extends Data.TaggedError("SnapchefEmailNotConfirmedError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {
+  readonly code = 403 as const;
+}
+
 export class SnapchefNotFoundError extends Data.TaggedError("SnapchefNotFoundError")<{
   readonly message: string;
   readonly cause?: unknown;
@@ -82,6 +89,7 @@ export class SnapchefUnexpectedError extends Data.TaggedError("SnapchefUnexpecte
 export type SnapchefServerError =
   | SnapchefAuthenticationError
   | SnapchefAuthorizationError
+  | SnapchefEmailNotConfirmedError
   | SnapchefNotFoundError
   | SnapchefConflictError
   | SnapchefBusinessRuleViolationError
