@@ -1,9 +1,9 @@
 ---
 project: Snapchef
-version: 3
+version: 4
 status: draft
 created: 2026-05-26
-updated: 2026-06-14
+updated: 2026-06-15
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -13,6 +13,7 @@ top_blocker: time
 
 > Derived from `context/foundation/prd.md` (v1) + auto-researched codebase baseline.
 > Adaptacja 2026-06-14: FR-004 rozszerzone o wieloetapowe rozpoznanie (per zdjęcie → prezentacja per zdjęcie → scalenie/konsolidacja w jedną odduplikowaną listę); FR-005 edytuje finalną skonsolidowaną listę. Zmiana mieści się w istniejącym slice S-01 — bez nowych slice'ów ani zmian w grafie zależności. PRD OQ7 (reguła deduplikacji) otwarte i śledzone jako non-blocking Unknown w S-01.
+> Adaptacja 2026-06-15: PRD FR-013 (reset zapomnianego hasła) dodane — domyka pełny flow autentykacji. Nowe foundation **F-03** (Stream B, obok F-02); ortogonalne do pionu produktowego (S-01–S-04 i graf zależności bez zmian). Bez nowych Open Questions.
 > Edit-in-place; archive when superseded. Poprzednia wersja: `context/foundation/archive/2026-05-26-roadmap.md`.
 > Slices below are listed in dependency order. The "At a glance" table is the index.
 
@@ -32,6 +33,7 @@ Snapchef rozwiązuje codzienny problem domowego kucharza: ma produkty, nie ma po
 | ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------- | ------ |
 | F-01 | domain-schema-and-storage    | (foundation) per-user domain tables + RLS + Storage bucket na zdjęcia                                             | —             | NFR-Prywatność, FR-009, Access Control        | ready  |
 | F-02 | email-verification-gating    | (foundation) weryfikacja emaila wymagana do aktywacji konta                                                       | —             | FR-001                                        | ready  |
+| F-03 | password-reset               | Zresetować zapomniane hasło przez link wysłany na email i ustawić nowe hasło                                      | F-02          | FR-013, Access Control                        | ready  |
 | S-01 | photo-upload-and-recognition | Wgrać 1–5 zdjęć (≤5 MB), zobaczyć rozpoznanie per zdjęcie i finalną skonsolidowaną listę [nazwa, ilość] do edycji | F-01, F-02    | FR-001, FR-002, FR-003, FR-004, FR-005, US-01 | ready  |
 | S-02 | recipe-generation-from-list  | Podać kontekst posiłku i zobaczyć przepis (nazwa + składniki + instrukcje)                                        | S-01          | FR-006, FR-007, FR-008, US-01                 | ready  |
 | S-03 | save-session-and-recipe      | Zapisać przepis razem z kontekstem sesji (zdjęcia, lista, opis) na koncie                                         | S-02          | FR-009, US-01                                 | ready  |
@@ -44,7 +46,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | Stream | Theme                      | Chain                                      | Note                                                                                 |
 | ------ | -------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
 | A      | Dane i prywatność per-user | `F-01` → `S-01` → `S-02` → `S-03` → `S-04` | Główny pion produktu; w `S-01` dołącza się wymóg zweryfikowanego konta ze Streamu B. |
-| B      | Domknięcie autentykacji    | `F-02`                                     | Aktywacja weryfikacji emaila; gate dla wszystkich slice'ów produktowych.             |
+| B      | Domknięcie autentykacji    | `F-02` → `F-03`                            | Weryfikacja emaila (F-02) + reset hasła (F-03); domknięcie tożsamości i dostępu.     |
 
 ## Baseline
 
@@ -83,6 +85,19 @@ What's already in place w codebase as of 2026-05-26 (auto-researched + user-conf
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Mała powierzchnia (toggle w Supabase + 2 ekrany), ale pominięcie przed S-01 oznacza, że pierwsi użytkownicy zakładają konta bez weryfikacji i trzeba je później audytować. Sequencing przed slice'ami produktowymi wymusza domknięcie polityki tożsamości raz, zanim pojawią się dane domenowe powiązane z `auth.users.id`.
+- **Status:** ready
+
+### F-03: Reset zapomnianego hasła
+
+- **Outcome:** (foundation) Użytkownik, który zapomniał hasła, odzyskuje dostęp samodzielnie: inicjuje reset podając adres email konta, otrzymuje na ten adres link umożliwiający ustawienie nowego hasła i po jego ustawieniu loguje się przy użyciu nowego hasła. Ekrany: formularz "podaj email" → potwierdzenie "wysłaliśmy link" → formularz "ustaw nowe hasło" (z linka) → przejście do logowania. Email/template w języku produktu (reuse infrastruktury mailowej z F-02).
+- **Change ID:** password-reset
+- **PRD refs:** FR-013 (reset zapomnianego hasła), Access Control (self-service recovery)
+- **Unlocks:** — (domyka pełny flow autentykacji: rejestracja + weryfikacja emaila → logowanie / wylogowanie → odzyskanie dostępu; nie jest prerequisitem żadnego slice'a produktowego)
+- **Prerequisites:** F-02 (reuse konfiguracji wysyłki maili + szablonów w języku produktu; spójny model zweryfikowanego konta)
+- **Parallel with:** S-01–S-04 (ortogonalne do pionu produktowego ze Streamu A — można dowieźć niezależnie)
+- **Blockers:** —
+- **Unknowns:** —
+- **Risk:** Mała powierzchnia (Supabase Auth recovery flow + 2–3 ekrany; reuse szablonu/wysyłki z F-02). Pominięcie nie blokuje pionu produktowego, ale zostawia użytkownika z zapomnianym hasłem trwale odciętego od prywatnych danych — luka w domknięciu autentykacji. Do rozważenia w `/10x-plan`: brak ujawniania, czy konto istnieje przy żądaniu resetu (standard anty-enumeracyjny), oraz czas ważności linka resetującego.
 - **Status:** ready
 
 ## Slices
@@ -142,6 +157,7 @@ What's already in place w codebase as of 2026-05-26 (auto-researched + user-conf
 | ---------- | ---------------------------- | ------------------------------------------------------------------------------ | --------------------- | ------------------------------------------------------- |
 | F-01       | domain-schema-and-storage    | Schemat domeny + Storage bucket z RLS dla danych użytkownika                   | yes                   | `/10x-plan domain-schema-and-storage`                   |
 | F-02       | email-verification-gating    | Weryfikacja emaila wymagana do aktywacji konta                                 | yes                   | `/10x-plan email-verification-gating`                   |
+| F-03       | password-reset               | Reset zapomnianego hasła (link na email → ustaw nowe hasło)                    | yes (po F-02)         | `/10x-plan password-reset`                              |
 | S-01       | photo-upload-and-recognition | Upload zdjęć (1–5 × ≤5 MB) + rozpoznanie per zdjęcie + scalenie listy + edycja | yes (po F-01, F-02)   | `/10x-plan photo-upload-and-recognition`                |
 | S-02       | recipe-generation-from-list  | Generacja przepisu z listy produktów i kontekstu posiłku                       | yes (po S-01)         | **North star.** `/10x-plan recipe-generation-from-list` |
 | S-03       | save-session-and-recipe      | Zapis pełnej sesji (zdjęcia + lista + przepis) na koncie                       | yes (po S-02)         | `/10x-plan save-session-and-recipe`                     |

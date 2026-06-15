@@ -65,6 +65,8 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
   > Socratic: Counter-argument considered: "rejestracja zbędna w MVP z jednym hardcoded userem" — odrzucone; per-user data od dnia 1 jest fundamentem prywatności. Weryfikacja emaila wymagana od v1 (decyzja użytkownika, OQ1) — zapobiega rejestracji na cudze adresy i jest standardową praktyką zaufania.
 - FR-002: Użytkownik może zalogować się i wylogować. Priority: must-have
   > Socratic: Counter-argument considered: "logout zbędny / sesja powinna być trwała" — odrzucone; standardowy mechanizm sesji jest wystarczający.
+- FR-013: Użytkownik może zresetować zapomniane hasło: inicjuje reset podając adres email konta, otrzymuje na ten adres link umożliwiający ustawienie nowego hasła i po jego ustawieniu loguje się przy użyciu nowego hasła. Priority: must-have
+  > Socratic: Counter-argument considered: "reset hasła zbędny w MVP / hasło można odtworzyć ręcznie w bazie" — odrzucone; w produkcie z danymi prywatnymi per użytkownik zapomniane hasło bez self-service resetu trwale odcina właściciela od jego danych. Reset domyka pełny flow uwierzytelniania: rejestracja z weryfikacją emaila (FR-001) → logowanie / wylogowanie (FR-002) → odzyskanie dostępu (FR-013).
 
 ### Image ingestion & product recognition
 
@@ -116,7 +118,7 @@ Osoba gotująca codziennie dla siebie / rodziny, mająca w domu zmienny zestaw p
 
 ## Access Control
 
-Autentykacja: login po **emailu + haśle**. Konto wymagane do wszystkich akcji aplikacji — zarówno przesyłania zdjęć / generowania przepisów, jak i przeglądania zapisanych przepisów. Wszystkie dane (zdjęcia, rozpoznane produkty, przepisy) są **prywatne per użytkownik** i wymagają autoryzacji do odczytu.
+Autentykacja: login po **emailu + haśle**. Konto wymagane do wszystkich akcji aplikacji — zarówno przesyłania zdjęć / generowania przepisów, jak i przeglądania zapisanych przepisów. Wszystkie dane (zdjęcia, rozpoznane produkty, przepisy) są **prywatne per użytkownik** i wymagają autoryzacji do odczytu. Użytkownik, który zapomniał hasła, odzyskuje dostęp samodzielnie — przez reset hasła zainicjowany linkiem wysłanym na email konta (FR-013).
 
 Model ról: **płaska struktura** — brak rozróżnienia admin / user. Każdy użytkownik widzi wyłącznie własne dane. Próba dostępu do gated route bez ważnej sesji kończy się przekierowaniem do ekranu logowania.
 
