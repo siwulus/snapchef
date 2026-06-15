@@ -391,8 +391,8 @@ None of note. Each operation is a single user-initiated request with one or two 
 
 #### Automated
 
-- [x] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build`
-- [x] 3.2 Lint passes: `pnpm lint`
+- [x] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build` — 071b2584a
+- [x] 3.2 Lint passes: `pnpm lint` — 071b2584a
 
 #### Manual
 
@@ -403,9 +403,9 @@ None of note. Each operation is a single user-initiated request with one or two 
 
 #### Automated
 
-- [ ] 4.1 Unit/component tests pass: `pnpm test`
-- [ ] 4.2 Lint passes: `pnpm lint`
-- [ ] 4.3 Build passes: `pnpm build`
+- [x] 4.1 Unit/component tests pass: `pnpm test`
+- [x] 4.2 Lint passes: `pnpm lint`
+- [x] 4.3 Build passes: `pnpm build`
 
 #### Manual
 
