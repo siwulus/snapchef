@@ -242,6 +242,13 @@ otp_expiry = 3600
 subject = "Confirm your Snapchef account"
 content_path = "./supabase/templates/confirmation.html"
 
+# Custom recovery (password-reset) email: its link carries the token_hash to the app's own
+# /auth/reset-password callback (token_hash flow, &type=recovery) instead of the default Supabase
+# verify endpoint, so the SSR route can redeem the token and set the new password server-side.
+[auth.email.template.recovery]
+subject = "Reset your Snapchef password"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
