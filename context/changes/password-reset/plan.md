@@ -383,16 +383,16 @@ None of note. Each operation is a single user-initiated request with one or two 
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `pnpm test`
-- [x] 2.2 Type-checked lint passes: `pnpm lint`
-- [x] 2.3 Build passes: `pnpm build`
+- [x] 2.1 Unit tests pass: `pnpm test` — e6e566f5a
+- [x] 2.2 Type-checked lint passes: `pnpm lint` — e6e566f5a
+- [x] 2.3 Build passes: `pnpm build` — e6e566f5a
 
 ### Phase 3: Forgot-Password & Reset-Password Routes
 
 #### Automated
 
-- [ ] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build`
-- [ ] 3.2 Lint passes: `pnpm lint`
+- [x] 3.1 Build passes (routes type-check, `prerender = false`): `pnpm build`
+- [x] 3.2 Lint passes: `pnpm lint`
 
 #### Manual
 
