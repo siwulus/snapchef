@@ -29,6 +29,16 @@ export default defineConfig({
         access: "public",
         default: "openai/gpt-4o-mini",
       }),
+      OPENROUTER_RECIPE_MODEL: envField.string({
+        context: "server",
+        access: "public",
+        default: "openai/gpt-4.1-mini",
+      }),
+      OPENROUTER_RECIPE_FALLBACK_MODEL: envField.string({
+        context: "server",
+        access: "public",
+        default: "openai/gpt-4o-mini",
+      }),
       // Effect LogLevel label: All | Trace | Debug | Info | Warning | Error | Fatal | None
       LOG_LEVEL: envField.string({ context: "server", access: "public", default: "Info" }),
       LOG_HTTP_BODIES: envField.boolean({ context: "server", access: "public", default: false }),

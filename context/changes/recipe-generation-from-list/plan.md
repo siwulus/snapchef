@@ -417,10 +417,10 @@ Add the shadcn `switch` primitive and markdown rendering deps, lift `useEditable
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly against the local stack (`pnpm exec supabase migration up`)
-- [x] 1.2 `pnpm db:types` regenerates with only the new column added
-- [x] 1.3 Type checking passes (`pnpm lint`)
-- [x] 1.4 Build passes (`pnpm build`)
+- [x] 1.1 Migration applies cleanly against the local stack (`pnpm exec supabase migration up`) — a80730b1c
+- [x] 1.2 `pnpm db:types` regenerates with only the new column added — a80730b1c
+- [x] 1.3 Type checking passes (`pnpm lint`) — a80730b1c
+- [x] 1.4 Build passes (`pnpm build`) — a80730b1c
 
 #### Manual
 
@@ -431,9 +431,9 @@ Add the shadcn `switch` primitive and markdown rendering deps, lift `useEditable
 
 #### Automated
 
-- [ ] 2.1 Type checking passes (`pnpm lint`)
-- [ ] 2.2 New transport test passes (`pnpm exec vitest run src/lib/infrastructure/llm`)
-- [ ] 2.3 Recognition behavior unchanged; build passes (`pnpm build`)
+- [x] 2.1 Type checking passes (`pnpm lint`)
+- [x] 2.2 New transport test passes (`pnpm exec vitest run src/lib/infrastructure/llm`)
+- [x] 2.3 Recognition behavior unchanged; build passes (`pnpm build`)
 
 #### Manual
 

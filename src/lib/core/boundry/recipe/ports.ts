@@ -81,3 +81,14 @@ export interface RecipeRepository {
   // overwrite-safe on re-generation. Returns the saved domain Recipe.
   upsert(payload: RecipeWritePayload): Effect.Effect<Recipe, SnapchefServerError>;
 }
+
+export interface RecipeGenerator {
+  // Generate a recipe from the edited product list, the user's free-text meal context, and the
+  // off-list-ingredients preference. Returns the AI-generated name and the markdown body
+  // (already mapped to the domain's `contentMd` vocabulary).
+  generate(input: {
+    items: RecognizedItem[];
+    mealContext: string;
+    allowExtraIngredients: boolean;
+  }): Effect.Effect<{ name: string; contentMd: string }, SnapchefServerError>;
+}
