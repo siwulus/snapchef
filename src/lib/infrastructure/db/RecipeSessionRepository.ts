@@ -64,8 +64,25 @@ const update =
         .then(({ error, data }) => ({ error, data })),
     ).pipe(Effect.flatMap((option) => Effect.transposeMapOption(option, decodeWith(RecipeSessionFromRow))));
 
+// Owner-scoped hard delete. The DB `on delete cascade` from recipe_sessions drops the recipe +
+// photo rows; storage-bucket cleanup is the UC's responsibility. A delete returns no domain row,
+// so the builder is shaped to `{ error, data: null }` and lifted through tryErrorDataOption.
+// Owner existence is already validated upstream by fetchRecipeSession, so a no-match is harmless.
+const deleteSession =
+  (supabase: SupabaseClient<Database>) =>
+  (userId: UserId, sessionId: string): Effect.Effect<void, SnapchefServerError> =>
+    tryErrorDataOption<null>(() =>
+      supabase
+        .from("recipe_sessions")
+        .delete()
+        .eq("id", sessionId)
+        .eq("user_id", userId)
+        .then(({ error }) => ({ error, data: null })),
+    ).pipe(Effect.asVoid);
+
 export const createRecipeSessionRepository = (supabase: SupabaseClient<Database>): RecipeSessionRepository => ({
   create: create(supabase),
   update: update(supabase),
   find: find(supabase),
+  delete: deleteSession(supabase),
 });

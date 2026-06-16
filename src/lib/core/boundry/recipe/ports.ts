@@ -51,6 +51,7 @@ export interface RecipeSessionRepository {
     data: RecipeSessionUpdatePayload,
   ): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError>;
   find(userId: UserId, sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError>;
+  delete(userId: UserId, sessionId: string): Effect.Effect<void, SnapchefServerError>;
 }
 
 export interface SessionPhotoStorage {
