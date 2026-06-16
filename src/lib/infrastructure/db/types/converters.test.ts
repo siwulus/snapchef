@@ -10,6 +10,7 @@ const baseRow = {
   created_at: "2026-06-16T00:00:00.000Z",
   meal_context: null,
   recognized_items: null,
+  allow_extra_ingredients: null,
   state: "created",
   updated_at: "2026-06-16T00:00:00.000Z",
 };
