@@ -11,6 +11,13 @@ const sampleItems: RecognizedItem[] = [
   { name: "Mleko", quantity: "1 l", context: "rozpoznane na zdjęciu 2" },
 ];
 
+// The editable state is now lifted to the parent; this harness owns the hook so the controlled
+// ProductListEditor can be exercised exactly as a parent would drive it.
+const Harness = ({ seed }: { seed: RecognizedItem[] | null }) => {
+  const editor = useEditableItems(seed);
+  return <ProductListEditor editor={editor} />;
+};
+
 // Locate rows and their fields by role/accessible label — never by DOM structure (repo policy).
 const rows = () => screen.getAllByRole("listitem");
 const nameInput = (row: HTMLElement) => within(row).getByLabelText("Nazwa produktu");
@@ -19,7 +26,7 @@ const addButton = () => screen.getByRole("button", { name: "Dodaj produkt" });
 
 describe("ProductListEditor", () => {
   it("seeds one row per recognized item with its name, quantity and context", () => {
-    render(<ProductListEditor recognizedItems={sampleItems} />);
+    render(<Harness seed={sampleItems} />);
 
     expect(rows()).toHaveLength(2);
     expect(nameInput(rows()[0])).toHaveValue("Pomidory");
@@ -32,7 +39,7 @@ describe("ProductListEditor", () => {
 
   it("edits a name and a quantity in place, leaving the other row untouched", async () => {
     const user = userEvent.setup();
-    render(<ProductListEditor recognizedItems={sampleItems} />);
+    render(<Harness seed={sampleItems} />);
 
     const firstName = nameInput(rows()[0]);
     await user.clear(firstName);
@@ -50,7 +57,7 @@ describe("ProductListEditor", () => {
 
   it("adds a blank row at the bottom and focuses its name input", async () => {
     const user = userEvent.setup();
-    render(<ProductListEditor recognizedItems={sampleItems} />);
+    render(<Harness seed={sampleItems} />);
 
     await user.click(addButton());
 
@@ -63,7 +70,7 @@ describe("ProductListEditor", () => {
 
   it("deletes the targeted row and leaves the others intact", async () => {
     const user = userEvent.setup();
-    render(<ProductListEditor recognizedItems={sampleItems} />);
+    render(<Harness seed={sampleItems} />);
 
     await user.click(within(rows()[0]).getByRole("button", { name: "Usuń produkt" }));
 
@@ -74,14 +81,14 @@ describe("ProductListEditor", () => {
   });
 
   it("renders the empty state (hint + add button, zero rows) for both null and []", () => {
-    const { unmount } = render(<ProductListEditor recognizedItems={null} />);
+    const { unmount } = render(<Harness seed={null} />);
 
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
     expect(screen.getByText("Nie rozpoznano żadnych produktów.")).toBeInTheDocument();
     expect(addButton()).toBeInTheDocument();
     unmount();
 
-    render(<ProductListEditor recognizedItems={[]} />);
+    render(<Harness seed={[]} />);
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
     expect(screen.getByText("Nie rozpoznano żadnych produktów.")).toBeInTheDocument();
     expect(addButton()).toBeInTheDocument();
@@ -89,7 +96,7 @@ describe("ProductListEditor", () => {
 
   it("surfaces a validation hint when a field is cleared", async () => {
     const user = userEvent.setup();
-    render(<ProductListEditor recognizedItems={sampleItems} />);
+    render(<Harness seed={sampleItems} />);
 
     await user.clear(nameInput(rows()[0]));
     expect(within(rows()[0]).getByText("Nazwa nie może być pusta.")).toBeInTheDocument();
