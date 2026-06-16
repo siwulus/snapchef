@@ -1,16 +1,18 @@
+import { RecipeDisplay } from "@/components/recipes/wizard/RecipeDisplay";
 import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
-import type { RecognitionResult } from "@/lib/core/boundry/recipe";
+import type { RecipeView, RecognitionResult } from "@/lib/core/boundry/recipe";
 import { useEffect, useState } from "react";
 
-type Step = "upload" | "review";
+type Step = "upload" | "review" | "recipe";
 
 // Orchestrates the "create new recipe" flow: owns the step machine, the upload→review handoff
-// payload, and the leave-guard. Each step renders itself (UploadStep / ReviewStep) — this
-// component only decides which one is shown.
+// payload, the generated recipe, and the leave-guard. Each step renders itself (UploadStep /
+// ReviewStep / RecipeDisplay) — this component only decides which one is shown.
 const RecipeWizard = () => {
   const [step, setStep] = useState<Step>("upload");
   const [result, setResult] = useState<RecognitionResult | null>(null);
+  const [recipe, setRecipe] = useState<RecipeView | null>(null);
   const [dirty, setDirty] = useState(false);
 
   // Leave-guard: warn before navigating away once photos have been selected (unsaved work).
@@ -32,11 +34,20 @@ const RecipeWizard = () => {
     setStep("review");
   };
 
+  const handleGenerated = (generatedRecipe: RecipeView) => {
+    setRecipe(generatedRecipe);
+    setStep("recipe");
+  };
+
   if (step === "upload" || !result) {
     return <UploadStep onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
   }
 
-  return <ReviewStep result={result} />;
+  if (step === "recipe" && recipe) {
+    return <RecipeDisplay recipe={recipe} />;
+  }
+
+  return <ReviewStep result={result} onGenerated={handleGenerated} />;
 };
 
 export default RecipeWizard;

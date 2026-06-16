@@ -445,9 +445,9 @@ Add the shadcn `switch` primitive and markdown rendering deps, lift `useEditable
 
 #### Automated
 
-- [x] 3.1 Type checking passes (`pnpm lint`)
-- [x] 3.2 UC + transport tests pass (`pnpm test`)
-- [x] 3.3 Build passes (`pnpm build`)
+- [x] 3.1 Type checking passes (`pnpm lint`) — 9771d7dbf
+- [x] 3.2 UC + transport tests pass (`pnpm test`) — 9771d7dbf
+- [x] 3.3 Build passes (`pnpm build`) — 9771d7dbf
 
 #### Manual
 
@@ -459,9 +459,9 @@ Add the shadcn `switch` primitive and markdown rendering deps, lift `useEditable
 
 #### Automated
 
-- [ ] 4.1 Type checking + lint passes (`pnpm lint`)
-- [ ] 4.2 All component tests pass (`pnpm test`)
-- [ ] 4.3 Build passes (`pnpm build`)
+- [x] 4.1 Type checking + lint passes (`pnpm lint`)
+- [x] 4.2 All component tests pass (`pnpm test`)
+- [x] 4.3 Build passes (`pnpm build`)
 
 #### Manual
 
