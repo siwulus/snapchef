@@ -1,12 +1,15 @@
 import {
   type PhotoRepository,
   type ProductRecognizer,
+  type RecipeGenerationCommand,
+  type RecipeGenerator,
+  type RecipeRepository,
   type RecipeSessionRepository,
   type SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import { SnapchefBusinessRuleViolationError, SnapchefExternalSystemError } from "@/lib/core/model/error";
-import { type Photo, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
+import { type Photo, type Recipe, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
 import { getOrThrowNotFound, logResult } from "@/lib/utils/effect";
 import { Effect } from "effect";
 import { isNotEmpty } from "ramda";
@@ -18,6 +21,8 @@ export class RecipeSessionUC {
     private readonly photoRepository: PhotoRepository,
     private readonly photosStorage: SessionPhotoStorage,
     private readonly productRecognizer: ProductRecognizer,
+    private readonly recipeRepository: RecipeRepository,
+    private readonly recipeGenerator: RecipeGenerator,
   ) {}
 
   createSession(userId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
@@ -57,6 +62,53 @@ export class RecipeSessionUC {
         ),
       ),
       logResult("recipe.recognize"),
+    );
+  }
+
+  // S-02: persist the edited inputs (provenance) BEFORE generating, so a generation failure leaves
+  // the session re-runnable with its inputs saved. Generate is timed (30 s) and retried once — the
+  // only thing that re-rolls a truncated/invalid model response (OpenRouter's model fallback only
+  // covers provider-side errors). The recipe is upserted, then the state advances to
+  // `recipe_generated` only after the recipe row is safely persisted.
+  generateRecipe(
+    userId: string,
+    sessionId: string,
+    command: RecipeGenerationCommand,
+  ): Effect.Effect<Recipe, SnapchefServerError> {
+    return this.fetchRecipeSession(userId, sessionId).pipe(
+      Effect.flatMap(() =>
+        this.sessionRepository
+          .update(userId, sessionId, {
+            correctedItems: command.correctedItems,
+            mealContext: command.mealContext,
+            allowExtraIngredients: command.allowExtraIngredients,
+          })
+          .pipe(Effect.flatMap(getOrThrowNotFound("Session not found"))),
+      ),
+      Effect.flatMap(() =>
+        this.recipeGenerator
+          .generate({
+            items: command.correctedItems,
+            mealContext: command.mealContext,
+            allowExtraIngredients: command.allowExtraIngredients,
+          })
+          .pipe(
+            Effect.timeoutFail({
+              duration: "30 seconds",
+              onTimeout: () => new SnapchefExternalSystemError({ message: "Recipe generation timed out" }),
+            }),
+            Effect.retry({ times: 1 }),
+          ),
+      ),
+      Effect.flatMap((generated) =>
+        this.recipeRepository.upsert({ sessionId, userId, name: generated.name, contentMd: generated.contentMd }),
+      ),
+      Effect.tap(() =>
+        this.sessionRepository
+          .update(userId, sessionId, { state: "recipe_generated" })
+          .pipe(Effect.flatMap(getOrThrowNotFound("Session not found"))),
+      ),
+      logResult("recipe.generate"),
     );
   }
 
