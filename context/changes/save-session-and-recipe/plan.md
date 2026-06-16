@@ -264,9 +264,9 @@ None — the `saved` state and its CHECK constraint already exist; no schema cha
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `pnpm build`
-- [x] 2.2 Linting passes: `pnpm lint`
-- [x] 2.3 Unit/component tests pass: `pnpm test`
+- [x] 2.1 Type checking passes: `pnpm build` — 5ab0e7943
+- [x] 2.2 Linting passes: `pnpm lint` — 5ab0e7943
+- [x] 2.3 Unit/component tests pass: `pnpm test` — 5ab0e7943
 
 #### Manual
 
