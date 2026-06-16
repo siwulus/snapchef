@@ -20,8 +20,18 @@ export const RecipeSessionRow = z.object({
   created_at: z.string(),
   meal_context: z.string().nullable(),
   recognized_items: z.array(RecognizedItem).nullable(),
+  allow_extra_ingredients: z.boolean().nullable(),
   state: z.string(),
   updated_at: z.string(),
+});
+
+export const RecipeRow = z.object({
+  id: z.string(),
+  session_id: z.string(),
+  user_id: z.string(),
+  content_md: z.string(),
+  created_at: z.string(),
+  name: z.string(),
 });
 
 export const PhotoRow = z.object({

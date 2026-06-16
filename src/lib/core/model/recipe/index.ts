@@ -33,6 +33,7 @@ export const RecipeSession = z.object({
   correctedItems: z.array(RecognizedItem).nullable(),
   createdAt: z.string(),
   mealContext: z.string().nullable(),
+  allowExtraIngredients: z.boolean().nullable(),
   recognizedItems: z.array(RecognizedItem).nullable(),
   state: RecipeSessionState,
   updatedAt: z.string(),

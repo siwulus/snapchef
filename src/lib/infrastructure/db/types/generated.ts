@@ -61,6 +61,7 @@ export type Database = {
       }
       recipe_sessions: {
         Row: {
+          allow_extra_ingredients: boolean | null
           corrected_items: Json | null
           created_at: string
           id: string
@@ -71,6 +72,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allow_extra_ingredients?: boolean | null
           corrected_items?: Json | null
           created_at?: string
           id?: string
@@ -81,6 +83,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allow_extra_ingredients?: boolean | null
           corrected_items?: Json | null
           created_at?: string
           id?: string
