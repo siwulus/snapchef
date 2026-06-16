@@ -8,8 +8,8 @@ import type {
   RecipeWritePayload,
   SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
-import { SnapchefExternalSystemError } from "@/lib/core/model/error";
-import type { Recipe, RecipeSession } from "@/lib/core/model/recipe";
+import { SnapchefExternalSystemError, SnapchefNotFoundError } from "@/lib/core/model/error";
+import type { Photo, Recipe, RecipeSession } from "@/lib/core/model/recipe";
 import { RecipeSessionUC } from "@/lib/core/uc/recipe/RecipeSessionUC";
 import { Effect, Either, Option } from "effect";
 import { describe, expect, it } from "vitest";
@@ -45,6 +45,7 @@ const makeSessionRepo = (updateCalls: RecipeSessionUpdatePayload[]): RecipeSessi
     updateCalls.push(data);
     return Effect.succeed(Option.some({ ...baseSession, ...data }));
   },
+  delete: () => Effect.void,
 });
 
 const stubPhotoRepo = {} as PhotoRepository;
@@ -126,5 +127,171 @@ describe("RecipeSessionUC.generateRecipe", () => {
     // The inputs write happened, but generation failed: no recipe upsert, no state transition.
     expect(upsertCalls).toHaveLength(0);
     expect(updateCalls.some((c) => c.state === "recipe_generated")).toBe(false);
+  });
+});
+
+const photo = (id: string, storagePath: string): Photo => ({
+  id,
+  sessionId: SESSION_ID,
+  userId: USER_ID,
+  storagePath,
+  storageObjectId: null,
+  contentType: "image/jpeg",
+  sizeBytes: 1234,
+  originalFilename: "fridge.jpg",
+  recognizedItems: null,
+  photoUrl: `https://example.test/${storagePath}`,
+  createdAt: "2026-06-16T00:00:00.000Z",
+  updatedAt: "2026-06-16T00:00:00.000Z",
+});
+
+// A session repo whose `find` outcome is configurable, recording delete calls.
+const makeSessionRepoFor = (
+  found: boolean,
+  updateCalls: RecipeSessionUpdatePayload[],
+  deleteCalls: { userId: string; sessionId: string }[],
+): RecipeSessionRepository => ({
+  create: () => Effect.succeed(baseSession),
+  find: () => Effect.succeed(found ? Option.some(baseSession) : Option.none()),
+  update: (_userId, _sessionId, data) => {
+    updateCalls.push(data);
+    return Effect.succeed(Option.some({ ...baseSession, ...data }));
+  },
+  delete: (userId, sessionId) => {
+    deleteCalls.push({ userId, sessionId });
+    return Effect.void;
+  },
+});
+
+describe("RecipeSessionUC.saveSession", () => {
+  it("advances the session to `saved` and returns it", async () => {
+    const updateCalls: RecipeSessionUpdatePayload[] = [];
+    const uc = new RecipeSessionUC(
+      makeSessionRepoFor(true, updateCalls, []),
+      stubPhotoRepo,
+      stubPhotoStorage,
+      stubRecognizer,
+      {} as RecipeRepository,
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.saveSession(USER_ID, SESSION_ID)));
+
+    expect(Either.isRight(result)).toBe(true);
+    if (Either.isRight(result)) {
+      expect(result.right.state).toBe("saved");
+    }
+    expect(updateCalls).toEqual([{ state: "saved" }]);
+  });
+
+  it("surfaces SnapchefNotFoundError when the session is missing (no update)", async () => {
+    const updateCalls: RecipeSessionUpdatePayload[] = [];
+    const uc = new RecipeSessionUC(
+      makeSessionRepoFor(false, updateCalls, []),
+      stubPhotoRepo,
+      stubPhotoStorage,
+      stubRecognizer,
+      {} as RecipeRepository,
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.saveSession(USER_ID, SESSION_ID)));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefNotFoundError);
+    }
+    expect(updateCalls).toHaveLength(0);
+  });
+});
+
+describe("RecipeSessionUC.deleteSession", () => {
+  it("removes the listed photos' storage paths, then deletes the session row", async () => {
+    const deleteCalls: { userId: string; sessionId: string }[] = [];
+    const removeCalls: string[][] = [];
+    const photos = [photo("p1", "user/sess/a.jpg"), photo("p2", "user/sess/b.jpg")];
+    const photoRepo: PhotoRepository = {
+      ...stubPhotoRepo,
+      listBySession: () => Effect.succeed(photos),
+    };
+    const photoStorage: SessionPhotoStorage = {
+      ...stubPhotoStorage,
+      remove: (paths) => {
+        removeCalls.push(paths);
+        return Effect.void;
+      },
+    };
+    const uc = new RecipeSessionUC(
+      makeSessionRepoFor(true, [], deleteCalls),
+      photoRepo,
+      photoStorage,
+      stubRecognizer,
+      {} as RecipeRepository,
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.deleteSession(USER_ID, SESSION_ID)));
+
+    expect(Either.isRight(result)).toBe(true);
+    expect(removeCalls).toEqual([["user/sess/a.jpg", "user/sess/b.jpg"]]);
+    expect(deleteCalls).toEqual([{ userId: USER_ID, sessionId: SESSION_ID }]);
+  });
+
+  it("still deletes the session when storage cleanup fails (best-effort)", async () => {
+    const deleteCalls: { userId: string; sessionId: string }[] = [];
+    const photoRepo: PhotoRepository = {
+      ...stubPhotoRepo,
+      listBySession: () => Effect.succeed([photo("p1", "user/sess/a.jpg")]),
+    };
+    const photoStorage: SessionPhotoStorage = {
+      ...stubPhotoStorage,
+      remove: () => Effect.fail(new SnapchefExternalSystemError({ message: "storage down" })),
+    };
+    const uc = new RecipeSessionUC(
+      makeSessionRepoFor(true, [], deleteCalls),
+      photoRepo,
+      photoStorage,
+      stubRecognizer,
+      {} as RecipeRepository,
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.deleteSession(USER_ID, SESSION_ID)));
+
+    expect(Either.isRight(result)).toBe(true);
+    expect(deleteCalls).toEqual([{ userId: USER_ID, sessionId: SESSION_ID }]);
+  });
+
+  it("surfaces SnapchefNotFoundError before any deletion when the session is missing", async () => {
+    const deleteCalls: { userId: string; sessionId: string }[] = [];
+    const removeCalls: string[][] = [];
+    const photoRepo: PhotoRepository = {
+      ...stubPhotoRepo,
+      listBySession: () => Effect.succeed([photo("p1", "user/sess/a.jpg")]),
+    };
+    const photoStorage: SessionPhotoStorage = {
+      ...stubPhotoStorage,
+      remove: (paths) => {
+        removeCalls.push(paths);
+        return Effect.void;
+      },
+    };
+    const uc = new RecipeSessionUC(
+      makeSessionRepoFor(false, [], deleteCalls),
+      photoRepo,
+      photoStorage,
+      stubRecognizer,
+      {} as RecipeRepository,
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.deleteSession(USER_ID, SESSION_ID)));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefNotFoundError);
+    }
+    expect(removeCalls).toHaveLength(0);
+    expect(deleteCalls).toHaveLength(0);
   });
 });

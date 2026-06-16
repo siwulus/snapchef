@@ -2,7 +2,7 @@ import { RecipeDisplay } from "@/components/recipes/wizard/RecipeDisplay";
 import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
 import type { RecipeView, RecognitionResult } from "@/lib/core/boundry/recipe";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Step = "upload" | "review" | "recipe";
 
@@ -14,20 +14,30 @@ const RecipeWizard = () => {
   const [result, setResult] = useState<RecognitionResult | null>(null);
   const [recipe, setRecipe] = useState<RecipeView | null>(null);
   const [dirty, setDirty] = useState(false);
+  // Ref-backed armed flag so the finalize flow can disarm the guard SYNCHRONOUSLY before
+  // window.location.assign — a deferred setDirty(false) would not flush before the browser
+  // reads the beforeunload handler.
+  const guardArmed = useRef(false);
 
   // Leave-guard: warn before navigating away once photos have been selected (unsaved work).
   useEffect(() => {
+    guardArmed.current = dirty;
     if (!dirty) return;
     // preventDefault() is the modern trigger for the browser's leave-prompt; the deprecated
-    // returnValue assignment is intentionally omitted.
+    // returnValue assignment is intentionally omitted. The handler honors the synchronous
+    // guardArmed flag so an intentional finalize navigation can suppress the prompt.
     const handler = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
+      if (guardArmed.current) event.preventDefault();
     };
     window.addEventListener("beforeunload", handler);
     return () => {
       window.removeEventListener("beforeunload", handler);
     };
   }, [dirty]);
+
+  const disarmLeaveGuard = () => {
+    guardArmed.current = false;
+  };
 
   const handleRecognitionComplete = (recognitionResult: RecognitionResult) => {
     setResult(recognitionResult);
@@ -44,7 +54,7 @@ const RecipeWizard = () => {
   }
 
   if (step === "recipe" && recipe) {
-    return <RecipeDisplay recipe={recipe} />;
+    return <RecipeDisplay recipe={recipe} onBeforeNavigate={disarmLeaveGuard} />;
   }
 
   return <ReviewStep result={result} onGenerated={handleGenerated} />;

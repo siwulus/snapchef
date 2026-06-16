@@ -1,4 +1,4 @@
-import { post, postFormData } from "@/components/api/http";
+import { delete_, post, postFormData } from "@/components/api/http";
 import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
 import { Effect } from "effect";
 import { useMemo } from "react";
@@ -23,6 +23,11 @@ export const useApiClient = () =>
         postFormData(url, formData, dataSchema).pipe(
           Effect.tapError((error) => Effect.sync(() => toast.error(error.message))),
         ),
+      del: <S extends z.ZodType>(
+        url: string,
+        dataSchema: S,
+      ): Effect.Effect<ApiResponsePayload<z.output<S>>, SnapchefClientError> =>
+        delete_(url, dataSchema).pipe(Effect.tapError((error) => Effect.sync(() => toast.error(error.message)))),
     }),
     [],
   );

@@ -112,6 +112,42 @@ export class RecipeSessionUC {
     );
   }
 
+  // Final step (save): validate ownership, then advance the session to `saved`. The recipe row
+  // already exists from generation, so this is solely a state transition — idempotent,
+  // last-write-wins (no `recipe_generated` precondition).
+  saveSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
+    return this.fetchRecipeSession(userId, sessionId).pipe(
+      Effect.flatMap(() => this.sessionRepository.update(userId, sessionId, { state: "saved" })),
+      Effect.flatMap(getOrThrowNotFound("Session not found")),
+      logResult("recipe.save"),
+    );
+  }
+
+  // Final step (delete): validate ownership, clean up the storage-bucket files (best-effort,
+  // mirroring removeExistingPhotos), then hard-delete the session row. The DB `on delete cascade`
+  // drops the recipe + photo rows. Files must be removed BEFORE the row is gone — afterwards the
+  // photos can no longer be listed.
+  deleteSession(userId: string, sessionId: string): Effect.Effect<void, SnapchefServerError> {
+    return this.fetchRecipeSession(userId, sessionId).pipe(
+      Effect.tap((session) => this.removeSessionPhotos(session)),
+      Effect.flatMap(() => this.sessionRepository.delete(userId, sessionId)),
+      logResult("recipe.delete"),
+    );
+  }
+
+  // Best-effort storage cleanup for a session about to be deleted — a transient storage hiccup
+  // must never block the delete (the DB rows still go via cascade). Mirrors removeExistingPhotos.
+  private removeSessionPhotos(session: RecipeSession): Effect.Effect<void> {
+    return this.photoRepository.listBySession(session.userId, session.id).pipe(
+      Effect.flatMap((photos) =>
+        match(photos.length)
+          .with(0, () => Effect.void)
+          .otherwise(() => this.photosStorage.remove(photos.map((photo) => photo.storagePath))),
+      ),
+      Effect.catchAll(() => Effect.void),
+    );
+  }
+
   private fetchRecipeSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
     return this.sessionRepository.find(userId, sessionId).pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
   }
