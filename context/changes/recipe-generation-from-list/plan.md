@@ -431,9 +431,9 @@ Add the shadcn `switch` primitive and markdown rendering deps, lift `useEditable
 
 #### Automated
 
-- [x] 2.1 Type checking passes (`pnpm lint`)
-- [x] 2.2 New transport test passes (`pnpm exec vitest run src/lib/infrastructure/llm`)
-- [x] 2.3 Recognition behavior unchanged; build passes (`pnpm build`)
+- [x] 2.1 Type checking passes (`pnpm lint`) — 5da065b59
+- [x] 2.2 New transport test passes (`pnpm exec vitest run src/lib/infrastructure/llm`) — 5da065b59
+- [x] 2.3 Recognition behavior unchanged; build passes (`pnpm build`) — 5da065b59
 
 #### Manual
 
@@ -445,9 +445,9 @@ Add the shadcn `switch` primitive and markdown rendering deps, lift `useEditable
 
 #### Automated
 
-- [ ] 3.1 Type checking passes (`pnpm lint`)
-- [ ] 3.2 UC + transport tests pass (`pnpm test`)
-- [ ] 3.3 Build passes (`pnpm build`)
+- [x] 3.1 Type checking passes (`pnpm lint`)
+- [x] 3.2 UC + transport tests pass (`pnpm test`)
+- [x] 3.3 Build passes (`pnpm build`)
 
 #### Manual
 

@@ -1,9 +1,10 @@
 import { createSupabaseAuthenticator } from "@/lib/infrastructure/auth/SupabaseAuthenticator";
 import { createPhotoRepository } from "@/lib/infrastructure/db/PhotoRepository";
+import { createRecipeRepository } from "@/lib/infrastructure/db/RecipeRepository";
 import { createRecipeSessionRepository } from "@/lib/infrastructure/db/RecipeSessionRepository";
 import { createSessionPhotoStorage } from "@/lib/infrastructure/db/SessionPhotoStorage";
 import { createClient } from "@/lib/infrastructure/db/supabase";
-import { createProductRecognizer } from "@/lib/infrastructure/llm/openrouter";
+import { createProductRecognizer, createRecipeGenerator } from "@/lib/infrastructure/llm/openrouter";
 import { runWithLogging, shouldLogBodies } from "@/lib/infrastructure/logging/logger";
 import type { APIContext, MiddlewareNext } from "astro";
 import { defineMiddleware } from "astro:middleware";
@@ -45,6 +46,8 @@ const injectDependencies = (context: APIContext): Effect.Effect<void, SnapchefEx
           createPhotoRepository(supabase),
           createSessionPhotoStorage(supabase),
           createProductRecognizer(),
+          createRecipeRepository(supabase),
+          createRecipeGenerator(),
         );
         return Effect.void;
       }),

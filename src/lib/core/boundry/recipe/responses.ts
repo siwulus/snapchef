@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PhotoId, RecipeSession, RecognizedItem } from "@/lib/core/model/recipe";
+import { PhotoId, Recipe, RecipeSession, RecognizedItem } from "@/lib/core/model/recipe";
 
 // Lean per-photo projection for the client — excludes storage internals
 // (storage path, object id, user id) so they never reach the browser.
@@ -17,3 +17,8 @@ export const RecognitionResult = z.object({
 });
 
 export type RecognitionResult = z.infer<typeof RecognitionResult>;
+
+// Lean recipe view for the client — excludes the owner's user id.
+export const RecipeView = Recipe.omit({ userId: true });
+
+export type RecipeView = z.infer<typeof RecipeView>;
