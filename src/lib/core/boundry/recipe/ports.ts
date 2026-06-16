@@ -1,17 +1,27 @@
 import type { Effect, Option } from "effect";
 import type { z } from "zod";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import { Photo, RecipeSession, StoredPhoto, type RecognizedItem } from "@/lib/core/model/recipe";
+import { Photo, Recipe, RecipeSession, StoredPhoto, type RecognizedItem } from "@/lib/core/model/recipe";
 import type { UserId } from "@/lib/core/model/auth";
 
 export const RecipeSessionUpdatePayload = RecipeSession.pick({
   correctedItems: true,
   mealContext: true,
   recognizedItems: true,
+  allowExtraIngredients: true,
   state: true,
 }).partial();
 
 export type RecipeSessionUpdatePayload = z.infer<typeof RecipeSessionUpdatePayload>;
+
+export const RecipeWritePayload = Recipe.pick({
+  sessionId: true,
+  userId: true,
+  name: true,
+  contentMd: true,
+});
+
+export type RecipeWritePayload = z.infer<typeof RecipeWritePayload>;
 
 // The storage metadata returned by a binary upload — the path plus the stable
 // storage object id, so the UC can persist them onto the photo row.
@@ -64,4 +74,10 @@ export interface PhotoRepository {
 export interface ProductRecognizer {
   recognizePhoto(url: string): Effect.Effect<RecognizedItem[], SnapchefServerError>;
   mergeItems(lists: RecognizedItem[]): Effect.Effect<RecognizedItem[], SnapchefServerError>;
+}
+
+export interface RecipeRepository {
+  // Idempotent upsert keyed on the session's UNIQUE session_id — one recipe per session,
+  // overwrite-safe on re-generation. Returns the saved domain Recipe.
+  upsert(payload: RecipeWritePayload): Effect.Effect<Recipe, SnapchefServerError>;
 }
