@@ -20,7 +20,10 @@ export const RecipeSessionRow = z.object({
   created_at: z.string(),
   meal_context: z.string().nullable(),
   recognized_items: z.array(RecognizedItem).nullable(),
-  allow_extra_ingredients: z.boolean().nullable(),
+  // `.nullish()` (not `.nullable()`) so a Worker that is ahead of the DB — before the additive
+  // migration 20260616120000 has been applied — decodes a row missing this column instead of
+  // 500-ing. The converter coalesces the absent value (undefined) to null.
+  allow_extra_ingredients: z.boolean().nullish(),
   state: z.string(),
   updated_at: z.string(),
 });

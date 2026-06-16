@@ -8,7 +8,7 @@ export const RecipeSessionFromRow = RecipeSessionRow.transform((row) => ({
   createdAt: row.created_at,
   mealContext: row.meal_context,
   recognizedItems: row.recognized_items,
-  allowExtraIngredients: row.allow_extra_ingredients,
+  allowExtraIngredients: row.allow_extra_ingredients ?? null,
   state: row.state,
   updatedAt: row.updated_at,
 })).pipe(RecipeSession);
