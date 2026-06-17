@@ -1,8 +1,17 @@
 import type { Effect, Option } from "effect";
 import type { z } from "zod";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import { Photo, Recipe, RecipeSession, StoredPhoto, type RecognizedItem } from "@/lib/core/model/recipe";
+import {
+  Photo,
+  Recipe,
+  RecipeSession,
+  type RecipeSessionState,
+  StoredPhoto,
+  type RecognizedItem,
+} from "@/lib/core/model/recipe";
 import type { UserId } from "@/lib/core/model/auth";
+// Type-only, same-folder reference: the list-read port returns the driving-side client projection.
+import type { RecipeListItem } from "./responses";
 
 export const RecipeSessionUpdatePayload = RecipeSession.pick({
   correctedItems: true,
@@ -22,6 +31,12 @@ export const RecipeWritePayload = Recipe.pick({
 });
 
 export type RecipeWritePayload = z.infer<typeof RecipeWritePayload>;
+
+// Owner-scoped list filter for the recipe-list read. For now the only criterion is the session
+// state (the UC passes `{ state: "saved" }`); absent fields are not filtered.
+export interface RecipeListFilter {
+  state?: RecipeSessionState;
+}
 
 // The storage metadata returned by a binary upload — the path plus the stable
 // storage object id, so the UC can persist them onto the photo row.
@@ -81,6 +96,11 @@ export interface RecipeRepository {
   // Idempotent upsert keyed on the session's UNIQUE session_id — one recipe per session,
   // overwrite-safe on re-generation. Returns the saved domain Recipe.
   upsert(payload: RecipeWritePayload): Effect.Effect<Recipe, SnapchefServerError>;
+  // Lists the user's recipes matching the filter (e.g. sessions in state `saved`), newest first,
+  // as lean list cards.
+  list(userId: UserId, filter: RecipeListFilter): Effect.Effect<RecipeListItem[], SnapchefServerError>;
+  // Fetches the single recipe belonging to a session (owner-scoped); absence is `Option.none()`.
+  findBySession(userId: UserId, sessionId: string): Effect.Effect<Option.Option<Recipe>, SnapchefServerError>;
 }
 
 export interface RecipeGenerator {

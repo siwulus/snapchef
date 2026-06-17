@@ -1,0 +1,26 @@
+---
+import { Card } from "@/components/ui/card";
+import DeleteRecipeButton from "@/components/recipes/DeleteRecipeButton";
+import type { RecipeListItem } from "@/lib/core/boundry/recipe";
+
+interface Props {
+  recipe: RecipeListItem;
+}
+
+const { recipe } = Astro.props;
+const formattedDate = new Date(recipe.createdAt).toLocaleDateString("pl-PL");
+---
+
+<Card className="flex h-full flex-col gap-0 p-0">
+  <a
+    href={`/recipes/${recipe.sessionId}`}
+    class="hover:bg-muted/50 flex flex-1 flex-col gap-1 px-4 py-4 transition-colors"
+  >
+    <h2 class="font-heading text-foreground text-sm font-medium">{recipe.name}</h2>
+    <p class="text-muted-foreground text-xs">{formattedDate}</p>
+    {recipe.mealContext && <p class="text-muted-foreground line-clamp-2 text-sm">{recipe.mealContext}</p>}
+  </a>
+  <div class="flex justify-end border-t px-4 py-3">
+    <DeleteRecipeButton sessionId={recipe.sessionId} client:visible />
+  </div>
+</Card>

@@ -1,0 +1,58 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import { RecipeBody } from "@/components/recipes/RecipeBody";
+import RecipeProvenance from "@/components/recipes/detail/RecipeProvenance.astro";
+import DeleteRecipeButton from "@/components/recipes/DeleteRecipeButton";
+import { RecipeSessionId } from "@/lib/core/model/recipe";
+import { runWithLogging } from "@/lib/infrastructure/logging/logger";
+import { Effect } from "effect";
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+const idResult = RecipeSessionId.safeParse(Astro.params.id);
+if (!idResult.success) {
+  return Astro.redirect("/recipes");
+}
+
+// Reuse the sanctioned page edge (see confirm.astro): collapse both channels with Effect.match to
+// detail-or-null. A missing/foreign/non-saved session surfaces as NotFound → null → redirect, so
+// the single guard below covers every "not viewable" case uniformly.
+const detail = await runWithLogging(
+  Astro.locals.recipeSessions.getSavedRecipe(user.id, idResult.data).pipe(
+    Effect.match({
+      onFailure: () => null,
+      onSuccess: (value) => value,
+    }),
+  ),
+);
+
+if (!detail) {
+  return Astro.redirect("/recipes");
+}
+---
+
+<AppLayout title={`${detail.recipe.name} — Snapchef`}>
+  <div class="flex flex-col gap-8">
+    <div>
+      <a href="/recipes" class="text-muted-foreground hover:text-foreground text-sm transition-colors">
+        ← Wróć do przepisów
+      </a>
+    </div>
+
+    <article class="flex flex-col gap-6">
+      <h1 class="text-foreground text-3xl font-semibold">{detail.recipe.name}</h1>
+      <RecipeBody contentMd={detail.recipe.contentMd} />
+    </article>
+
+    <RecipeProvenance mealContext={detail.mealContext} items={detail.items} photos={detail.photos} />
+
+    <div class="flex justify-end border-t pt-6">
+      <DeleteRecipeButton sessionId={detail.recipe.sessionId} client:visible />
+    </div>
+  </div>
+</AppLayout>
