@@ -1,7 +1,7 @@
 ---
 change_id: saved-recipes-readback
 title: Saved recipes readback
-status: implementing
+status: impl_reviewed
 created: 2026-06-17
 updated: 2026-06-17
 archived_at: null

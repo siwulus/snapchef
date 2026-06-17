@@ -3,6 +3,7 @@ import type { z } from "zod";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import { Photo, Recipe, RecipeSession, StoredPhoto, type RecognizedItem } from "@/lib/core/model/recipe";
 import type { UserId } from "@/lib/core/model/auth";
+// Type-only, same-folder reference: the list-read port returns the driving-side client projection.
 import type { SavedRecipeListItem } from "./responses";
 
 export const RecipeSessionUpdatePayload = RecipeSession.pick({
