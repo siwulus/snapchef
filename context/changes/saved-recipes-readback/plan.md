@@ -338,9 +338,9 @@ None — `recipes`/`recipe_sessions`/`photos` tables, the `(user_id, created_at 
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `pnpm build`
-- [x] 2.2 Linting passes: `pnpm lint`
-- [x] 2.3 Unit/component tests pass: `pnpm test`
+- [x] 2.1 Type checking passes: `pnpm build` — fd4c9c302
+- [x] 2.2 Linting passes: `pnpm lint` — fd4c9c302
+- [x] 2.3 Unit/component tests pass: `pnpm test` — fd4c9c302
 
 #### Manual
 
