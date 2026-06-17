@@ -10,7 +10,8 @@ export const prerender = false;
 export const POST: APIRoute = ({ params, locals: { user, recipeSessions } }) =>
   runApiRoute(
     Effect.all([validateAuthUser(user), decodeWith(RecipeSessionId)(params.id)]).pipe(
-      Effect.flatMap(([authUser, id]) => recipeSessions.saveSession(authUser.id, id)),
-      Effect.as<RedirectTarget>({ redirect: "/recipes" }),
+      Effect.flatMap(([authUser, id]) =>
+        recipeSessions.saveSession(authUser.id, id).pipe(Effect.as<RedirectTarget>({ redirect: `/recipes/${id}` })),
+      ),
     ),
   );

@@ -84,6 +84,8 @@ export interface RecipeRepository {
   upsert(payload: RecipeWritePayload): Effect.Effect<Recipe, SnapchefServerError>;
   // Lists the user's saved recipes (sessions in state `saved`), newest first, as lean list cards.
   listSaved(userId: UserId): Effect.Effect<SavedRecipeListItem[], SnapchefServerError>;
+  // Fetches the single recipe belonging to a session (owner-scoped); absence is `Option.none()`.
+  findBySession(userId: UserId, sessionId: string): Effect.Effect<Option.Option<Recipe>, SnapchefServerError>;
 }
 
 export interface RecipeGenerator {

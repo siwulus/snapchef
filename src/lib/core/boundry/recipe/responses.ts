@@ -33,3 +33,23 @@ export const SavedRecipeListItem = z.object({
 });
 
 export type SavedRecipeListItem = z.infer<typeof SavedRecipeListItem>;
+
+// Lean gallery photo for the detail page — just id + signed url (no per-photo recognition,
+// no storage internals).
+export const RecipeGalleryPhoto = z.object({
+  id: PhotoId,
+  photoUrl: z.string(),
+});
+
+export type RecipeGalleryPhoto = z.infer<typeof RecipeGalleryPhoto>;
+
+// Everything the detail page renders: the recipe (name + markdown body), then the saved session's
+// provenance — meal context, the final consolidated item list, and the photo gallery.
+export const SavedRecipeDetail = z.object({
+  recipe: RecipeView,
+  mealContext: z.string().nullable(),
+  items: z.array(RecognizedItem),
+  photos: z.array(RecipeGalleryPhoto),
+});
+
+export type SavedRecipeDetail = z.infer<typeof SavedRecipeDetail>;

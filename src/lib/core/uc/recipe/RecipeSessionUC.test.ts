@@ -66,6 +66,7 @@ const makeRecipeRepo = (upsertCalls: RecipeWritePayload[]): RecipeRepository => 
     });
   },
   listSaved: () => Effect.succeed([]),
+  findBySession: () => Effect.succeed(Option.none()),
 });
 
 const successGenerator: RecipeGenerator = {
@@ -310,6 +311,7 @@ describe("RecipeSessionUC.listSavedRecipes", () => {
         listSavedCalls.push(userId);
         return Effect.succeed(items);
       },
+      findBySession: () => Effect.succeed(Option.none()),
     };
     const uc = new RecipeSessionUC(
       makeSessionRepoFor(true, [], []),
@@ -324,5 +326,115 @@ describe("RecipeSessionUC.listSavedRecipes", () => {
 
     expect(result).toEqual(items);
     expect(listSavedCalls).toEqual([USER_ID]);
+  });
+});
+
+const savedSession: RecipeSession = { ...baseSession, state: "saved" };
+
+const sampleRecipe: Recipe = {
+  id: RECIPE_ID,
+  sessionId: SESSION_ID,
+  userId: USER_ID,
+  name: "Jajecznica",
+  contentMd: "## Składniki\n- 4 jajka",
+  createdAt: "2026-06-16T00:00:00.000Z",
+};
+
+const sessionRepoReturning = (session: RecipeSession | null): RecipeSessionRepository => ({
+  create: () => Effect.succeed(baseSession),
+  find: () => Effect.succeed(session ? Option.some(session) : Option.none()),
+  update: (_userId, _sessionId, data) => Effect.succeed(Option.some({ ...baseSession, ...data })),
+  delete: () => Effect.void,
+});
+
+const recipeRepoFindBySession = (recipe: Recipe | null): RecipeRepository => ({
+  upsert: () => Effect.fail(new SnapchefExternalSystemError({ message: "unused" })),
+  listSaved: () => Effect.succeed([]),
+  findBySession: () => Effect.succeed(recipe ? Option.some(recipe) : Option.none()),
+});
+
+const photoRepoListing = (photos: Photo[]): PhotoRepository => ({
+  ...stubPhotoRepo,
+  listBySession: () => Effect.succeed(photos),
+});
+
+describe("RecipeSessionUC.getSavedRecipe", () => {
+  it("composes the detail from a saved session, its recipe, and photos (items from correctedItems)", async () => {
+    const photos = [photo("p1", "user/sess/a.jpg")];
+    const uc = new RecipeSessionUC(
+      sessionRepoReturning(savedSession),
+      photoRepoListing(photos),
+      stubPhotoStorage,
+      stubRecognizer,
+      recipeRepoFindBySession(sampleRecipe),
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(uc.getSavedRecipe(USER_ID, SESSION_ID));
+
+    expect(result.recipe).toEqual({
+      id: RECIPE_ID,
+      sessionId: SESSION_ID,
+      name: "Jajecznica",
+      contentMd: sampleRecipe.contentMd,
+      createdAt: sampleRecipe.createdAt,
+    });
+    expect(result.mealContext).toBe(savedSession.mealContext);
+    expect(result.items).toEqual(baseSession.correctedItems);
+    expect(result.photos).toEqual([{ id: "p1", photoUrl: "https://example.test/user/sess/a.jpg" }]);
+  });
+
+  it("fails SnapchefNotFoundError when the session is not in the `saved` state", async () => {
+    const uc = new RecipeSessionUC(
+      sessionRepoReturning(baseSession), // state: products_recognized
+      photoRepoListing([]),
+      stubPhotoStorage,
+      stubRecognizer,
+      recipeRepoFindBySession(sampleRecipe),
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.getSavedRecipe(USER_ID, SESSION_ID)));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefNotFoundError);
+    }
+  });
+
+  it("fails SnapchefNotFoundError when the session is missing or not owned", async () => {
+    const uc = new RecipeSessionUC(
+      sessionRepoReturning(null),
+      photoRepoListing([]),
+      stubPhotoStorage,
+      stubRecognizer,
+      recipeRepoFindBySession(sampleRecipe),
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.getSavedRecipe(USER_ID, SESSION_ID)));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefNotFoundError);
+    }
+  });
+
+  it("fails SnapchefNotFoundError when a saved session has no recipe row", async () => {
+    const uc = new RecipeSessionUC(
+      sessionRepoReturning(savedSession),
+      photoRepoListing([]),
+      stubPhotoStorage,
+      stubRecognizer,
+      recipeRepoFindBySession(null),
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(Effect.either(uc.getSavedRecipe(USER_ID, SESSION_ID)));
+
+    expect(Either.isLeft(result)).toBe(true);
+    if (Either.isLeft(result)) {
+      expect(result.left).toBeInstanceOf(SnapchefNotFoundError);
+    }
   });
 });

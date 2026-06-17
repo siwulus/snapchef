@@ -321,9 +321,9 @@ None — `recipes`/`recipe_sessions`/`photos` tables, the `(user_id, created_at 
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `pnpm build`
-- [x] 1.2 Linting passes: `pnpm lint`
-- [x] 1.3 Unit/component tests pass: `pnpm test`
+- [x] 1.1 Type checking passes: `pnpm build` — 7aafc3e3b
+- [x] 1.2 Linting passes: `pnpm lint` — 7aafc3e3b
+- [x] 1.3 Unit/component tests pass: `pnpm test` — 7aafc3e3b
 
 #### Manual
 
@@ -338,9 +338,9 @@ None — `recipes`/`recipe_sessions`/`photos` tables, the `(user_id, created_at 
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `pnpm build`
-- [ ] 2.2 Linting passes: `pnpm lint`
-- [ ] 2.3 Unit/component tests pass: `pnpm test`
+- [x] 2.1 Type checking passes: `pnpm build`
+- [x] 2.2 Linting passes: `pnpm lint`
+- [x] 2.3 Unit/component tests pass: `pnpm test`
 
 #### Manual
 

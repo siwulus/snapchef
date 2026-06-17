@@ -2,11 +2,11 @@ import type { RecipeRepository, RecipeWritePayload, SavedRecipeListItem } from "
 import type { UserId } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import type { Recipe } from "@/lib/core/model/recipe";
-import type { Database } from "@/lib/infrastructure/db/types";
+import type { Database, RecipeRow } from "@/lib/infrastructure/db/types";
 import { RecipeFromRow, SavedRecipeListItemFromRow } from "@/lib/infrastructure/db/types/converters";
-import { tryErrorDataWithSchema } from "@/lib/utils/effect";
+import { decodeWith, tryErrorDataOption, tryErrorDataWithSchema } from "@/lib/utils/effect";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Effect } from "effect";
+import { Effect, type Option } from "effect";
 import { z } from "zod";
 
 // Overwrite-safe upsert on the UNIQUE session_id: one recipe per session, re-generation
@@ -49,7 +49,23 @@ const listSaved =
         .then(({ error, data }) => ({ error, data })),
     );
 
+// Owner-scoped fetch of the one recipe belonging to a session. Absence (no recipe for this
+// session, or not owned) is reported as Option.none(); the UC decides whether that is a 404.
+const findBySession =
+  (supabase: SupabaseClient<Database>) =>
+  (userId: UserId, sessionId: string): Effect.Effect<Option.Option<Recipe>, SnapchefServerError> =>
+    tryErrorDataOption<RecipeRow>(() =>
+      supabase
+        .from("recipes")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("session_id", sessionId)
+        .single()
+        .then(({ error, data }) => ({ error, data })),
+    ).pipe(Effect.flatMap((option) => Effect.transposeMapOption(option, decodeWith(RecipeFromRow))));
+
 export const createRecipeRepository = (supabase: SupabaseClient<Database>): RecipeRepository => ({
   upsert: upsert(supabase),
   listSaved: listSaved(supabase),
+  findBySession: findBySession(supabase),
 });

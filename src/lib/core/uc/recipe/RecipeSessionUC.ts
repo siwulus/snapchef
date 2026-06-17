@@ -5,11 +5,16 @@ import {
   type RecipeGenerator,
   type RecipeRepository,
   type RecipeSessionRepository,
+  type SavedRecipeDetail,
   type SavedRecipeListItem,
   type SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import { SnapchefBusinessRuleViolationError, SnapchefExternalSystemError } from "@/lib/core/model/error";
+import {
+  SnapchefBusinessRuleViolationError,
+  SnapchefExternalSystemError,
+  SnapchefNotFoundError,
+} from "@/lib/core/model/error";
 import { type Photo, type Recipe, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
 import { getOrThrowNotFound, logResult } from "@/lib/utils/effect";
 import { Effect } from "effect";
@@ -140,6 +145,50 @@ export class RecipeSessionUC {
   // the `saved`-state filter live in the repository query (RLS-backed).
   listSavedRecipes(userId: string): Effect.Effect<SavedRecipeListItem[], SnapchefServerError> {
     return this.recipeRepository.listSaved(userId).pipe(logResult("recipe.listSaved"));
+  }
+
+  // Readback (S-04): the full detail of one saved recipe — body + provenance (meal context, the
+  // final consolidated item list, the photo gallery). Only the owner's *saved* recipe is viewable;
+  // a missing/foreign session or a non-`saved` state both surface as NotFound, so the page can
+  // redirect uniformly. The final item list is the edited (corrected) list persisted at generation.
+  getSavedRecipe(userId: string, sessionId: string): Effect.Effect<SavedRecipeDetail, SnapchefServerError> {
+    return this.fetchRecipeSession(userId, sessionId).pipe(
+      Effect.flatMap((session) =>
+        match(session.state)
+          .with("saved", () => Effect.succeed(session))
+          .otherwise(() =>
+            Effect.fail<SnapchefServerError>(new SnapchefNotFoundError({ message: "Recipe not saved" })),
+          ),
+      ),
+      Effect.flatMap((session) =>
+        this.recipeRepository.findBySession(userId, sessionId).pipe(
+          Effect.flatMap(getOrThrowNotFound("Recipe not found")),
+          Effect.flatMap((recipe) =>
+            this.photoRepository
+              .listBySession(userId, sessionId)
+              .pipe(Effect.map((photos) => this.toSavedRecipeDetail(session, recipe, photos))),
+          ),
+        ),
+      ),
+      logResult("recipe.getSaved"),
+    );
+  }
+
+  // Assemble the detail payload: drop the recipe's owner id (RecipeView shape), take the final
+  // consolidated list (corrected, falling back to recognized), and project photos to the gallery.
+  private toSavedRecipeDetail(session: RecipeSession, recipe: Recipe, photos: Photo[]): SavedRecipeDetail {
+    return {
+      recipe: {
+        id: recipe.id,
+        sessionId: recipe.sessionId,
+        name: recipe.name,
+        contentMd: recipe.contentMd,
+        createdAt: recipe.createdAt,
+      },
+      mealContext: session.mealContext,
+      items: session.correctedItems ?? session.recognizedItems ?? [],
+      photos: photos.map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })),
+    };
   }
 
   // Best-effort storage cleanup for a session about to be deleted — a transient storage hiccup
