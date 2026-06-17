@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PhotoId, Recipe, RecipeSession, RecognizedItem } from "@/lib/core/model/recipe";
+import { PhotoId, Recipe, RecipeSession, RecipeSessionId, RecognizedItem } from "@/lib/core/model/recipe";
 
 // Lean per-photo projection for the client — excludes storage internals
 // (storage path, object id, user id) so they never reach the browser.
@@ -22,3 +22,14 @@ export type RecognitionResult = z.infer<typeof RecognitionResult>;
 export const RecipeView = Recipe.omit({ userId: true });
 
 export type RecipeView = z.infer<typeof RecipeView>;
+
+// One saved-recipe list card: the session id is the durable handle for the detail link
+// (`/recipes/[id]`) and the delete call; `mealContext` powers the card snippet.
+export const SavedRecipeListItem = z.object({
+  sessionId: RecipeSessionId,
+  name: z.string(),
+  createdAt: z.string(),
+  mealContext: z.string().nullable(),
+});
+
+export type SavedRecipeListItem = z.infer<typeof SavedRecipeListItem>;

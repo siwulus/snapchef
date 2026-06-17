@@ -3,6 +3,7 @@ import type { z } from "zod";
 import type { SnapchefServerError } from "@/lib/core/model/error";
 import { Photo, Recipe, RecipeSession, StoredPhoto, type RecognizedItem } from "@/lib/core/model/recipe";
 import type { UserId } from "@/lib/core/model/auth";
+import type { SavedRecipeListItem } from "./responses";
 
 export const RecipeSessionUpdatePayload = RecipeSession.pick({
   correctedItems: true,
@@ -81,6 +82,8 @@ export interface RecipeRepository {
   // Idempotent upsert keyed on the session's UNIQUE session_id — one recipe per session,
   // overwrite-safe on re-generation. Returns the saved domain Recipe.
   upsert(payload: RecipeWritePayload): Effect.Effect<Recipe, SnapchefServerError>;
+  // Lists the user's saved recipes (sessions in state `saved`), newest first, as lean list cards.
+  listSaved(userId: UserId): Effect.Effect<SavedRecipeListItem[], SnapchefServerError>;
 }
 
 export interface RecipeGenerator {

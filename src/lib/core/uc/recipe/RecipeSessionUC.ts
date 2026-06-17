@@ -5,6 +5,7 @@ import {
   type RecipeGenerator,
   type RecipeRepository,
   type RecipeSessionRepository,
+  type SavedRecipeListItem,
   type SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import type { SnapchefServerError } from "@/lib/core/model/error";
@@ -133,6 +134,12 @@ export class RecipeSessionUC {
       Effect.flatMap(() => this.sessionRepository.delete(userId, sessionId)),
       logResult("recipe.delete"),
     );
+  }
+
+  // Readback (S-04): the user's saved recipes as lean list cards, newest first. Owner scoping +
+  // the `saved`-state filter live in the repository query (RLS-backed).
+  listSavedRecipes(userId: string): Effect.Effect<SavedRecipeListItem[], SnapchefServerError> {
+    return this.recipeRepository.listSaved(userId).pipe(logResult("recipe.listSaved"));
   }
 
   // Best-effort storage cleanup for a session about to be deleted — a transient storage hiccup

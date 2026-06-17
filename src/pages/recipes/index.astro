@@ -2,29 +2,78 @@
 import AppLayout from "@/layouts/AppLayout.astro";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
+import RecipeCard from "@/components/recipes/list/RecipeCard.astro";
+import { runWithLogging } from "@/lib/infrastructure/logging/logger";
+import { Effect } from "effect";
+
+export const prerender = false;
 
 const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect("/auth/signin");
+}
+
+// Reuse the sanctioned page edge (see confirm.astro): run the read through runWithLogging and
+// collapse both channels with Effect.match, so a typed failure becomes a value we branch on
+// (error state) rather than a throw. Three-way render: failure → error, empty → CTA, else → grid.
+const result = await runWithLogging(
+  Astro.locals.recipeSessions.listSavedRecipes(user.id).pipe(
+    Effect.match({
+      onFailure: () => ({ ok: false as const }),
+      onSuccess: (recipes) => ({ ok: true as const, recipes }),
+    }),
+  ),
+);
 ---
 
-<AppLayout title="Recipes — Snapchef">
+<AppLayout title="Przepisy — Snapchef">
   <div class="flex flex-col gap-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-foreground text-2xl font-semibold">
-          {user?.email ? `Welcome, ${user.email}` : "Your Recipes"}
-        </h1>
-        <p class="text-muted-foreground mt-1 text-sm">Your recipe collection will appear here.</p>
+        <h1 class="text-foreground text-2xl font-semibold">Twoje przepisy</h1>
+        <p class="text-muted-foreground mt-1 text-sm">Zapisane przepisy z Twojego konta.</p>
       </div>
       <a href="/recipes/new" class:list={[buttonVariants()]}>Nowy przepis</a>
     </div>
-    <Card>
-      <CardHeader>
-        <CardTitle>No recipes yet</CardTitle>
-      </CardHeader>
-      <CardContent class="flex flex-col items-start gap-4">
-        <p class="text-muted-foreground text-sm">Start building your collection by adding your first recipe.</p>
-        <a href="/recipes/new" class:list={[buttonVariants()]}>Dodaj pierwszy przepis</a>
-      </CardContent>
-    </Card>
+
+    {
+      !result.ok ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nie udało się wczytać przepisów</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex flex-col items-start gap-4">
+              <p class="text-muted-foreground text-sm">Wystąpił błąd podczas wczytywania. Spróbuj ponownie.</p>
+              <a href="/recipes" class:list={[buttonVariants({ variant: "outline" })]}>
+                Odśwież
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      ) : result.recipes.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Brak zapisanych przepisów</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex flex-col items-start gap-4">
+              <p class="text-muted-foreground text-sm">Zacznij budować swoją kolekcję — dodaj pierwszy przepis.</p>
+              <a href="/recipes/new" class:list={[buttonVariants()]}>
+                Dodaj pierwszy przepis
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {result.recipes.map((recipe) => (
+            <li class="list-none">
+              <RecipeCard recipe={recipe} />
+            </li>
+          ))}
+        </ul>
+      )
+    }
   </div>
 </AppLayout>

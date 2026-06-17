@@ -6,6 +6,7 @@ import type {
   RecipeSessionRepository,
   RecipeSessionUpdatePayload,
   RecipeWritePayload,
+  SavedRecipeListItem,
   SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import { SnapchefExternalSystemError, SnapchefNotFoundError } from "@/lib/core/model/error";
@@ -64,6 +65,7 @@ const makeRecipeRepo = (upsertCalls: RecipeWritePayload[]): RecipeRepository => 
       createdAt: "2026-06-16T00:00:00.000Z",
     });
   },
+  listSaved: () => Effect.succeed([]),
 });
 
 const successGenerator: RecipeGenerator = {
@@ -293,5 +295,34 @@ describe("RecipeSessionUC.deleteSession", () => {
     }
     expect(removeCalls).toHaveLength(0);
     expect(deleteCalls).toHaveLength(0);
+  });
+});
+
+describe("RecipeSessionUC.listSavedRecipes", () => {
+  it("returns the saved recipes from the repository, scoped to the user", async () => {
+    const items: SavedRecipeListItem[] = [
+      { sessionId: SESSION_ID, name: "Jajecznica", createdAt: "2026-06-16T00:00:00.000Z", mealContext: "śniadanie" },
+    ];
+    const listSavedCalls: string[] = [];
+    const recipeRepo: RecipeRepository = {
+      upsert: () => Effect.fail(new SnapchefExternalSystemError({ message: "unused" })),
+      listSaved: (userId) => {
+        listSavedCalls.push(userId);
+        return Effect.succeed(items);
+      },
+    };
+    const uc = new RecipeSessionUC(
+      makeSessionRepoFor(true, [], []),
+      stubPhotoRepo,
+      stubPhotoStorage,
+      stubRecognizer,
+      recipeRepo,
+      {} as RecipeGenerator,
+    );
+
+    const result = await Effect.runPromise(uc.listSavedRecipes(USER_ID));
+
+    expect(result).toEqual(items);
+    expect(listSavedCalls).toEqual([USER_ID]);
   });
 });
