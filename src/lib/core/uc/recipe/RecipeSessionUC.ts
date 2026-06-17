@@ -1,12 +1,12 @@
 import {
   type PhotoRepository,
   type ProductRecognizer,
+  type RecipeDetail,
   type RecipeGenerationCommand,
   type RecipeGenerator,
+  type RecipeListItem,
   type RecipeRepository,
   type RecipeSessionRepository,
-  type SavedRecipeDetail,
-  type SavedRecipeListItem,
   type SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import type { SnapchefServerError } from "@/lib/core/model/error";
@@ -141,17 +141,17 @@ export class RecipeSessionUC {
     );
   }
 
-  // Readback (S-04): the user's saved recipes as lean list cards, newest first. Owner scoping +
-  // the `saved`-state filter live in the repository query (RLS-backed).
-  listSavedRecipes(userId: string): Effect.Effect<SavedRecipeListItem[], SnapchefServerError> {
-    return this.recipeRepository.listSaved(userId).pipe(logResult("recipe.listSaved"));
+  // Readback (S-04): the user's saved recipes as lean list cards, newest first. The `saved`-state
+  // filter is the use case's business rule; the repository runs the owner-scoped (RLS-backed) query.
+  listSavedRecipes(userId: string): Effect.Effect<RecipeListItem[], SnapchefServerError> {
+    return this.recipeRepository.list(userId, { state: "saved" }).pipe(logResult("recipe.listSaved"));
   }
 
   // Readback (S-04): the full detail of one saved recipe — body + provenance (meal context, the
   // final consolidated item list, the photo gallery). Only the owner's *saved* recipe is viewable;
   // a missing/foreign session or a non-`saved` state both surface as NotFound, so the page can
   // redirect uniformly. The final item list is the edited (corrected) list persisted at generation.
-  getSavedRecipe(userId: string, sessionId: string): Effect.Effect<SavedRecipeDetail, SnapchefServerError> {
+  getSavedRecipe(userId: string, sessionId: string): Effect.Effect<RecipeDetail, SnapchefServerError> {
     return this.fetchRecipeSession(userId, sessionId).pipe(
       Effect.flatMap((session) =>
         match(session.state)
@@ -166,7 +166,7 @@ export class RecipeSessionUC {
           Effect.flatMap((recipe) =>
             this.photoRepository
               .listBySession(userId, sessionId)
-              .pipe(Effect.map((photos) => this.toSavedRecipeDetail(session, recipe, photos))),
+              .pipe(Effect.map((photos) => this.toRecipeDetail(session, recipe, photos))),
           ),
         ),
       ),
@@ -176,7 +176,7 @@ export class RecipeSessionUC {
 
   // Assemble the detail payload: drop the recipe's owner id (RecipeView shape), take the final
   // consolidated list (corrected, falling back to recognized), and project photos to the gallery.
-  private toSavedRecipeDetail(session: RecipeSession, recipe: Recipe, photos: Photo[]): SavedRecipeDetail {
+  private toRecipeDetail(session: RecipeSession, recipe: Recipe, photos: Photo[]): RecipeDetail {
     return {
       recipe: {
         id: recipe.id,

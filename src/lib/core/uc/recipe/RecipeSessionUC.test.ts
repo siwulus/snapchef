@@ -2,11 +2,12 @@ import type {
   PhotoRepository,
   ProductRecognizer,
   RecipeGenerator,
+  RecipeListFilter,
+  RecipeListItem,
   RecipeRepository,
   RecipeSessionRepository,
   RecipeSessionUpdatePayload,
   RecipeWritePayload,
-  SavedRecipeListItem,
   SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import { SnapchefExternalSystemError, SnapchefNotFoundError } from "@/lib/core/model/error";
@@ -65,7 +66,7 @@ const makeRecipeRepo = (upsertCalls: RecipeWritePayload[]): RecipeRepository => 
       createdAt: "2026-06-16T00:00:00.000Z",
     });
   },
-  listSaved: () => Effect.succeed([]),
+  list: () => Effect.succeed([]),
   findBySession: () => Effect.succeed(Option.none()),
 });
 
@@ -300,15 +301,15 @@ describe("RecipeSessionUC.deleteSession", () => {
 });
 
 describe("RecipeSessionUC.listSavedRecipes", () => {
-  it("returns the saved recipes from the repository, scoped to the user", async () => {
-    const items: SavedRecipeListItem[] = [
+  it("returns the saved recipes from the repository, scoped to the user and filtered to `saved`", async () => {
+    const items: RecipeListItem[] = [
       { sessionId: SESSION_ID, name: "Jajecznica", createdAt: "2026-06-16T00:00:00.000Z", mealContext: "śniadanie" },
     ];
-    const listSavedCalls: string[] = [];
+    const listCalls: { userId: string; filter: RecipeListFilter }[] = [];
     const recipeRepo: RecipeRepository = {
       upsert: () => Effect.fail(new SnapchefExternalSystemError({ message: "unused" })),
-      listSaved: (userId) => {
-        listSavedCalls.push(userId);
+      list: (userId, filter) => {
+        listCalls.push({ userId, filter });
         return Effect.succeed(items);
       },
       findBySession: () => Effect.succeed(Option.none()),
@@ -325,7 +326,7 @@ describe("RecipeSessionUC.listSavedRecipes", () => {
     const result = await Effect.runPromise(uc.listSavedRecipes(USER_ID));
 
     expect(result).toEqual(items);
-    expect(listSavedCalls).toEqual([USER_ID]);
+    expect(listCalls).toEqual([{ userId: USER_ID, filter: { state: "saved" } }]);
   });
 });
 
@@ -349,7 +350,7 @@ const sessionRepoReturning = (session: RecipeSession | null): RecipeSessionRepos
 
 const recipeRepoFindBySession = (recipe: Recipe | null): RecipeRepository => ({
   upsert: () => Effect.fail(new SnapchefExternalSystemError({ message: "unused" })),
-  listSaved: () => Effect.succeed([]),
+  list: () => Effect.succeed([]),
   findBySession: () => Effect.succeed(recipe ? Option.some(recipe) : Option.none()),
 });
 

@@ -1,10 +1,10 @@
 ---
 import { Card } from "@/components/ui/card";
 import DeleteRecipeButton from "@/components/recipes/DeleteRecipeButton";
-import type { SavedRecipeListItem } from "@/lib/core/boundry/recipe";
+import type { RecipeListItem } from "@/lib/core/boundry/recipe";
 
 interface Props {
-  recipe: SavedRecipeListItem;
+  recipe: RecipeListItem;
 }
 
 const { recipe } = Astro.props;

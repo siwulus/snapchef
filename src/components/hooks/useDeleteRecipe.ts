@@ -1,7 +1,5 @@
 import { useApiClient } from "@/components/hooks/useApiClient";
-import type { SnapchefClientError } from "@/components/errors";
 import { RedirectTarget } from "@/lib/core/boundry/auth";
-import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
 import { Effect } from "effect";
 import { useState } from "react";
 import { match } from "ts-pattern";
@@ -19,41 +17,35 @@ export const useDeleteRecipe = (sessionId: string) => {
 
   const { del } = useApiClient();
 
-  const confirmDelete = () => {
-    const request: Effect.Effect<ApiResponsePayload<RedirectTarget>, SnapchefClientError> = del(
-      `/api/recipe-sessions/${sessionId}`,
-      RedirectTarget,
-    );
-    void Effect.runPromise(
-      Effect.sync(() => {
-        setIsBusy(true);
-        setError(null);
-      }).pipe(
-        Effect.flatMap(() => request),
-        Effect.flatMap((result) =>
-          match(result)
-            .with({ ok: true }, ({ data }) =>
-              Effect.sync(() => {
-                window.location.assign(data.redirect);
-              }),
-            )
-            .with({ ok: false }, ({ error: envelopeError }) =>
-              Effect.sync(() => {
-                setIsBusy(false);
-                setError(envelopeError.message || GENERIC_ERROR);
-              }),
-            )
-            .exhaustive(),
-        ),
-        Effect.catchAll(() =>
-          Effect.sync(() => {
-            setIsBusy(false);
-            setError(GENERIC_ERROR);
-          }),
-        ),
+  const confirmDelete = () =>
+    Effect.sync(() => {
+      setIsBusy(true);
+      setError(null);
+    }).pipe(
+      Effect.flatMap(() => del(`/api/recipe-sessions/${sessionId}`, RedirectTarget)),
+      Effect.flatMap((result) =>
+        match(result)
+          .with({ ok: true }, ({ data }) =>
+            Effect.sync(() => {
+              window.location.assign(data.redirect);
+            }),
+          )
+          .with({ ok: false }, ({ error: envelopeError }) =>
+            Effect.sync(() => {
+              setIsBusy(false);
+              setError(envelopeError.message || GENERIC_ERROR);
+            }),
+          )
+          .exhaustive(),
       ),
+      Effect.catchAll(() =>
+        Effect.sync(() => {
+          setIsBusy(false);
+          setError(GENERIC_ERROR);
+        }),
+      ),
+      Effect.runPromise,
     );
-  };
 
   return { confirmDelete, isBusy, error };
 };

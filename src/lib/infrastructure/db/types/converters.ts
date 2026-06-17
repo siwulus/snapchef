@@ -1,4 +1,4 @@
-import { SavedRecipeListItem } from "@/lib/core/boundry/recipe";
+import { RecipeListItem } from "@/lib/core/boundry/recipe";
 import { Recipe, RecipeSession, StoredPhoto } from "@/lib/core/model/recipe";
 import { PhotoRow, RecipeRow, RecipeSessionRow } from "@/lib/infrastructure/db/types/index";
 import { z } from "zod";
@@ -24,22 +24,22 @@ export const RecipeFromRow = RecipeRow.transform((row) => ({
   name: row.name,
 })).pipe(Recipe);
 
-// Row shape of the saved-recipes list query: `recipes` columns plus the embedded (to-one)
+// Row shape of the recipe-list query: `recipes` columns plus the embedded (to-one)
 // `recipe_sessions` object — the forward `recipes.session_id → recipe_sessions.id` embed always
 // returns a single object, so `meal_context` is read off it directly.
-const SavedRecipeListRow = z.object({
+const RecipeListRow = z.object({
   session_id: z.string(),
   name: z.string(),
   created_at: z.string(),
   recipe_sessions: z.object({ meal_context: z.string().nullable() }),
 });
 
-export const SavedRecipeListItemFromRow = SavedRecipeListRow.transform((row) => ({
+export const RecipeListItemFromRow = RecipeListRow.transform((row) => ({
   sessionId: row.session_id,
   name: row.name,
   createdAt: row.created_at,
   mealContext: row.recipe_sessions.meal_context,
-})).pipe(SavedRecipeListItem);
+})).pipe(RecipeListItem);
 
 export const PhotoFromRow = PhotoRow.transform((row) => ({
   id: row.id,
