@@ -17,7 +17,10 @@ const GENERIC_ERROR = "Nie udało się wygenerować przepisu. Spróbuj ponownie.
 // chain, one runPromise edge, branch on the envelope's `ok`. Transport errors are already toasted
 // by useApiClient; a server-envelope failure surfaces as a generic Polish retry message. The last
 // command is held so retry() can re-run the same generation.
-export const useRecipeGeneration = (sessionId: string, onGenerated: (recipe: Recipe) => void) => {
+export const useRecipeGeneration = (
+  sessionId: string,
+  onGenerated: (recipe: Recipe, command: RecipeGenerationCommand) => void,
+) => {
   const [phase, setPhase] = useState<GenerationPhase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastCommand, setLastCommand] = useState<RecipeGenerationCommand | null>(null);
@@ -36,7 +39,7 @@ export const useRecipeGeneration = (sessionId: string, onGenerated: (recipe: Rec
           .with({ ok: true }, ({ data }) =>
             Effect.sync(() => {
               setPhase("idle");
-              onGenerated(data);
+              onGenerated(data, command);
             }),
           )
           .with({ ok: false }, () =>

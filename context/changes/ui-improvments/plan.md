@@ -307,10 +307,10 @@ None — no schema or data changes. The decision that the back link does **not**
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0`
-- [x] 2.2 Linting passes: `pnpm lint`
-- [x] 2.3 Unit tests pass: `pnpm test`
-- [x] 2.4 `WizardActions` tests cover cancel→delete→redirect, save→redirect, failure→stay+error
+- [x] 2.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0` — b7b2fcefe
+- [x] 2.2 Linting passes: `pnpm lint` — b7b2fcefe
+- [x] 2.3 Unit tests pass: `pnpm test` — b7b2fcefe
+- [x] 2.4 `WizardActions` tests cover cancel→delete→redirect, save→redirect, failure→stay+error — b7b2fcefe
 
 #### Manual
 
@@ -322,11 +322,11 @@ None — no schema or data changes. The decision that the back link does **not**
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0`
-- [ ] 3.2 Linting passes: `pnpm lint`
-- [ ] 3.3 Unit tests pass: `pnpm test`
-- [ ] 3.4 `GeneratedRecipeView` test asserts read-only summary (no `textbox`), name-above-body, kept-content-first
-- [ ] 3.5 `RecipeGenerationPanel.test.tsx` updated for `(recipe, command)` callback
+- [x] 3.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0`
+- [x] 3.2 Linting passes: `pnpm lint`
+- [x] 3.3 Unit tests pass: `pnpm test`
+- [x] 3.4 `GeneratedRecipeView` test asserts read-only summary (no `textbox`), name-above-body, kept-content-first
+- [x] 3.5 `RecipeGenerationPanel.test.tsx` updated for `(recipe, command)` callback
 
 #### Manual
 
