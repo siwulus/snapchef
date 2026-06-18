@@ -1,7 +1,7 @@
 ---
 change_id: ui-improvments
 title: "Recipe wizard UI improvements: back link, cancel, read-only steps, title"
-status: implementing
+status: implemented
 created: 2026-06-18
 updated: 2026-06-18
 archived_at: null
