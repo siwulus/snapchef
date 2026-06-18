@@ -18,7 +18,7 @@ import {
 import { type Photo, type Recipe, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
 import { getOrThrowNotFound, logResult } from "@/lib/utils/effect";
 import { Effect } from "effect";
-import { isNotEmpty } from "ramda";
+import { isEmpty, isNotEmpty } from "ramda";
 import { match } from "ts-pattern";
 
 export class RecipeSessionUC {
@@ -122,11 +122,9 @@ export class RecipeSessionUC {
   // already exists from generation, so this is solely a state transition — idempotent,
   // last-write-wins (no `recipe_generated` precondition).
   saveSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.fetchRecipeSession(userId, sessionId).pipe(
-      Effect.flatMap(() => this.sessionRepository.update(userId, sessionId, { state: "saved" })),
-      Effect.flatMap(getOrThrowNotFound("Session not found")),
-      logResult("recipe.save"),
-    );
+    return this.sessionRepository
+      .update(userId, sessionId, { state: "saved" })
+      .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")), logResult("recipe.save"));
   }
 
   // Final step (delete): validate ownership, clean up the storage-bucket files (best-effort,
@@ -208,8 +206,8 @@ export class RecipeSessionUC {
   private removeExistingPhotos(session: RecipeSession): Effect.Effect<void> {
     return this.photoRepository.listBySession(session.userId, session.id).pipe(
       Effect.flatMap((photos) =>
-        match(photos.length)
-          .with(0, () => Effect.void)
+        match(isEmpty(photos))
+          .with(true, () => Effect.void)
           .otherwise(() =>
             this.photosStorage
               .remove(photos.map((photo) => photo.storagePath))
@@ -248,8 +246,8 @@ export class RecipeSessionUC {
   }
 
   private guardHasPhotos(photos: Photo[]): Effect.Effect<void, SnapchefServerError> {
-    return match(photos.length)
-      .with(0, () => Effect.fail(new SnapchefBusinessRuleViolationError({ message: "No photos to recognize" })))
+    return match(isEmpty(photos))
+      .with(true, () => Effect.fail(new SnapchefBusinessRuleViolationError({ message: "No photos to recognize" })))
       .otherwise(() => Effect.void);
   }
 
@@ -278,8 +276,8 @@ export class RecipeSessionUC {
   // All photos failed → external error (500). Skip the merge call when only one photo yielded items.
   private resolveItems(lists: RecognizedItem[][]): Effect.Effect<RecognizedItem[], SnapchefServerError> {
     const nonEmptyLists = lists.filter((list) => isNotEmpty(list));
-    return match(nonEmptyLists.length)
-      .with(0, () =>
+    return match(isEmpty(nonEmptyLists))
+      .with(true, () =>
         Effect.fail<SnapchefServerError>(
           new SnapchefExternalSystemError({ message: "Recognition produced no items for any photo" }),
         ),
