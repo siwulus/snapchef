@@ -18,6 +18,17 @@ export const RecognitionResult = z.object({
 
 export type RecognitionResult = z.infer<typeof RecognitionResult>;
 
+// The generation response: the generated recipe together with the session it was generated from
+// (state `recipe_generated`, carrying the persisted items / meal context / off-list toggle). The
+// wizard's final step renders its read-only echo from this session — backend data, not a snapshot
+// of the submitted command.
+export const RecipeGenerationResult = z.object({
+  recipe: Recipe,
+  session: RecipeSession,
+});
+
+export type RecipeGenerationResult = z.infer<typeof RecipeGenerationResult>;
+
 // One recipe list card: the session id is the durable handle for the detail link
 // (`/recipes/[id]`) and the delete call; `mealContext` powers the card snippet.
 export const RecipeListItem = z.object({
