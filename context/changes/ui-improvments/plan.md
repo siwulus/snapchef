@@ -293,10 +293,10 @@ None — no schema or data changes. The decision that the back link does **not**
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0`
-- [x] 1.2 Linting passes: `pnpm lint`
-- [x] 1.3 Unit tests pass: `pnpm test`
-- [x] 1.4 `WizardExitLink` test passes (direct nav / dialog / confirm→disarm+assign)
+- [x] 1.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0` — eaa656bdf
+- [x] 1.2 Linting passes: `pnpm lint` — eaa656bdf
+- [x] 1.3 Unit tests pass: `pnpm test` — eaa656bdf
+- [x] 1.4 `WizardExitLink` test passes (direct nav / dialog / confirm→disarm+assign) — eaa656bdf
 
 #### Manual
 
@@ -307,10 +307,10 @@ None — no schema or data changes. The decision that the back link does **not**
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0`
-- [ ] 2.2 Linting passes: `pnpm lint`
-- [ ] 2.3 Unit tests pass: `pnpm test`
-- [ ] 2.4 `WizardActions` tests cover cancel→delete→redirect, save→redirect, failure→stay+error
+- [x] 2.1 Type checking passes: `pnpm exec tsc --noEmit --ignoreDeprecations 6.0`
+- [x] 2.2 Linting passes: `pnpm lint`
+- [x] 2.3 Unit tests pass: `pnpm test`
+- [x] 2.4 `WizardActions` tests cover cancel→delete→redirect, save→redirect, failure→stay+error
 
 #### Manual
 

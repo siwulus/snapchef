@@ -1,6 +1,7 @@
 import { RecipeDisplay } from "@/components/recipes/wizard/RecipeDisplay";
 import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
+import { WizardActions } from "@/components/recipes/wizard/WizardActions";
 import { WizardExitLink } from "@/components/recipes/wizard/WizardExitLink";
 import type { RecognitionResult } from "@/lib/core/boundry/recipe";
 import type { Recipe } from "@/lib/core/model/recipe";
@@ -57,7 +58,7 @@ const RecipeWizard = () => {
     }
 
     if (step === "recipe" && recipe) {
-      return <RecipeDisplay recipe={recipe} onBeforeNavigate={disarmLeaveGuard} />;
+      return <RecipeDisplay recipe={recipe} />;
     }
 
     return <ReviewStep result={result} onGenerated={handleGenerated} />;
@@ -71,6 +72,13 @@ const RecipeWizard = () => {
         <p className="text-muted-foreground mt-1 text-sm">Prześlij od 1 do 5 zdjęć produktów, aby rozpocząć.</p>
       </div>
       {renderStep()}
+      {result ? (
+        <WizardActions
+          sessionId={result.session.id}
+          onBeforeNavigate={disarmLeaveGuard}
+          showSave={step === "recipe" && !!recipe}
+        />
+      ) : null}
     </div>
   );
 };
