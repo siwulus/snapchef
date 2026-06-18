@@ -376,6 +376,7 @@ describe("RecipeSessionUC.getSavedRecipe", () => {
     expect(result.recipe).toEqual({
       id: RECIPE_ID,
       sessionId: SESSION_ID,
+      userId: USER_ID,
       name: "Jajecznica",
       contentMd: sampleRecipe.contentMd,
       createdAt: sampleRecipe.createdAt,
