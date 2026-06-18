@@ -1,6 +1,7 @@
 import { RecipeDisplay } from "@/components/recipes/wizard/RecipeDisplay";
 import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
+import { WizardExitLink } from "@/components/recipes/wizard/WizardExitLink";
 import type { RecognitionResult } from "@/lib/core/boundry/recipe";
 import type { Recipe } from "@/lib/core/model/recipe";
 import { useEffect, useRef, useState } from "react";
@@ -50,15 +51,28 @@ const RecipeWizard = () => {
     setStep("recipe");
   };
 
-  if (step === "upload" || !result) {
-    return <UploadStep onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
-  }
+  const renderStep = () => {
+    if (step === "upload" || !result) {
+      return <UploadStep onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
+    }
 
-  if (step === "recipe" && recipe) {
-    return <RecipeDisplay recipe={recipe} onBeforeNavigate={disarmLeaveGuard} />;
-  }
+    if (step === "recipe" && recipe) {
+      return <RecipeDisplay recipe={recipe} onBeforeNavigate={disarmLeaveGuard} />;
+    }
 
-  return <ReviewStep result={result} onGenerated={handleGenerated} />;
+    return <ReviewStep result={result} onGenerated={handleGenerated} />;
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <WizardExitLink dirty={dirty} onBeforeNavigate={disarmLeaveGuard} />
+      <div>
+        <h1 className="text-foreground text-2xl font-semibold">Nowy przepis</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Prześlij od 1 do 5 zdjęć produktów, aby rozpocząć.</p>
+      </div>
+      {renderStep()}
+    </div>
+  );
 };
 
 export default RecipeWizard;
