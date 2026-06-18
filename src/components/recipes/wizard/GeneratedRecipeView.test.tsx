@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { GeneratedRecipeView } from "@/components/recipes/wizard/GeneratedRecipeView";
-import type { PhotoView, RecipeGenerationCommand } from "@/lib/core/boundry/recipe";
-import type { Recipe } from "@/lib/core/model/recipe";
+import type { PhotoView } from "@/lib/core/boundry/recipe";
+import type { Recipe, RecipeSession } from "@/lib/core/model/recipe";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -18,13 +18,20 @@ const photos: PhotoView[] = [
   { id: "aaaaaaaa-1111-2222-3333-444444444444", photoUrl: "https://example.test/a.jpg", recognizedItems: null },
 ];
 
-const command: RecipeGenerationCommand = {
+// The read-only echo is sourced from the returned session (backend data), not the submitted command.
+const session: RecipeSession = {
+  id: "11111111-2222-3333-4444-555555555555",
+  userId: "11111111-2222-3333-4444-555555555555",
   correctedItems: [{ name: "jajko", quantity: "4 sztuki", context: "z lodówki" }],
+  createdAt: "2026-06-16T00:00:00.000Z",
   mealContext: "szybka kolacja na dwie osoby",
+  recognizedItems: [{ name: "jajko", quantity: "4 sztuki", context: "z lodówki" }],
   allowExtraIngredients: false,
+  state: "recipe_generated",
+  updatedAt: "2026-06-16T00:00:00.000Z",
 };
 
-const renderView = () => render(<GeneratedRecipeView recipe={recipe} photos={photos} command={command} />);
+const renderView = () => render(<GeneratedRecipeView recipe={recipe} photos={photos} session={session} />);
 
 describe("GeneratedRecipeView", () => {
   it("renders the kept content as read-only — no editable controls", () => {

@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import type { RecipeGenerationCommand } from "@/lib/core/boundry/recipe";
-import type { Recipe } from "@/lib/core/model/recipe";
+import type { RecipeGenerationResult } from "@/lib/core/boundry/recipe";
 import type { RecognizedItem } from "@/lib/core/model/recipe";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -14,9 +13,9 @@ interface RecipeGenerationPanelProps {
   // Projection of the edited list, owned by the parent (ReviewStep). Read at submit time so the
   // command carries exactly what the user sees.
   toCorrectedItems: () => RecognizedItem[];
-  // The submitted command is reported alongside the recipe so the final step can render a read-only
-  // echo of exactly what the user generated from.
-  onGenerated: (recipe: Recipe, command: RecipeGenerationCommand) => void;
+  // The backend `{ recipe, session }` bundle is reported up; the final step renders its read-only
+  // echo from the returned session (source of truth), not from the submitted command.
+  onGenerated: (result: RecipeGenerationResult) => void;
 }
 
 const MEAL_CONTEXT_HINT =

@@ -3,23 +3,24 @@ import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
 import { WizardActions } from "@/components/recipes/wizard/WizardActions";
 import { WizardExitLink } from "@/components/recipes/wizard/WizardExitLink";
-import type { RecipeGenerationCommand, RecognitionResult } from "@/lib/core/boundry/recipe";
-import type { Recipe } from "@/lib/core/model/recipe";
+import type { PhotoView, RecipeGenerationResult, RecognitionResult } from "@/lib/core/boundry/recipe";
+import type { Recipe, RecipeSession } from "@/lib/core/model/recipe";
 import { useEffect, useRef, useState } from "react";
 
 type Step = "upload" | "review" | "recipe";
 
-// Orchestrates the "create new recipe" flow: owns the step machine, the upload→review handoff
-// payload, the generated recipe + the command snapshot it was generated from, and the leave-guard.
-// Each step renders itself (UploadStep / ReviewStep / GeneratedRecipeView) — this component only
-// decides which one is shown and renders the shared chrome (back link, heading, action row).
+// Orchestrates the "create new recipe" flow. Its state is divided into three explicit slices, each
+// from the backend: the `session` (the durable handle + the persisted items / meal context / off-
+// list toggle), the uploaded `photos`, and the generated `recipe`. Plus the step machine and the
+// leave-guard. Each step renders itself (UploadStep / ReviewStep / GeneratedRecipeView) — this
+// component only decides which one is shown and renders the shared chrome (back link, heading,
+// action row). Recognition and generation responses are destructured into these slices at the
+// handoff boundaries; no slice is reconstructed from a command snapshot or a bundle reach-in.
 const RecipeWizard = () => {
   const [step, setStep] = useState<Step>("upload");
-  const [result, setResult] = useState<RecognitionResult | null>(null);
-  // The generated recipe together with the command it was generated from — the command carries the
-  // items / meal context / off-list toggle the read-only final-step summary echoes (the Recipe
-  // model itself does not).
-  const [generated, setGenerated] = useState<{ recipe: Recipe; command: RecipeGenerationCommand } | null>(null);
+  const [session, setSession] = useState<RecipeSession | null>(null);
+  const [photos, setPhotos] = useState<PhotoView[]>([]);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [dirty, setDirty] = useState(false);
   // Ref-backed armed flag so the finalize flow can disarm the guard SYNCHRONOUSLY before
   // window.location.assign — a deferred setDirty(false) would not flush before the browser
@@ -47,25 +48,27 @@ const RecipeWizard = () => {
   };
 
   const handleRecognitionComplete = (recognitionResult: RecognitionResult) => {
-    setResult(recognitionResult);
+    setSession(recognitionResult.session);
+    setPhotos(recognitionResult.photos);
     setStep("review");
   };
 
-  const handleGenerated = (recipe: Recipe, command: RecipeGenerationCommand) => {
-    setGenerated({ recipe, command });
+  const handleGenerated = (result: RecipeGenerationResult) => {
+    setSession(result.session);
+    setRecipe(result.recipe);
     setStep("recipe");
   };
 
   const renderStep = () => {
-    if (step === "upload" || !result) {
+    if (step === "upload" || session === null) {
       return <UploadStep onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
     }
 
-    if (step === "recipe" && generated) {
-      return <GeneratedRecipeView recipe={generated.recipe} photos={result.photos} command={generated.command} />;
+    if (step === "recipe" && recipe) {
+      return <GeneratedRecipeView recipe={recipe} photos={photos} session={session} />;
     }
 
-    return <ReviewStep result={result} onGenerated={handleGenerated} />;
+    return <ReviewStep session={session} photos={photos} onGenerated={handleGenerated} />;
   };
 
   return (
@@ -76,11 +79,11 @@ const RecipeWizard = () => {
         <p className="text-muted-foreground mt-1 text-sm">Prześlij od 1 do 5 zdjęć produktów, aby rozpocząć.</p>
       </div>
       {renderStep()}
-      {result ? (
+      {session ? (
         <WizardActions
-          sessionId={result.session.id}
+          sessionId={session.id}
           onBeforeNavigate={disarmLeaveGuard}
-          showSave={step === "recipe" && !!generated}
+          showSave={step === "recipe" && !!recipe}
         />
       ) : null}
     </div>

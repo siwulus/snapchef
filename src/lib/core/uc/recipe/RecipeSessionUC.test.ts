@@ -80,7 +80,7 @@ const failingGenerator: RecipeGenerator = {
 };
 
 describe("RecipeSessionUC.generateRecipe", () => {
-  it("persists inputs, generates, upserts the recipe, transitions to recipe_generated, returns the recipe", async () => {
+  it("persists inputs, generates, upserts the recipe, transitions to recipe_generated, returns the recipe and the updated session", async () => {
     const updateCalls: RecipeSessionUpdatePayload[] = [];
     const upsertCalls: RecipeWritePayload[] = [];
     const uc = new RecipeSessionUC(
@@ -96,8 +96,10 @@ describe("RecipeSessionUC.generateRecipe", () => {
 
     expect(Either.isRight(result)).toBe(true);
     if (Either.isRight(result)) {
-      expect(result.right.name).toBe("Jajecznica");
-      expect(result.right.contentMd).toContain("## Składniki");
+      expect(result.right.recipe.name).toBe("Jajecznica");
+      expect(result.right.recipe.contentMd).toContain("## Składniki");
+      // The returned session is the updated one (state advanced), carrying the persisted inputs.
+      expect(result.right.session.state).toBe("recipe_generated");
     }
     // Inputs persisted before generation, then the state transition after the upsert.
     expect(updateCalls[0]).toMatchObject({

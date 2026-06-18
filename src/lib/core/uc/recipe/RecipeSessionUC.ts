@@ -3,6 +3,7 @@ import {
   type ProductRecognizer,
   type RecipeDetail,
   type RecipeGenerationCommand,
+  type RecipeGenerationResult,
   type RecipeGenerator,
   type RecipeListItem,
   type RecipeRepository,
@@ -75,12 +76,14 @@ export class RecipeSessionUC {
   // the session re-runnable with its inputs saved. Generate is timed (30 s) and retried once — the
   // only thing that re-rolls a truncated/invalid model response (OpenRouter's model fallback only
   // covers provider-side errors). The recipe is upserted, then the state advances to
-  // `recipe_generated` only after the recipe row is safely persisted.
+  // `recipe_generated` only after the recipe row is safely persisted. Returns the recipe together
+  // with the updated session (the single source of truth the final step renders from) — the session
+  // carries the persisted items / meal context / off-list toggle that `Recipe` alone does not.
   generateRecipe(
     userId: string,
     sessionId: string,
     command: RecipeGenerationCommand,
-  ): Effect.Effect<Recipe, SnapchefServerError> {
+  ): Effect.Effect<RecipeGenerationResult, SnapchefServerError> {
     return this.fetchRecipeSession(userId, sessionId).pipe(
       Effect.flatMap(() =>
         this.sessionRepository
@@ -109,10 +112,11 @@ export class RecipeSessionUC {
       Effect.flatMap((generated) =>
         this.recipeRepository.upsert({ sessionId, userId, name: generated.name, contentMd: generated.contentMd }),
       ),
-      Effect.tap(() =>
-        this.sessionRepository
-          .update(userId, sessionId, { state: "recipe_generated" })
-          .pipe(Effect.flatMap(getOrThrowNotFound("Session not found"))),
+      Effect.flatMap((recipe) =>
+        this.sessionRepository.update(userId, sessionId, { state: "recipe_generated" }).pipe(
+          Effect.flatMap(getOrThrowNotFound("Session not found")),
+          Effect.map((session) => ({ recipe, session })),
+        ),
       ),
       logResult("recipe.generate"),
     );

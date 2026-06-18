@@ -3,21 +3,22 @@ import { ProductListEditor } from "@/components/recipes/wizard/ProductListEditor
 import { RecipeGenerationPanel } from "@/components/recipes/wizard/RecipeGenerationPanel";
 import { useEditableItems } from "@/components/recipes/wizard/useEditableItems";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { RecipeGenerationCommand, RecognitionResult } from "@/lib/core/boundry/recipe";
-import type { Recipe } from "@/lib/core/model/recipe";
+import type { PhotoView, RecipeGenerationResult } from "@/lib/core/boundry/recipe";
+import type { RecipeSession } from "@/lib/core/model/recipe";
 
 interface ReviewStepProps {
-  result: RecognitionResult;
-  onGenerated: (recipe: Recipe, command: RecipeGenerationCommand) => void;
+  session: RecipeSession;
+  photos: PhotoView[];
+  onGenerated: (result: RecipeGenerationResult) => void;
 }
 
 // The review screen: per-photo read-only lists (PhotoReviewCard) plus the merged/consolidated list
 // as a structured, per-item editable list (ProductListEditor). The editable state is OWNED here
 // (lifted from the editor) so the generation panel can read its `toCorrectedItems()` projection.
 // Below the list, the generation panel collects the meal context + off-list toggle and triggers
-// generation; the generated recipe is reported up via `onGenerated`.
-export const ReviewStep = ({ result, onGenerated }: ReviewStepProps) => {
-  const editor = useEditableItems(result.session.recognizedItems);
+// generation; the generated `{ recipe, session }` bundle is reported up via `onGenerated`.
+export const ReviewStep = ({ session, photos, onGenerated }: ReviewStepProps) => {
+  const editor = useEditableItems(session.recognizedItems);
 
   return (
     <div className="flex flex-col gap-4">
@@ -26,7 +27,7 @@ export const ReviewStep = ({ result, onGenerated }: ReviewStepProps) => {
           <CardTitle>Rozpoznane produkty na zdjęciach</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {result.photos.map((photo) => (
+          {photos.map((photo) => (
             <PhotoReviewCard key={photo.id} photo={photo} />
           ))}
         </CardContent>
@@ -47,7 +48,7 @@ export const ReviewStep = ({ result, onGenerated }: ReviewStepProps) => {
         </CardHeader>
         <CardContent>
           <RecipeGenerationPanel
-            sessionId={result.session.id}
+            sessionId={session.id}
             toCorrectedItems={editor.toCorrectedItems}
             onGenerated={onGenerated}
           />

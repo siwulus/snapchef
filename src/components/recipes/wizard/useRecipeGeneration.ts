@@ -1,6 +1,5 @@
 import { useApiClient } from "@/components/hooks/useApiClient";
-import type { RecipeGenerationCommand } from "@/lib/core/boundry/recipe";
-import { Recipe } from "@/lib/core/model/recipe";
+import { RecipeGenerationResult, type RecipeGenerationCommand } from "@/lib/core/boundry/recipe";
 import { Effect } from "effect";
 import { useState } from "react";
 import { match } from "ts-pattern";
@@ -16,11 +15,9 @@ const GENERIC_ERROR = "Nie udało się wygenerować przepisu. Spróbuj ponownie.
 // Owns the generate workflow and its UI state, mirroring useRecipeUpload: one pipe-first Effect
 // chain, one runPromise edge, branch on the envelope's `ok`. Transport errors are already toasted
 // by useApiClient; a server-envelope failure surfaces as a generic Polish retry message. The last
-// command is held so retry() can re-run the same generation.
-export const useRecipeGeneration = (
-  sessionId: string,
-  onGenerated: (recipe: Recipe, command: RecipeGenerationCommand) => void,
-) => {
+// command is held so retry() can re-run the same generation. The success branch reports the backend
+// `{ recipe, session }` bundle up — the final step renders from it, never from the submitted command.
+export const useRecipeGeneration = (sessionId: string, onGenerated: (result: RecipeGenerationResult) => void) => {
   const [phase, setPhase] = useState<GenerationPhase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastCommand, setLastCommand] = useState<RecipeGenerationCommand | null>(null);
@@ -33,13 +30,15 @@ export const useRecipeGeneration = (
       setError(null);
       setLastCommand(command);
     }).pipe(
-      Effect.flatMap(() => post(`/api/recipe-sessions/${sessionId}/recipe-generation`, command, Recipe)),
+      Effect.flatMap(() =>
+        post(`/api/recipe-sessions/${sessionId}/recipe-generation`, command, RecipeGenerationResult),
+      ),
       Effect.flatMap((result) =>
         match(result)
           .with({ ok: true }, ({ data }) =>
             Effect.sync(() => {
               setPhase("idle");
-              onGenerated(data, command);
+              onGenerated(data);
             }),
           )
           .with({ ok: false }, () =>
