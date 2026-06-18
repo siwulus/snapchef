@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { RecipeDisplay } from "@/components/recipes/wizard/RecipeDisplay";
-import type { RecipeView } from "@/lib/core/boundry/recipe";
+import type { Recipe } from "@/lib/core/model/recipe";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,8 +33,9 @@ vi.mock("@/components/hooks/useApiClient", async () => {
   };
 });
 
-const recipe: RecipeView = {
+const recipe: Recipe = {
   id: "99999999-8888-7777-6666-555555555555",
+  userId: "11111111-2222-3333-4444-555555555555",
   sessionId: "11111111-2222-3333-4444-555555555555",
   name: "Jajecznica ze szczypiorkiem",
   contentMd:

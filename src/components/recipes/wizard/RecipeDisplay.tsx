@@ -12,13 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRecipeFinalize } from "@/components/recipes/wizard/useRecipeFinalize";
-import type { RecipeView } from "@/lib/core/boundry/recipe";
+import type { Recipe } from "@/lib/core/model/recipe";
 import { cn } from "@/styles/utils";
 import { Loader2, Save, Trash2 } from "lucide-react";
 import Markdown from "react-markdown";
 
 interface RecipeDisplayProps {
-  recipe: RecipeView;
+  recipe: Recipe;
   // Synchronously disarms the wizard's beforeunload leave-guard before the finalize redirect.
   onBeforeNavigate: () => void;
 }

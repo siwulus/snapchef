@@ -1,7 +1,8 @@
 import { RecipeDisplay } from "@/components/recipes/wizard/RecipeDisplay";
 import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
 import { UploadStep } from "@/components/recipes/wizard/UploadStep";
-import type { RecipeView, RecognitionResult } from "@/lib/core/boundry/recipe";
+import type { RecognitionResult } from "@/lib/core/boundry/recipe";
+import type { Recipe } from "@/lib/core/model/recipe";
 import { useEffect, useRef, useState } from "react";
 
 type Step = "upload" | "review" | "recipe";
@@ -12,7 +13,7 @@ type Step = "upload" | "review" | "recipe";
 const RecipeWizard = () => {
   const [step, setStep] = useState<Step>("upload");
   const [result, setResult] = useState<RecognitionResult | null>(null);
-  const [recipe, setRecipe] = useState<RecipeView | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [dirty, setDirty] = useState(false);
   // Ref-backed armed flag so the finalize flow can disarm the guard SYNCHRONOUSLY before
   // window.location.assign — a deferred setDirty(false) would not flush before the browser
@@ -44,7 +45,7 @@ const RecipeWizard = () => {
     setStep("review");
   };
 
-  const handleGenerated = (generatedRecipe: RecipeView) => {
+  const handleGenerated = (generatedRecipe: Recipe) => {
     setRecipe(generatedRecipe);
     setStep("recipe");
   };

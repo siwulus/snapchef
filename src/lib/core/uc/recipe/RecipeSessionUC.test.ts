@@ -47,7 +47,7 @@ const makeSessionRepo = (updateCalls: RecipeSessionUpdatePayload[]): RecipeSessi
     updateCalls.push(data);
     return Effect.succeed(Option.some({ ...baseSession, ...data }));
   },
-  delete: () => Effect.void,
+  remove: () => Effect.void,
 });
 
 const stubPhotoRepo = {} as PhotoRepository;
@@ -161,7 +161,7 @@ const makeSessionRepoFor = (
     updateCalls.push(data);
     return Effect.succeed(Option.some({ ...baseSession, ...data }));
   },
-  delete: (userId, sessionId) => {
+  remove: (userId, sessionId) => {
     deleteCalls.push({ userId, sessionId });
     return Effect.void;
   },
@@ -345,7 +345,7 @@ const sessionRepoReturning = (session: RecipeSession | null): RecipeSessionRepos
   create: () => Effect.succeed(baseSession),
   find: () => Effect.succeed(session ? Option.some(session) : Option.none()),
   update: (_userId, _sessionId, data) => Effect.succeed(Option.some({ ...baseSession, ...data })),
-  delete: () => Effect.void,
+  remove: () => Effect.void,
 });
 
 const recipeRepoFindBySession = (recipe: Recipe | null): RecipeRepository => ({

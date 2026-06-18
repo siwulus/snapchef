@@ -3,11 +3,12 @@ import { ProductListEditor } from "@/components/recipes/wizard/ProductListEditor
 import { RecipeGenerationPanel } from "@/components/recipes/wizard/RecipeGenerationPanel";
 import { useEditableItems } from "@/components/recipes/wizard/useEditableItems";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { RecipeView, RecognitionResult } from "@/lib/core/boundry/recipe";
+import type { RecognitionResult } from "@/lib/core/boundry/recipe";
+import type { Recipe } from "@/lib/core/model/recipe";
 
 interface ReviewStepProps {
   result: RecognitionResult;
-  onGenerated: (recipe: RecipeView) => void;
+  onGenerated: (recipe: Recipe) => void;
 }
 
 // The review screen: per-photo read-only lists (PhotoReviewCard) plus the merged/consolidated list

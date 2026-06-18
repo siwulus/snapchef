@@ -7,6 +7,7 @@ import { PhotoFromRow } from "@/lib/infrastructure/db/types/converters";
 import { decodeWith, tryErrorData, tryErrorDataOption, tryErrorDataWithSchema } from "@/lib/utils/effect";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Effect } from "effect";
+import { isEmpty } from "ramda";
 import z from "zod";
 
 // Mirrors SessionPhotoStorage's bucket/TTL (re-declared rather than imported — the storage
@@ -47,7 +48,7 @@ const toUrlByPath = (entries: { path?: string | null; signedUrl?: string | null 
 const signUrlsByPath =
   (supabase: SupabaseClient<Database>) =>
   (paths: string[]): Effect.Effect<Map<string, string>, SnapchefServerError> =>
-    paths.length === 0
+    isEmpty(paths)
       ? Effect.succeed(new Map<string, string>())
       : tryErrorData(() =>
           supabase.storage

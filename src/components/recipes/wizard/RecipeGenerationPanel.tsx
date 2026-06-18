@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import type { RecipeView } from "@/lib/core/boundry/recipe";
+import type { Recipe } from "@/lib/core/model/recipe";
 import type { RecognizedItem } from "@/lib/core/model/recipe";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -13,7 +13,7 @@ interface RecipeGenerationPanelProps {
   // Projection of the edited list, owned by the parent (ReviewStep). Read at submit time so the
   // command carries exactly what the user sees.
   toCorrectedItems: () => RecognizedItem[];
-  onGenerated: (recipe: RecipeView) => void;
+  onGenerated: (recipe: Recipe) => void;
 }
 
 const MEAL_CONTEXT_HINT =

@@ -68,7 +68,7 @@ const update =
 // photo rows; storage-bucket cleanup is the UC's responsibility. A delete returns no domain row,
 // so the builder is shaped to `{ error, data: null }` and lifted through tryErrorDataOption.
 // Owner existence is already validated upstream by fetchRecipeSession, so a no-match is harmless.
-const deleteSession =
+const remove =
   (supabase: SupabaseClient<Database>) =>
   (userId: UserId, sessionId: string): Effect.Effect<void, SnapchefServerError> =>
     tryErrorDataOption<null>(() =>
@@ -84,5 +84,5 @@ export const createRecipeSessionRepository = (supabase: SupabaseClient<Database>
   create: create(supabase),
   update: update(supabase),
   find: find(supabase),
-  delete: deleteSession(supabase),
+  remove: remove(supabase),
 });

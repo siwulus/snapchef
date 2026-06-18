@@ -18,11 +18,6 @@ export const RecognitionResult = z.object({
 
 export type RecognitionResult = z.infer<typeof RecognitionResult>;
 
-// Lean recipe view for the client — excludes the owner's user id.
-export const RecipeView = Recipe.omit({ userId: true });
-
-export type RecipeView = z.infer<typeof RecipeView>;
-
 // One recipe list card: the session id is the durable handle for the detail link
 // (`/recipes/[id]`) and the delete call; `mealContext` powers the card snippet.
 export const RecipeListItem = z.object({
@@ -46,7 +41,7 @@ export type RecipeGalleryPhoto = z.infer<typeof RecipeGalleryPhoto>;
 // Everything the detail page renders: the recipe (name + markdown body), then the saved session's
 // provenance — meal context, the final consolidated item list, and the photo gallery.
 export const RecipeDetail = z.object({
-  recipe: RecipeView,
+  recipe: Recipe,
   mealContext: z.string().nullable(),
   items: z.array(RecognizedItem),
   photos: z.array(RecipeGalleryPhoto),

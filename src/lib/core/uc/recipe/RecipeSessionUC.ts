@@ -136,7 +136,7 @@ export class RecipeSessionUC {
   deleteSession(userId: string, sessionId: string): Effect.Effect<void, SnapchefServerError> {
     return this.fetchRecipeSession(userId, sessionId).pipe(
       Effect.tap((session) => this.removeSessionPhotos(session)),
-      Effect.flatMap(() => this.sessionRepository.delete(userId, sessionId)),
+      Effect.flatMap(() => this.sessionRepository.remove(userId, sessionId)),
       logResult("recipe.delete"),
     );
   }
@@ -174,17 +174,11 @@ export class RecipeSessionUC {
     );
   }
 
-  // Assemble the detail payload: drop the recipe's owner id (RecipeView shape), take the final
+  // Assemble the detail payload: drop the recipe's owner id (Recipe shape), take the final
   // consolidated list (corrected, falling back to recognized), and project photos to the gallery.
   private toRecipeDetail(session: RecipeSession, recipe: Recipe, photos: Photo[]): RecipeDetail {
     return {
-      recipe: {
-        id: recipe.id,
-        sessionId: recipe.sessionId,
-        name: recipe.name,
-        contentMd: recipe.contentMd,
-        createdAt: recipe.createdAt,
-      },
+      recipe,
       mealContext: session.mealContext,
       items: session.correctedItems ?? session.recognizedItems ?? [],
       photos: photos.map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })),

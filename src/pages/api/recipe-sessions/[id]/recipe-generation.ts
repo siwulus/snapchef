@@ -1,5 +1,5 @@
-import { RecipeGenerationCommand, RecipeView } from "@/lib/core/boundry/recipe";
-import { RecipeSessionId } from "@/lib/core/model/recipe";
+import { RecipeGenerationCommand } from "@/lib/core/boundry/recipe";
+import { Recipe, RecipeSessionId } from "@/lib/core/model/recipe";
 import { parseRequestBody, runApiRoute, validateAuthUser } from "@/lib/infrastructure/api";
 import { decodeWith } from "@/lib/utils/effect";
 import type { APIRoute } from "astro";
@@ -15,6 +15,6 @@ export const POST: APIRoute = ({ request, params, locals: { user, recipeSessions
       parseRequestBody(request, RecipeGenerationCommand),
     ]).pipe(
       Effect.flatMap(([authUser, id, command]) => recipeSessions.generateRecipe(authUser.id, id, command)),
-      Effect.flatMap(decodeWith(RecipeView)),
+      Effect.flatMap(decodeWith(Recipe)),
     ),
   );
