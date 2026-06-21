@@ -1,6 +1,6 @@
+import { PhotoUploader } from "@/components/recipes/photo/PhotoUploader";
 import { GeneratedRecipeView } from "@/components/recipes/wizard/GeneratedRecipeView";
-import { ReviewStep } from "@/components/recipes/wizard/ReviewStep";
-import { UploadStep } from "@/components/recipes/wizard/UploadStep";
+import { WizardReviewProducts } from "@/components/recipes/wizard/WizardReviewProducts";
 import { WizardActions } from "@/components/recipes/wizard/WizardActions";
 import { WizardExitLink } from "@/components/recipes/wizard/WizardExitLink";
 import type { PhotoView, RecipeGenerationResult, RecognitionResult } from "@/lib/core/boundry/recipe";
@@ -61,21 +61,25 @@ const RecipeWizard = () => {
 
   const renderStep = () => {
     if (step === "upload" || session === null) {
-      return <UploadStep onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
+      return <PhotoUploader onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
     }
 
-    if (step === "recipe" && recipe) {
+    if (step === "review") {
+      return <WizardReviewProducts session={session} photos={photos} onGenerated={handleGenerated} />;
+    }
+
+    if (recipe) {
       return <GeneratedRecipeView recipe={recipe} photos={photos} session={session} />;
     }
 
-    return <ReviewStep session={session} photos={photos} onGenerated={handleGenerated} />;
+    return null;
   };
 
   return (
     <div className="flex flex-col gap-6">
       <WizardExitLink dirty={dirty} onBeforeNavigate={disarmLeaveGuard} />
       <div>
-        <h1 className="text-foreground text-2xl font-semibold">Nowy przepis</h1>
+        <h1 className="text-foreground text-2xl font-semibold">{recipe?.name ?? "Nowy przepis"}</h1>
         <p className="text-muted-foreground mt-1 text-sm">Prześlij od 1 do 5 zdjęć produktów, aby rozpocząć.</p>
       </div>
       {renderStep()}

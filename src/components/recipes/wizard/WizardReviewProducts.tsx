@@ -1,12 +1,12 @@
-import { PhotoReviewCard } from "@/components/recipes/wizard/PhotoReviewCard";
-import { ProductListEditor } from "@/components/recipes/wizard/ProductListEditor";
-import { RecipeGenerationPanel } from "@/components/recipes/wizard/RecipeGenerationPanel";
-import { useEditableItems } from "@/components/recipes/wizard/useEditableItems";
+import { PhotosReviewCard } from "@/components/recipes/photo/PhotosReviewCard";
+import { ProductListEditor } from "@/components/recipes/ingridients/ProductListEditor";
+import { RecipeGenerationPanel } from "@/components/recipes/recipe/RecipeGenerationPanel";
+import { useEditableItems } from "@/components/recipes/ingridients/useEditableItems";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PhotoView, RecipeGenerationResult } from "@/lib/core/boundry/recipe";
 import type { RecipeSession } from "@/lib/core/model/recipe";
 
-interface ReviewStepProps {
+interface WizardReviewProductsProps {
   session: RecipeSession;
   photos: PhotoView[];
   onGenerated: (result: RecipeGenerationResult) => void;
@@ -17,21 +17,12 @@ interface ReviewStepProps {
 // (lifted from the editor) so the generation panel can read its `toCorrectedItems()` projection.
 // Below the list, the generation panel collects the meal context + off-list toggle and triggers
 // generation; the generated `{ recipe, session }` bundle is reported up via `onGenerated`.
-export const ReviewStep = ({ session, photos, onGenerated }: ReviewStepProps) => {
+export const WizardReviewProducts = ({ session, photos, onGenerated }: WizardReviewProductsProps) => {
   const editor = useEditableItems(session.recognizedItems);
 
   return (
     <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Rozpoznane produkty na zdjęciach</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {photos.map((photo) => (
-            <PhotoReviewCard key={photo.id} photo={photo} />
-          ))}
-        </CardContent>
-      </Card>
+      <PhotosReviewCard photos={photos} />
 
       <Card>
         <CardHeader>

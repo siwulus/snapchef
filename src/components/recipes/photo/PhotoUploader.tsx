@@ -1,15 +1,15 @@
 import { useObjectUrls } from "@/components/hooks/useObjectUrls";
-import { validateFiles } from "@/components/recipes/image-processing";
-import { PhotoPreviewGrid } from "@/components/recipes/wizard/PhotoPreviewGrid";
-import { RecognitionErrorAlert } from "@/components/recipes/wizard/RecognitionErrorAlert";
-import { UploadProgressOverlay } from "@/components/recipes/wizard/UploadProgressOverlay";
-import { useRecipeUpload } from "@/components/recipes/wizard/useRecipeUpload";
+import { validateFiles } from "@/components/recipes/photo/photo-processing";
+import { PhotoPreviewGrid } from "@/components/recipes/photo/PhotoPreviewGrid";
+import { PhotoRecognitionErrorAlert } from "@/components/recipes/photo/PhotoRecognitionErrorAlert";
+import { PhotoUploadProgressOverlay } from "@/components/recipes/photo/PhotoUploadProgressOverlay";
+import { usePhotoUpload } from "@/components/recipes/photo/usePhotoUpload";
 import { Button } from "@/components/ui/button";
 import type { RecognitionResult } from "@/lib/core/boundry/recipe";
 import { ImagePlus } from "lucide-react";
 import { useRef, useState } from "react";
 
-interface UploadStepProps {
+interface PhotoUploaderProps {
   onComplete: (result: RecognitionResult) => void;
   onDirtyChange: (dirty: boolean) => void;
 }
@@ -19,10 +19,10 @@ interface UploadStepProps {
 const isSameFile = (a: File, b: File): boolean =>
   a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
 
-export const UploadStep = ({ onComplete, onDirtyChange }: UploadStepProps) => {
+export const PhotoUploader = ({ onComplete, onDirtyChange }: PhotoUploaderProps) => {
   const { photos, append, removeAt } = useObjectUrls();
   const { phase, recognitionError, isBusy, canRetry, submit, retry, clearRecognitionError } =
-    useRecipeUpload(onComplete);
+    usePhotoUpload(onComplete);
   const [errors, setErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -88,14 +88,14 @@ export const UploadStep = ({ onComplete, onDirtyChange }: UploadStepProps) => {
       {photos.length > 0 ? <PhotoPreviewGrid photos={photos} disabled={isBusy} onRemove={handleRemove} /> : null}
 
       {recognitionError ? (
-        <RecognitionErrorAlert message={recognitionError} canRetry={canRetry} onRetry={retry} />
+        <PhotoRecognitionErrorAlert message={recognitionError} canRetry={canRetry} onRetry={retry} />
       ) : null}
 
       <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
         Rozpoznaj produkty
       </Button>
 
-      {phase !== "idle" ? <UploadProgressOverlay phase={phase} /> : null}
+      {phase !== "idle" ? <PhotoUploadProgressOverlay phase={phase} /> : null}
     </div>
   );
 };

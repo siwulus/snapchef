@@ -161,7 +161,8 @@ const makeSessionRepoFor = (
   find: () => Effect.succeed(found ? Option.some(baseSession) : Option.none()),
   update: (_userId, _sessionId, data) => {
     updateCalls.push(data);
-    return Effect.succeed(Option.some({ ...baseSession, ...data }));
+    // Owner-scoped update: a missing / unowned row yields None (mirrors the maybeSingle() adapter).
+    return Effect.succeed(found ? Option.some({ ...baseSession, ...data }) : Option.none());
   },
   remove: (userId, sessionId) => {
     deleteCalls.push({ userId, sessionId });
@@ -190,7 +191,7 @@ describe("RecipeSessionUC.saveSession", () => {
     expect(updateCalls).toEqual([{ state: "saved" }]);
   });
 
-  it("surfaces SnapchefNotFoundError when the session is missing (no update)", async () => {
+  it("surfaces SnapchefNotFoundError when the owner-scoped update matches no row", async () => {
     const updateCalls: RecipeSessionUpdatePayload[] = [];
     const uc = new RecipeSessionUC(
       makeSessionRepoFor(false, updateCalls, []),
@@ -207,7 +208,8 @@ describe("RecipeSessionUC.saveSession", () => {
     if (Either.isLeft(result)) {
       expect(result.left).toBeInstanceOf(SnapchefNotFoundError);
     }
-    expect(updateCalls).toHaveLength(0);
+    // The owner-scoped update is attempted; matching no row (None) is what surfaces NotFound.
+    expect(updateCalls).toEqual([{ state: "saved" }]);
   });
 });
 

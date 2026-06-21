@@ -1,11 +1,11 @@
-import { LOADER_MESSAGE, type Phase } from "@/components/recipes/wizard/useRecipeUpload";
+import { LOADER_MESSAGE, type Phase } from "@/components/recipes/photo/usePhotoUpload";
 import { Loader2 } from "lucide-react";
 
-interface UploadProgressOverlayProps {
+interface PhotoUploadProgressOverlayProps {
   phase: Exclude<Phase, "idle">;
 }
 
-export const UploadProgressOverlay = ({ phase }: UploadProgressOverlayProps) => (
+export const PhotoUploadProgressOverlay = ({ phase }: PhotoUploadProgressOverlayProps) => (
   <div
     className="bg-background/70 fixed inset-0 z-50 flex flex-col items-center justify-center gap-3"
     role="status"

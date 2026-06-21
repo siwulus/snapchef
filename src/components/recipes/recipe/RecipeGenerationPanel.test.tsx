@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { RecipeGenerationPanel } from "@/components/recipes/wizard/RecipeGenerationPanel";
+import { RecipeGenerationPanel } from "@/components/recipes/recipe/RecipeGenerationPanel";
 import type { RecipeGenerationResult } from "@/lib/core/boundry/recipe";
 import type { RecognizedItem } from "@/lib/core/model/recipe";
 import { render, screen, waitFor } from "@testing-library/react";

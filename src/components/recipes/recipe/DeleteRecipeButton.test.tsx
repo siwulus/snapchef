@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import DeleteRecipeButton from "@/components/recipes/DeleteRecipeButton";
+import DeleteRecipeButton from "@/components/recipes/recipe/DeleteRecipeButton";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";

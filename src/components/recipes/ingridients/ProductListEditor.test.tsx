@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { ProductListEditor } from "@/components/recipes/wizard/ProductListEditor";
-import { itemFieldHints, useEditableItems } from "@/components/recipes/wizard/useEditableItems";
+import { ProductListEditor } from "@/components/recipes/ingridients/ProductListEditor";
+import { itemFieldHints, useEditableItems } from "@/components/recipes/ingridients/useEditableItems";
 import type { RecognizedItem } from "@/lib/core/model/recipe";
 import { act, render, renderHook, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

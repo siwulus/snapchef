@@ -1,8 +1,11 @@
 ---
+import { BackToRecipies } from "@/components/navigation/BackToRecipies";
+import { ProductListView } from "@/components/recipes/ingridients/ProductListView";
+import { PhotoGrid } from "@/components/recipes/photo/PhotoGrid";
+import DeleteRecipeButton from "@/components/recipes/recipe/DeleteRecipeButton";
+import { RecipeContextView } from "@/components/recipes/recipe/RecipeContextView";
+import { RecipeView } from "@/components/recipes/recipe/RecipeView";
 import AppLayout from "@/layouts/AppLayout.astro";
-import { RecipeBody } from "@/components/recipes/RecipeBody";
-import RecipeProvenance from "@/components/recipes/detail/RecipeProvenance.astro";
-import DeleteRecipeButton from "@/components/recipes/DeleteRecipeButton";
 import { RecipeSessionId } from "@/lib/core/model/recipe";
 import { runWithLogging } from "@/lib/infrastructure/logging/logger";
 import { Effect } from "effect";
@@ -39,19 +42,16 @@ if (!detail) {
 <AppLayout title={`${detail.recipe.name} — Snapchef`}>
   <div class="flex flex-col gap-8">
     <div>
-      <a href="/recipes" class="text-muted-foreground hover:text-foreground text-sm transition-colors">
-        ← Wróć do przepisów
-      </a>
+      <BackToRecipies href="/recipes" />
     </div>
 
-    <article class="flex flex-col gap-6">
-      <h1 class="text-foreground text-3xl font-semibold">{detail.recipe.name}</h1>
-      <RecipeBody contentMd={detail.recipe.contentMd} />
-    </article>
+    <RecipeView name={detail.recipe.name} contentMd={detail.recipe.contentMd} />
+    <RecipeContextView mealContext={detail.mealContext ?? ""} />
+    <ProductListView items={detail.items ?? []} />
+    <PhotoGrid photos={detail.photos ?? []} />
 
-    <RecipeProvenance mealContext={detail.mealContext} items={detail.items} photos={detail.photos} />
-
-    <div class="flex justify-end border-t pt-6">
+    <div class="flex justify-between border-t pt-6">
+      <BackToRecipies href="/recipes" />
       <DeleteRecipeButton sessionId={detail.recipe.sessionId} client:visible />
     </div>
   </div>

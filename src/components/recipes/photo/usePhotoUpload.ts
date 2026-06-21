@@ -1,6 +1,6 @@
 import { SnapchefClientUploadStepError, type SnapchefClientError } from "@/components/errors";
 import { useApiClient } from "@/components/hooks/useApiClient";
-import { prepareForUpload } from "@/components/recipes/image-processing";
+import { prepareForUpload } from "@/components/recipes/photo/photo-processing";
 import { RecognitionResult } from "@/lib/core/boundry/recipe";
 import { RecipeSession } from "@/lib/core/model/recipe";
 import type { ApiResponsePayload } from "@/lib/infrastructure/api/types";
@@ -24,7 +24,7 @@ const unwrap = (result: ApiResponsePayload<RecipeSession>): Effect.Effect<Recipe
 // Owns the upload→recognize workflow and its UI state. The single consumer (UploadStep) feeds it the
 // selected files; success is reported through `onComplete`. Kept as one pipe-first Effect chain with a
 // single runPromise edge per effect.md.
-export const useRecipeUpload = (onComplete: (result: RecognitionResult) => void) => {
+export const usePhotoUpload = (onComplete: (result: RecognitionResult) => void) => {
   const [phase, setPhase] = useState<Phase>("idle");
   const [recognitionError, setRecognitionError] = useState<string | null>(null);
   const [createdSession, setCreatedSession] = useState<RecipeSession | null>(null);

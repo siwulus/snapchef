@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 
-interface RecognitionErrorAlertProps {
+interface PhotoRecognitionErrorAlertProps {
   message: string;
   canRetry: boolean;
   onRetry: () => void;
 }
 
-export const RecognitionErrorAlert = ({ message, canRetry, onRetry }: RecognitionErrorAlertProps) => (
+export const PhotoRecognitionErrorAlert = ({ message, canRetry, onRetry }: PhotoRecognitionErrorAlertProps) => (
   <div className="text-destructive flex flex-col gap-2 text-sm" role="alert">
     <p>{message}</p>
     {canRetry ? (

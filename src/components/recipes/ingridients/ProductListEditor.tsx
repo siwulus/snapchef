@@ -1,5 +1,5 @@
-import { ProductRow } from "@/components/recipes/wizard/ProductRow";
-import { itemFieldHints, type UseEditableItems } from "@/components/recipes/wizard/useEditableItems";
+import { ProductRow } from "@/components/recipes/ingridients/ProductRow";
+import { itemFieldHints, type UseEditableItems } from "@/components/recipes/ingridients/useEditableItems";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 

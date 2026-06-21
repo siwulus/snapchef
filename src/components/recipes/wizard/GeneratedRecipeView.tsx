@@ -1,5 +1,8 @@
-import { RecipeBody } from "@/components/recipes/RecipeBody";
-import { WizardReviewSummary } from "@/components/recipes/wizard/WizardReviewSummary";
+import { ProductListView } from "@/components/recipes/ingridients/ProductListView";
+import { PhotosReviewCard } from "@/components/recipes/photo/PhotosReviewCard";
+import { RecipeView } from "@/components/recipes/recipe/RecipeView";
+import { RecipeContextView } from "@/components/recipes/recipe/RecipeContextView";
+import { RecipeExtraProducts } from "@/components/recipes/recipe/RecipeExtraProducts";
 import type { PhotoView } from "@/lib/core/boundry/recipe";
 import type { Recipe, RecipeSession } from "@/lib/core/model/recipe";
 
@@ -17,16 +20,11 @@ interface GeneratedRecipeViewProps {
 // Cancel / Save actions are rendered separately by RecipeWizard below.
 export const GeneratedRecipeView = ({ recipe, photos, session }: GeneratedRecipeViewProps) => (
   <div className="flex flex-col gap-8">
-    <WizardReviewSummary
-      photos={photos}
-      items={session.correctedItems ?? []}
-      mealContext={session.mealContext ?? ""}
-      allowExtraIngredients={session.allowExtraIngredients ?? false}
-    />
+    <PhotosReviewCard photos={photos} />
+    <ProductListView items={session.correctedItems ?? []} />
+    <RecipeContextView mealContext={session.mealContext ?? ""} />
+    <RecipeExtraProducts allowExtraIngredients={session.allowExtraIngredients ?? false} modeReadOnly={true} />
 
-    <article className="flex flex-col gap-6">
-      <h1 className="text-foreground text-3xl font-semibold">{recipe.name}</h1>
-      <RecipeBody contentMd={recipe.contentMd} />
-    </article>
+    <RecipeView name={recipe.name} contentMd={recipe.contentMd} />
   </div>
 );

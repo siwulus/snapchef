@@ -1,4 +1,4 @@
-import type { EditableItem, FieldHints } from "@/components/recipes/wizard/useEditableItems";
+import type { EditableItem, FieldHints } from "@/components/recipes/ingridients/useEditableItems";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
