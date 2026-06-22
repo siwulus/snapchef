@@ -10,3 +10,4 @@ export const OPENROUTER_RECIPE_MODEL = "openai/gpt-4.1-mini";
 export const OPENROUTER_RECIPE_FALLBACK_MODEL = "openai/gpt-4o-mini";
 export const LOG_LEVEL = "Info";
 export const LOG_HTTP_BODIES = false;
+export const E2E_FAKE_LLM = false;
