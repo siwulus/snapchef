@@ -1,7 +1,7 @@
 ---
 change_id: mock-openrouter-for-tests-e2e
 title: Mock OpenRouter in E2E tests with a fake adapter behind the port
-status: implementing
+status: implemented
 created: 2026-06-22
 updated: 2026-06-22
 archived_at: null

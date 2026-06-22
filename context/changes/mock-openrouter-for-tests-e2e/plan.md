@@ -313,8 +313,8 @@ changes. Backward compatible by construction.
 
 #### Automated
 
-- [x] 2.1 Type-checked lint passes: `pnpm lint`
-- [x] 2.2 E2E suite runs against a flagged server: `pnpm test:e2e` passes
+- [x] 2.1 Type-checked lint passes: `pnpm lint` — 6e6bf1f2e
+- [x] 2.2 E2E suite runs against a flagged server: `pnpm test:e2e` passes — 6e6bf1f2e
 
 #### Manual
 
