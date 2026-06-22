@@ -42,6 +42,10 @@ export default defineConfig({
       // Effect LogLevel label: All | Trace | Debug | Info | Warning | Error | Fatal | None
       LOG_LEVEL: envField.string({ context: "server", access: "public", default: "Info" }),
       LOG_HTTP_BODIES: envField.boolean({ context: "server", access: "public", default: false }),
+      // E2E test seam: swap the OpenRouter LLM adapters for deterministic fakes. Only honored
+      // under a non-production build (see the !import.meta.env.PROD guard in src/middleware.ts);
+      // set by Playwright's webServer.env. Defaults false → real adapters in dev and production.
+      E2E_FAKE_LLM: envField.boolean({ context: "server", access: "public", default: false }),
     },
   },
 });

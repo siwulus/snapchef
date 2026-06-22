@@ -4,9 +4,12 @@ import { createRecipeRepository } from "@/lib/infrastructure/db/RecipeRepository
 import { createRecipeSessionRepository } from "@/lib/infrastructure/db/RecipeSessionRepository";
 import { createSessionPhotoStorage } from "@/lib/infrastructure/db/SessionPhotoStorage";
 import { createClient } from "@/lib/infrastructure/db/supabase";
+import { createFakeProductRecognizer } from "@/lib/infrastructure/llm/FakeProductRecognizer";
+import { createFakeRecipeGenerator } from "@/lib/infrastructure/llm/FakeRecipeGenerator";
 import { createProductRecognizer, createRecipeGenerator } from "@/lib/infrastructure/llm/openrouter";
 import { runWithLogging, shouldLogBodies } from "@/lib/infrastructure/logging/logger";
 import type { APIContext, MiddlewareNext } from "astro";
+import { E2E_FAKE_LLM } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
 import { Effect } from "effect";
 import { SnapchefExternalSystemError } from "./lib/core/model/error";
@@ -15,6 +18,12 @@ import { RecipeSessionUC } from "./lib/core/uc/recipe/RecipeSessionUC";
 import { match } from "ts-pattern";
 
 const PROTECTED_ROUTES = ["/recipes"];
+
+// E2E test seam: swap the paid OpenRouter adapters for deterministic fakes. Only ever true under
+// a non-production build (Playwright boots `astro dev`); `import.meta.env.PROD` is statically true
+// in the production Worker bundle, so `!PROD` folds to false there and the fake branch is
+// dead-code-eliminated — the fakes can never run in prod regardless of the env flag.
+const useFakeLlm = E2E_FAKE_LLM && !import.meta.env.PROD;
 
 // Single Effect edge for every request (pages + API + redirects): capture the request body
 // (when enabled) → inject dependencies (fail fast on misconfig) → resolve the user → produce the
@@ -45,9 +54,9 @@ const injectDependencies = (context: APIContext): Effect.Effect<void, SnapchefEx
           createRecipeSessionRepository(supabase),
           createPhotoRepository(supabase),
           createSessionPhotoStorage(supabase),
-          createProductRecognizer(),
+          useFakeLlm ? createFakeProductRecognizer() : createProductRecognizer(),
           createRecipeRepository(supabase),
-          createRecipeGenerator(),
+          useFakeLlm ? createFakeRecipeGenerator() : createRecipeGenerator(),
         );
         return Effect.void;
       }),
