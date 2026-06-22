@@ -24,13 +24,16 @@ test.describe("critical recipe flow (authenticated)", () => {
   // storage + DB) so the test is repeatable and parallel-safe even after a failure.
   let createdSessionId: string | null = null;
 
-  test.afterEach(async ({ request }) => {
-    if (createdSessionId) {
-      // The same endpoint the Delete control hits; the `request` fixture carries the
-      // authenticated storageState. Best-effort cleanup — don't fail the run on teardown.
-      await request.delete(`/api/recipe-sessions/${createdSessionId}`).catch(() => undefined);
-      createdSessionId = null;
-    }
+  test.afterEach(async ({ page }) => {
+    if (!createdSessionId) return;
+    const id = createdSessionId;
+    createdSessionId = null;
+    // Delete via a same-origin browser fetch (not the request fixture): Astro's CSRF guard
+    // (checkOrigin) rejects an APIRequestContext DELETE as "cross-site" (403), which a
+    // .catch would silently swallow and leak the row. A page fetch carries the Origin header.
+    await page
+      .evaluate((sessionId) => fetch(`/api/recipe-sessions/${sessionId}`, { method: "DELETE" }), id)
+      .catch(() => undefined);
   });
 
   test("upload → recognize → edit context → generate → save persists the recipe end to end", async ({ page }) => {
