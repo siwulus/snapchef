@@ -23,13 +23,17 @@ const create =
 const find =
   (supabase: SupabaseClient<Database>) =>
   (userId: UserId, sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
+    // maybeSingle (not single): a missing/foreign session is a legitimate miss → null data,
+    // null error → Option.none(), which the UC's getOrThrowNotFound maps to a typed 404. With
+    // .single() a 0-row result is a PGRST116 *error* → SnapchefExternalSystemError (500), which
+    // would mask the NotFound contract. Mirrors update() below.
     tryErrorDataOption<RecipeSessionRow>(() =>
       supabase
         .from("recipe_sessions")
         .select("*")
         .eq("id", sessionId)
         .eq("user_id", userId)
-        .single()
+        .maybeSingle()
         .then(({ error, data }) => ({ error, data })),
     ).pipe(Effect.flatMap((option) => Effect.transposeMapOption(option, decodeWith(RecipeSessionFromRow))));
 
