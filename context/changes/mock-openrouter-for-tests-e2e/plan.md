@@ -299,10 +299,10 @@ changes. Backward compatible by construction.
 
 #### Automated
 
-- [x] 1.1 Type-checked lint passes: `pnpm lint`
-- [x] 1.2 Unit tests pass (incl. new fake test): `pnpm test`
-- [x] 1.3 Production build succeeds: `pnpm build`
-- [x] 1.4 Formatting clean: `pnpm format` (no diff)
+- [x] 1.1 Type-checked lint passes: `pnpm lint` — 1db486b11
+- [x] 1.2 Unit tests pass (incl. new fake test): `pnpm test` — 1db486b11
+- [x] 1.3 Production build succeeds: `pnpm build` — 1db486b11
+- [x] 1.4 Formatting clean: `pnpm format` (no diff) — 1db486b11
 
 #### Manual
 
@@ -313,8 +313,8 @@ changes. Backward compatible by construction.
 
 #### Automated
 
-- [ ] 2.1 Type-checked lint passes: `pnpm lint`
-- [ ] 2.2 E2E suite runs against a flagged server: `pnpm test:e2e` passes
+- [x] 2.1 Type-checked lint passes: `pnpm lint`
+- [x] 2.2 E2E suite runs against a flagged server: `pnpm test:e2e` passes
 
 #### Manual
 
