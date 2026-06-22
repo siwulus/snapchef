@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-06
+> Last updated: 2026-06-22 (full refresh of §1–§4 — see §8 ledger)
 
 ## 1. Strategy
 
@@ -28,7 +28,7 @@ Tests follow three non-negotiable principles for this project:
    ground truth.
 
 Hot-spot scope used for likelihood weighting: `src/`, `supabase/migrations/`
-(30 days, 21 commits; generated DB types and lockfiles excluded).
+(30 days, 79 commits; generated DB types, snapshots, and lockfiles excluded).
 
 ## 2. Risk Map
 
@@ -38,30 +38,36 @@ terms, not test names. The Source column cites the _evidence that surfaced
 this risk_ — never a specific file as "where the failure lives" (that is
 research's job, see §1 principle #3).
 
-| #   | Risk (failure scenario)                                                                                                                                                         | Impact | Likelihood | Source (evidence — not anchor)                                                                                                    |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Vision step returns wrong/hallucinated products, or a malformed model response renders garbage instead of an editable list — the recipe is built on a bad inventory             | High   | High       | Interview Q1 (user's top fear); PRD FR-004/FR-005; roadmap S-01 risk note                                                         |
-| 2   | Auth flow regression: login breaks, wrong-password leaks an untyped 500, or an unverified account can sign in (FR-001 gate still pending)                                       | High   | High       | Hot-spot dirs `src/components/auth/` (32 commits/30d) + `src/pages/api/` (20 commits/30d); roadmap F-02 status `ready`, not built |
-| 3   | Cross-user data leak: user B reads/writes/deletes user A's sessions, recipes, or photos (IDOR / RLS or storage-policy hole) — abuse scenario                                    | High   | Medium     | PRD privacy guardrail (launch-gating); roadmap F-01/S-03/S-04 risk notes ("first real test of RLS")                               |
-| 4   | API error-envelope contract drift: error→status mapping or envelope shape changes on one side; client-side validation turns every response into an opaque transport error       | Medium | High       | Hot-spot dir `src/lib/` (17 commits/30d); conventions registry — envelope is a binding two-sided contract                         |
-| 5   | Recipe generation output misses name/ingredients/steps or breaches the ~30 s NFR; the north-star flow fails opaquely                                                            | High   | Medium     | PRD FR-008 + NFR response time; roadmap S-02 risk note (validation milestone)                                                     |
-| 6   | Upload limits enforced only client-side: >5 files / >5 MB / non-image reaches the server, burning paid LLM calls and storage — abuse scenario (resource abuse, untrusted input) | Medium | Medium     | PRD FR-003; roadmap S-01 risk note ("server-side validation, not client-only")                                                    |
+| #   | Risk (failure scenario)                                                                                                                                                                                                                            | Impact   | Likelihood | Source (evidence — not anchor)                                                                                                                                                                                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Recipe session state machine: a transition fires from an illegal prior state, an edit (corrected items / meal context / off-list toggle) is lost across a transition, or save/delete acts on a missing or foreign session (ownership not enforced) | High     | High       | Interview Q1 (top fear) + Q3; hot-spot dir `src/lib/core/uc/recipe/` (25 commits/30d), `RecipeSessionUC` 16 commits/30d; concrete drift found 2026-06-21 (owner-scoped `update` returning None no longer surfaced NotFound in `saveSession`) |
+| 2   | The critical end-to-end flow (upload → recognize → edit → generate → save) has no browser-level proof; a wiring/prop break — e.g. after the 2026-06-21 refactor that moved every recipe component — ships unseen                                   | High     | Medium     | Interview Q3 (e2e gap); hot-spot dir `src/components/recipes/` (`wizard` 71 + `recipe` 10 commits/30d); no e2e / Playwright exists today                                                                                                     |
+| 3   | Cross-user data leak: user B reads/writes/deletes user A's sessions, recipes, or photos (IDOR / RLS or storage-policy hole) — abuse scenario, still zero integration coverage                                                                      | High     | Medium     | PRD privacy guardrail (launch-gating); roadmap F-01/S-03/S-04 risk notes ("first real test of RLS"); mandatory abuse lens                                                                                                                    |
+| 4   | Auth token abuse: a recovery or email-verification token is reused, expired, or type-confused (`type=recovery` ↔ `type=email`), or the callback route does not fail closed — letting the wrong account action through — abuse scenario             | High     | Medium     | `password-reset` impl_reviewed 2026-06-15 (FR-013) + `email-verification-gating` implemented 2026-06-14; shared `token_hash` callback mechanism; hot-spot dir `src/pages/api/auth/` (28 commits/30d); mandatory abuse lens                   |
+| 5   | Malformed LLM output (recognition or generation) renders garbage instead of an editable list / usable recipe, or upload limits enforced only client-side let >5 files / >5 MB / non-image reach the server and burn paid LLM calls + storage       | Med-High | Medium     | PRD FR-003/FR-004/FR-005/FR-008 + NFR response time; roadmap S-01/S-02 risk notes; features now built so likelihood is real, but interview Q2 reports no incidents → not top                                                                 |
 
-Considered and deliberately not mapped: "works in `astro dev`, breaks on
-Cloudflare Workers" — no incident evidence (interview Q2) and no cheap
-deterministic signal; belongs to observability (`wrangler tail`) and the
-pre-prod smoke gate, not a test row.
+Considered and deliberately not mapped:
+
+- **API error-envelope contract drift** (old Risk #4) — demoted to
+  "verify, don't re-cover": the `SnapchefServerError` family, the
+  `runApiRoute` boundary mapper, and the client envelope now carry unit
+  tests (`src/lib/core/model/error/`, `src/lib/infrastructure/api/` — both
+  churned _with_ tests). §3 Phase 3 research should confirm a round-trip
+  contract test exists and add one only if it is missing.
+- **"works in `astro dev`, breaks on Cloudflare Workers"** — no incident
+  evidence (interview Q2: no real incidents) and no cheap deterministic
+  signal; belongs to observability (`wrangler tail`) and the pre-prod
+  smoke gate, not a test row.
 
 ### Risk Response Guidance
 
-| Risk | What would prove protection                                                                                                                                                                                                                                                                                                 | Must challenge                                                                            | Context `/10x-research` must ground                                                                                                | Likely cheapest layer                                   | Anti-pattern to avoid                                                              |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| #1   | Unparseable/malformed vision output fails typed and surfaces a clear error — never a garbage list; the recognized list is always editable before generation (the FR-005 safety valve). Semantic _accuracy_ of recognition is an eval problem, not a deterministic gate — a small, dated, fixture-based eval set is optional | "Schema-valid output means correct output" — shape ≠ accuracy                             | Vision call site, response schema, error translation path, fixture strategy for recorded model outputs                             | contract/unit with recorded fixtures                    | Asserting exact model output (flaky oracle); testing only the happy parse          |
-| #2   | Signin/signup/signout return the documented envelope for success, validation failure (fieldErrors), and bad credentials; unauthenticated access to protected routes redirects; once email verification lands, an unverified account cannot sign in                                                                          | "Happy-path login implies the gate works"                                                 | Route pipelines, protected-route gating mechanism, how auth-provider errors translate to domain errors                             | integration on API routes + unit on middleware          | Mocking the auth provider so deeply the test mirrors the implementation            |
-| #3   | With two real users, every read/write/delete on domain tables AND the storage bucket returns only owner-scoped data; cross-user access fails closed at the database layer, not just the API layer                                                                                                                           | "RLS enabled = policies correct"; "API-level checks suffice" — PostgREST is also a door   | Actual policy definitions, table vs storage-policy parity, two-user fixture strategy against local Supabase                        | integration vs local Supabase (db reset + seeded users) | Testing isolation only through the app's own API; owner-only happy-path assertions |
-| #4   | Every server error type maps to its documented HTTP status and envelope shape; the client's envelope schema parses real server output (round-trip), so contract drift fails in CI, not in the browser                                                                                                                       | "The exhaustive match makes tests redundant" — totality is not correctness of the mapping | Error-code→status table, mapper branches, shared boundary schemas used by both sides                                               | unit on mapper + one round-trip contract test           | Copying expected statuses from the mapper under test (oracle problem)              |
-| #5   | Generation output missing required recipe fields fails typed and the user sees a clear error, never a partially rendered recipe; latency vs the 30 s NFR is observed (logged/measured), not asserted in a flaky test                                                                                                        | "Final status 200 means the recipe is usable"                                             | Generation call site, recipe output schema, timeout/abort behavior on the edge runtime                                             | contract/unit with recorded fixtures                    | e2e against the live LLM as the primary gate (slow, flaky, paid)                   |
-| #6   | The server rejects the 6th file, an oversized file, and a non-image with a typed 400 — regardless of what the client sends; rejected uploads never trigger an LLM call                                                                                                                                                      | "The client already validates"                                                            | Upload endpoint shape once S-01 lands; where limits are declared and enforced; what happens between upload accept and LLM dispatch | integration on the upload route                         | Exercising limits only through the React form                                      |
+| Risk | What would prove protection                                                                                                                                                                                                                                                                        | Must challenge                                                                                               | Context `/10x-research` must ground                                                                                                            | Likely cheapest layer                                        | Anti-pattern to avoid                                                                                                                |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| #1   | Each documented transition only fires from a legal prior state; the persisted edits (corrected items, meal context, off-list toggle) survive each transition; save/delete on a missing or foreign session returns a typed NotFound and performs no write                                           | "`update` succeeded ⇒ the row existed and was owned" — the exact drift just found; absence ≠ success         | The session state enum + legal transition graph; where ownership is enforced (owner-scoped query vs explicit guard); what state persists where | unit/integration on `RecipeSessionUC` with fake ports        | Mocking `update` to always return `Some` (the stale-test trap that hid the NotFound regression); happy-path-only transitions         |
+| #2   | The full critical path (upload → recognize → edit → generate → save) completes against a running app driven by role-based locators; a broken prop/route after the refactor fails the smoke deterministically                                                                                       | "Component unit tests passing ⇒ the flow is wired end to end"                                                | Real route URLs + auth precondition; deterministic session/photo seeding; which waits are state-based (no `waitForTimeout`)                    | one Playwright smoke (governed by `/10x-e2e`)                | e2e-ing every branch (use integration); `page.waitForTimeout`; asserting exact LLM output as the oracle                              |
+| #3   | With two real users, every read/write/delete on domain tables AND the storage bucket returns only owner-scoped data; cross-user access fails closed at the database layer, not just the API layer                                                                                                  | "RLS enabled = policies correct"; "API-level checks suffice" — PostgREST and the storage API are also doors  | Actual policy definitions; table vs storage-policy parity; two-user fixture strategy against local Supabase (db reset + seeded users)          | integration vs local Supabase (db reset + seeded users)      | Testing isolation only through the app's own API; owner-only happy-path assertions                                                   |
+| #4   | A used, expired, or wrong-`type` token is rejected and the callback fails closed; a valid recovery token cannot be replayed; verification and recovery flows are not interchangeable                                                                                                               | "`type=email` and `type=recovery` are interchangeable"; "a 200 from the callback means the right action ran" | The callback route(s); the `token_hash` verification call; what distinguishes the two flows; how the session is (or isn't) established         | integration on the callback route(s)                         | Testing only the happy callback; mocking Supabase auth so deeply the test mirrors the implementation                                 |
+| #5   | Unparseable/malformed recognition or generation output fails typed and surfaces a clear error — never a garbage list / partial recipe; the recognized list stays editable (FR-005 valve); the server rejects the 6th file, an oversized file, and a non-image with a typed 400 before any LLM call | "Schema-valid output ⇒ correct output"; "the client already validates"; "final status 200 ⇒ usable recipe"   | Vision + generation call sites, response schemas, error-translation path, fixture strategy; upload endpoint shape + where limits are enforced  | contract/unit with recorded fixtures + integration on upload | Asserting exact model output (flaky oracle); e2e against the live LLM as the primary gate; exercising limits only via the React form |
 
 ## 3. Phased Rollout
 
@@ -69,33 +75,38 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                         | Goal (one line)                                                                                                                         | Risks covered                   | Test types                                | Status        | Change folder                                    |
-| --- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------- | ------------------------------------------------ |
-| 1   | Bootstrap + critical-path coverage | Stand up the unit/integration runner and prove the auth flow and error-envelope contract cannot silently regress                        | #2, #4                          | unit + integration                        | change opened | context/changes/testing-bootstrap-critical-path/ |
-| 2   | Privacy / RLS integration suite    | Prove cross-user isolation on domain tables and the storage bucket with two-user fixtures                                               | #3                              | integration (local Supabase)              | not started   | —                                                |
-| 3   | LLM boundary contracts             | Prove malformed model output fails typed at both LLM boundaries and server-side upload limits hold (gated on roadmap S-01/S-02 landing) | #1, #5, #6                      | contract/unit with fixtures + integration | not started   | —                                                |
-| 4   | E2E smoke + quality-gates wiring   | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | cross-cutting (floor for #1–#6) | e2e + gates                               | not started   | —                                                |
+(The 2026-06-06 "Bootstrap runner" phase is **done** — Vitest + Testing
+Library + jsdom + `src/test/setup.ts` are installed and a ~13-file suite
+exists. Its residue is folded into Phase 1.)
+
+| #   | Phase name                              | Goal (one line)                                                                                                                         | Risks covered                   | Test types                                | Status        | Change folder                                         |
+| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------- | ----------------------------------------------------- |
+| 1   | Recipe session UC + state machine       | Prove `RecipeSessionUC` transitions, ownership, and save/delete idempotency cannot silently regress (close the drift class just found)  | #1                              | unit / integration (fake ports)           | change opened | context/changes/testing-recipe-session-state-machine/ |
+| 2   | Auth + RLS integration (local Supabase) | Prove two-user isolation on domain tables and the storage bucket, and that reset/verification callbacks fail closed                     | #3, #4                          | integration (local Supabase)              | not started   | —                                                     |
+| 3   | LLM boundary + upload limits            | Confirm malformed model output fails typed at both LLM boundaries and server-side upload limits hold; add only gaps existing tests miss | #5                              | contract/unit with fixtures + integration | not started   | —                                                     |
+| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | not started   | —                                                     |
 
 ## 4. Stack
 
 The classic test base for this project. AI-native tools (if any) carry a
 `checked:` date so future readers can see which lines need re-verification.
 
-| Layer                | Tool                                              | Version                   | Notes                                                                                    |
-| -------------------- | ------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
-| unit + integration   | Vitest via Astro's `getViteConfig()`              | none yet — see Phase 1    | Astro's official recommendation (docs checked 2026-06-06); no runner installed today     |
-| API/route testing    | Vitest + local Supabase stack                     | none yet — see Phases 1–2 | Local Supabase (Docker) already used for migrations; reuse for integration fixtures      |
-| LLM boundary         | recorded-fixture contract tests                   | none yet — see Phase 3    | Deterministic fixtures over live calls; optional dated eval set for recognition accuracy |
-| e2e                  | Playwright                                        | none yet — see Phase 4    | Astro's official e2e recommendation; `/10x-e2e` skill governs generation                 |
-| accessibility        | eslint-plugin-jsx-a11y                            | 6.10.2                    | Already wired via ESLint; no runtime axe layer planned for MVP                           |
-| (optional) AI-native | chrome-devtools browser MCP — checked: 2026-06-06 | n/a                       | Verification aid only; not a CI gate — do not layer over deterministic asserts           |
+| Layer                | Tool                                              | Version            | Notes                                                                                                 |
+| -------------------- | ------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
+| unit + component     | Vitest + @testing-library/react + jsdom           | 4.1.8 / 16.3 / 29  | **Installed.** `vitest.config.ts` + `src/test/setup.ts`; ~13 test files across `components/` + `lib/` |
+| API/route + UC logic | Vitest with fake ports (hexagonal)                | 4.1.8              | Established pattern: `RecipeSessionUC.test.ts`, `SupabaseAuthenticator.test.ts` inject fakes          |
+| integration (DB/RLS) | Vitest + local Supabase stack                     | none yet — Phase 2 | Local Supabase (Docker) already used for migrations; reuse for two-user fixtures                      |
+| LLM boundary         | recorded-fixture contract tests                   | partial — Phase 3  | `openrouter.test.ts` exists; deterministic fixtures over live calls; optional dated eval set          |
+| e2e                  | Playwright                                        | none yet — Phase 4 | Astro's official e2e recommendation; `/10x-e2e` skill governs generation                              |
+| accessibility        | eslint-plugin-jsx-a11y                            | 6.10.2             | Already wired via ESLint; no runtime axe layer planned for MVP                                        |
+| (optional) AI-native | chrome-devtools browser MCP — checked: 2026-06-22 | n/a                | Verification aid only; not a CI gate — do not layer over deterministic asserts                        |
 
 **Stack grounding tools (current session):**
 
-- Docs: Context7 MCP — verified Astro's official testing guidance (Vitest + `getViteConfig()`, Playwright e2e); checked: 2026-06-06
-- Search: Exa MCP present but unauthenticated; WebSearch available as fallback — not needed this pass; checked: 2026-06-06
-- Runtime/browser: chrome-devtools MCP — available as a verification layer for e2e debugging; not used for this write; checked: 2026-06-06
-- Provider/platform: Supabase skill + local CLI — relevant to Phase 2 fixtures and future quality gates; not used for this write; checked: 2026-06-06
+- Docs: Context7 MCP available — Astro testing guidance (Vitest + `getViteConfig()`, Playwright e2e) verified 2026-06-06, still current; runner already installed so no re-verify needed this pass; checked: 2026-06-22
+- Search: Exa MCP available (deferred); WebSearch fallback — not needed this pass; checked: 2026-06-22
+- Runtime/browser: chrome-devtools MCP + Playwright MCP available as an e2e verification/debug layer for Phase 4; not used for this refresh; checked: 2026-06-22
+- Provider/platform: Supabase skill + local CLI — relevant to Phase 2 two-user fixtures and future quality gates; not used for this refresh; checked: 2026-06-22
 
 ## 5. Quality Gates
 
@@ -103,14 +114,15 @@ The full set of gates that must pass before a change reaches production.
 "Required after §3 Phase N" means the gate is enforced once that rollout
 phase lands; before that, the gate is planned.
 
-| Gate                                   | Where                                 | Required?                 | Catches                                              |
-| -------------------------------------- | ------------------------------------- | ------------------------- | ---------------------------------------------------- |
-| lint + typecheck (type-checked ESLint) | local (Lefthook) + CI                 | required (already wired)  | syntactic / type drift                               |
-| unit + integration                     | local + CI                            | required after §3 Phase 1 | logic and contract regressions                       |
-| RLS isolation suite                    | local + CI                            | required after §3 Phase 2 | cross-user data leaks                                |
-| LLM boundary contracts                 | local + CI                            | required after §3 Phase 3 | malformed-output and limit-bypass regressions        |
-| e2e on the critical flow               | CI on PR                              | required after §3 Phase 4 | broken end-to-end user path                          |
-| pre-prod smoke                         | between merge + prod (Workers Builds) | optional                  | environment-specific failures (dev-vs-Workers drift) |
+| Gate                                   | Where                                 | Required?                   | Catches                                              |
+| -------------------------------------- | ------------------------------------- | --------------------------- | ---------------------------------------------------- |
+| lint + typecheck (type-checked ESLint) | local (Lefthook) + CI                 | required (already wired)    | syntactic / type drift                               |
+| unit + component (Vitest)              | local + CI                            | required (runner installed) | logic and contract regressions                       |
+| UC + state-machine coverage            | local + CI                            | required after §3 Phase 1   | recipe-session transition / ownership regressions    |
+| RLS isolation suite                    | local + CI                            | required after §3 Phase 2   | cross-user data leaks; reset/verify callback holes   |
+| LLM boundary contracts                 | local + CI                            | required after §3 Phase 3   | malformed-output and limit-bypass regressions        |
+| e2e on the critical flow               | CI on PR                              | required after §3 Phase 4   | broken end-to-end user path                          |
+| pre-prod smoke                         | between merge + prod (Workers Builds) | optional                    | environment-specific failures (dev-vs-Workers drift) |
 
 ## 6. Cookbook Patterns
 
@@ -120,25 +132,36 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 ### 6.1 Adding a unit test
 
-- TBD — see §3 Phase 1 (error-envelope mapping and auth-flow regression patterns).
+- A suite already exists. Exemplars: `src/lib/utils/effect.test.ts`,
+  `src/lib/core/model/error/` coverage, `src/lib/infrastructure/db/types/converters.test.ts`.
+  The cookbook entry for the recipe state-machine pattern is filled by §3 Phase 1.
 
-### 6.2 Adding an integration test for an API route
+### 6.2 Adding a UC / use-case test with fake ports
 
-- TBD — see §3 Phase 1 (envelope round-trip + auth route pattern).
+- Exemplar: `src/lib/core/uc/recipe/RecipeSessionUC.test.ts` (inject fake
+  `RecipeSessionRepository` / `PhotoRepository` / ports; assert over the
+  Effect via `Effect.either`). §3 Phase 1 hardens the state-machine cases.
+  Note the known trap: a fake `update` must honor the "missing/foreign row →
+  `None`" contract, or it hides ownership/NotFound regressions.
 
-### 6.3 Adding an RLS / privacy isolation test
+### 6.3 Adding an integration test for an API route
+
+- TBD — see §3 Phase 2 (envelope round-trip + auth route + callback pattern).
+
+### 6.4 Adding an RLS / privacy isolation test
 
 - TBD — see §3 Phase 2 (two-user fixture pattern against local Supabase, tables + storage).
 
-### 6.4 Adding an LLM boundary contract test
+### 6.5 Adding an LLM boundary contract test
 
-- TBD — see §3 Phase 3 (recorded-fixture pattern for malformed-output rejection and server-side limit enforcement).
+- Partial: `src/lib/infrastructure/llm/openrouter.test.ts` exists.
+  §3 Phase 3 fills the malformed-output rejection + server-side limit pattern.
 
-### 6.5 Adding an e2e test
+### 6.6 Adding an e2e test
 
 - TBD — see §3 Phase 4 (critical-flow smoke; `/10x-e2e` skill rules apply: role-based locators, no `waitForTimeout`, test independence).
 
-### 6.6 Per-rollout-phase notes
+### 6.7 Per-rollout-phase notes
 
 (Appended by each phase's final sub-phase when something surprising lands.)
 
@@ -160,12 +183,30 @@ contributors should respect these unless the underlying assumption changes.
   quality is non-deterministic; the FR-005 edit path is the product-level
   mitigation. An optional dated eval set may exist (§3 Phase 3) but never
   blocks a merge.
+- **Static / marketing pages (snapshot or visual tests)** — low blast
+  radius, brittle, catch little; not worth the budget. Re-evaluate if a
+  marketing page gains interactive logic. (Source: 2026-06-22 refresh, Q4.)
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-06-06 (Phase 1 change opened same day)
-- Stack versions last verified: 2026-06-06
-- AI-native tool references last verified: 2026-06-06
+- Strategy (§1–§5) last reviewed: 2026-06-22 (full refresh)
+- Stack versions last verified: 2026-06-22
+- AI-native tool references last verified: 2026-06-22
+
+**2026-06-22 refresh (full §1–§4 rewrite, in place by user direction):**
+
+- Test base flipped `none` → meaningful: Vitest 4 + Testing-Library + jsdom
+  - `src/test/setup.ts` and a ~13-file suite now exist. The old "Bootstrap
+    runner" phase is retired as done.
+- Old §3 Phase 1 (`testing-bootstrap-critical-path`) never materialized on
+  disk; tests grew ad-hoc. Rollout table reset to reflect reality.
+- Risk map reordered: recipe-session **state-machine integrity** elevated to
+  Risk #1 (user's top fear, #1 churn file, a real `saveSession` NotFound
+  drift found 2026-06-21). E2E smoke (#2) and auth **token abuse** (#4, new
+  surface from `password-reset` FR-013) added. Envelope drift demoted to
+  "verify, don't re-cover" (now unit-tested).
+- Calibration: interview Q2 reports no real incidents → likelihoods kept at
+  Medium except Risk #1.
 
 Refresh (`/10x-test-plan --refresh`) when:
 

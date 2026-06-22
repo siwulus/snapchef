@@ -29,3 +29,10 @@ pnpm-debug.log*
 
 # 10x-cli / Claude local tooling — never commit
 .claude/skills/10x-*
+
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/e2e/.auth/
+.playwright-cli/
