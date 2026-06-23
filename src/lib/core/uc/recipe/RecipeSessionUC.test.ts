@@ -11,7 +11,7 @@ import type {
   SessionPhotoStorage,
 } from "@/lib/core/boundry/recipe";
 import { SnapchefExternalSystemError, SnapchefNotFoundError } from "@/lib/core/model/error";
-import type { Photo, Recipe, RecipeSession } from "@/lib/core/model/recipe";
+import type { Photo, Recipe, RecipeSession, RecipeSessionState } from "@/lib/core/model/recipe";
 import { RecipeSessionUC } from "@/lib/core/uc/recipe/RecipeSessionUC";
 import { Effect, Either, Option } from "effect";
 import { describe, expect, it } from "vitest";
@@ -40,12 +40,19 @@ const command = {
 
 // In-memory session repo that records each update payload and reflects it back, so
 // getOrThrowNotFound always sees a present session.
-const makeSessionRepo = (updateCalls: RecipeSessionUpdatePayload[]): RecipeSessionRepository => ({
+const makeSessionRepo = (
+  updateCalls: RecipeSessionUpdatePayload[],
+  transitionCalls: RecipeSessionState[] = [],
+): RecipeSessionRepository => ({
   create: () => Effect.succeed(baseSession),
   find: () => Effect.succeed(Option.some(baseSession)),
   update: (_userId, _sessionId, data) => {
     updateCalls.push(data);
     return Effect.succeed(Option.some({ ...baseSession, ...data }));
+  },
+  transition: (_userId, _sessionId, to) => {
+    transitionCalls.push(to);
+    return Effect.succeed(Option.some({ ...baseSession, state: to }));
   },
   remove: () => Effect.void,
 });
@@ -156,6 +163,7 @@ const makeSessionRepoFor = (
   found: boolean,
   updateCalls: RecipeSessionUpdatePayload[],
   deleteCalls: { userId: string; sessionId: string }[],
+  transitionCalls: RecipeSessionState[] = [],
 ): RecipeSessionRepository => ({
   create: () => Effect.succeed(baseSession),
   find: () => Effect.succeed(found ? Option.some(baseSession) : Option.none()),
@@ -163,6 +171,11 @@ const makeSessionRepoFor = (
     updateCalls.push(data);
     // Owner-scoped update: a missing / unowned row yields None (mirrors the maybeSingle() adapter).
     return Effect.succeed(found ? Option.some({ ...baseSession, ...data }) : Option.none());
+  },
+  transition: (_userId, _sessionId, to) => {
+    transitionCalls.push(to);
+    // Owner-scoped state write: a missing / unowned row yields None (mirrors the maybeSingle() adapter).
+    return Effect.succeed(found ? Option.some({ ...baseSession, state: to }) : Option.none());
   },
   remove: (userId, sessionId) => {
     deleteCalls.push({ userId, sessionId });
@@ -345,10 +358,17 @@ const sampleRecipe: Recipe = {
   createdAt: "2026-06-16T00:00:00.000Z",
 };
 
-const sessionRepoReturning = (session: RecipeSession | null): RecipeSessionRepository => ({
+const sessionRepoReturning = (
+  session: RecipeSession | null,
+  transitionCalls: RecipeSessionState[] = [],
+): RecipeSessionRepository => ({
   create: () => Effect.succeed(baseSession),
   find: () => Effect.succeed(session ? Option.some(session) : Option.none()),
   update: (_userId, _sessionId, data) => Effect.succeed(Option.some({ ...baseSession, ...data })),
+  transition: (_userId, _sessionId, to) => {
+    transitionCalls.push(to);
+    return Effect.succeed(session ? Option.some({ ...session, state: to }) : Option.none());
+  },
   remove: () => Effect.void,
 });
 

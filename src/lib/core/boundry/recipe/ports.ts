@@ -67,6 +67,13 @@ export interface RecipeSessionRepository {
   ): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError>;
   find(userId: UserId, sessionId: string): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError>;
   remove(userId: UserId, sessionId: string): Effect.Effect<void, SnapchefServerError>;
+  // The dedicated, sole writer of `state` — only the transition aspect calls this. An owner-scoped
+  // `update({ state: to })`; absence (no matching/owned row) is reported as Option.none().
+  transition(
+    userId: UserId,
+    sessionId: string,
+    to: RecipeSessionState,
+  ): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError>;
 }
 
 export interface SessionPhotoStorage {
