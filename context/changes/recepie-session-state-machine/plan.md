@@ -362,23 +362,23 @@ No DB migration. The change is code-only; the existing `state` column/CHECK is s
 
 #### Automated
 
-- [x] 2.1 Lint passes: `pnpm lint`
-- [x] 2.2 Existing suite still passes: `pnpm test`
+- [x] 2.1 Lint passes: `pnpm lint` — bd2f8c36b
+- [x] 2.2 Existing suite still passes: `pnpm test` — bd2f8c36b
 
 #### Manual
 
-- [x] 2.3 `transition` wired into the adapter factory object
+- [x] 2.3 `transition` wired into the adapter factory object — bd2f8c36b
 
 ### Phase 3: Transition Aspect
 
 #### Automated
 
-- [ ] 3.1 Lint passes: `pnpm lint`
-- [ ] 3.2 Aspect + reducer tests pass: `pnpm test`
+- [x] 3.1 Lint passes: `pnpm lint`
+- [x] 3.2 Aspect + reducer tests pass: `pnpm test`
 
 #### Manual
 
-- [ ] 3.3 Aspect test asserts `action` recorder empty on illegal event
+- [x] 3.3 Aspect test asserts `action` recorder empty on illegal event
 
 ### Phase 4: UC Refactor + Enforcement Seal + Test Migration
 
