@@ -1,7 +1,7 @@
 ---
 change_id: recepie-session-state-machine
 title: Centralized state machine and transition aspect for recipe sessions
-status: implementing
+status: implemented
 created: 2026-06-23
 updated: 2026-06-23
 archived_at: null
@@ -217,12 +217,12 @@ Effect.map(() => recognized.map((e) => ({ ...e.photo, recognizedItems: e.items }
 
 generateRecipe(userId, sessionId, command): Effect.Effect<RecipeGenerationResult, SnapchefServerError> {
 return this.sessions
-.run("generate_recipe", userId, sessionId, () =>
+.run("generate*recipe", userId, sessionId, () =>
 // early provenance write stays INSIDE the action (survives a generation failure) — data only:
 this.sessionRepository
 .update(userId, sessionId, { correctedItems: command.correctedItems, mealContext: command.mealContext, allowExtraIngredients: command.allowExtraIngredients })
 .pipe(
-Effect.flatMap(() => this.recipeGenerator.generate({ /_ … _/ }).pipe(/_ timeout + retry _/)),
+Effect.flatMap(() => this.recipeGenerator.generate({ /* … _/ }).pipe(/_ timeout + retry \_/)),
 Effect.flatMap((generated) => this.recipeRepository.upsert({ sessionId, userId, name: generated.name, contentMd: generated.contentMd })),
 ),
 )
