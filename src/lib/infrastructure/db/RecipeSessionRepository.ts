@@ -1,7 +1,7 @@
 import type { RecipeSessionRepository, RecipeSessionUpdatePayload } from "@/lib/core/boundry/recipe";
 import type { UserId } from "@/lib/core/model/auth";
 import type { SnapchefServerError } from "@/lib/core/model/error";
-import type { RecipeSession } from "@/lib/core/model/recipe";
+import type { RecipeSession, RecipeSessionState } from "@/lib/core/model/recipe";
 import type { Database, RecipeSessionRow, RecipeSessionUpdate } from "@/lib/infrastructure/db/types";
 import { RecipeSessionFromRow } from "@/lib/infrastructure/db/types/converters";
 import { decodeWith, tryErrorDataOption, tryErrorDataWithSchema } from "@/lib/utils/effect";
@@ -68,6 +68,28 @@ const update =
         .then(({ error, data }) => ({ error, data })),
     ).pipe(Effect.flatMap((option) => Effect.transposeMapOption(option, decodeWith(RecipeSessionFromRow))));
 
+// The sole writer of `state`: an owner-scoped `update({ state: to })`, decoded back through
+// RecipeSessionFromRow with the same transposeMapOption pattern as `update`/`find`. It writes the
+// `state` column directly (not via toRecipeSessionUpdate, which carries only the data columns), so
+// it stays the single state writer even after `state` leaves RecipeSessionUpdatePayload.
+const transition =
+  (supabase: SupabaseClient<Database>) =>
+  (
+    userId: UserId,
+    sessionId: string,
+    to: RecipeSessionState,
+  ): Effect.Effect<Option.Option<RecipeSession>, SnapchefServerError> =>
+    tryErrorDataOption<RecipeSessionRow>(() =>
+      supabase
+        .from("recipe_sessions")
+        .update({ state: to })
+        .eq("id", sessionId)
+        .eq("user_id", userId)
+        .select("*")
+        .maybeSingle()
+        .then(({ error, data }) => ({ error, data })),
+    ).pipe(Effect.flatMap((option) => Effect.transposeMapOption(option, decodeWith(RecipeSessionFromRow))));
+
 // Owner-scoped hard delete. The DB `on delete cascade` from recipe_sessions drops the recipe +
 // photo rows; storage-bucket cleanup is the UC's responsibility. A delete returns no domain row,
 // so the builder is shaped to `{ error, data: null }` and lifted through tryErrorDataOption.
@@ -89,4 +111,5 @@ export const createRecipeSessionRepository = (supabase: SupabaseClient<Database>
   update: update(supabase),
   find: find(supabase),
   remove: remove(supabase),
+  transition: transition(supabase),
 });

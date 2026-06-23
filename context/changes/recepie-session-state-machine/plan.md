@@ -351,23 +351,23 @@ No DB migration. The change is code-only; the existing `state` column/CHECK is s
 
 #### Automated
 
-- [x] 1.1 Lint passes: `pnpm lint`
-- [x] 1.2 Reducer unit test passes: `pnpm test`
+- [x] 1.1 Lint passes: `pnpm lint` — 577289b8a
+- [x] 1.2 Reducer unit test passes: `pnpm test` — 577289b8a
 
 #### Manual
 
-- [x] 1.3 The 11 legal edges match the agreed graph
+- [x] 1.3 The 11 legal edges match the agreed graph — 577289b8a
 
 ### Phase 2: Repository `transition` Seam
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `pnpm lint`
-- [ ] 2.2 Existing suite still passes: `pnpm test`
+- [x] 2.1 Lint passes: `pnpm lint`
+- [x] 2.2 Existing suite still passes: `pnpm test`
 
 #### Manual
 
-- [ ] 2.3 `transition` wired into the adapter factory object
+- [x] 2.3 `transition` wired into the adapter factory object
 
 ### Phase 3: Transition Aspect
 
