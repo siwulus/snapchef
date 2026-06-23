@@ -13,12 +13,14 @@ import type { UserId } from "@/lib/core/model/auth";
 // Type-only, same-folder reference: the list-read port returns the driving-side client projection.
 import type { RecipeListItem } from "./responses";
 
+// `state` is deliberately absent: the transition aspect (via `transition`) is the sole writer of
+// `state`. Business code can only write data columns through `update`, so a stray `{ state }` write
+// is a compile error.
 export const RecipeSessionUpdatePayload = RecipeSession.pick({
   correctedItems: true,
   mealContext: true,
   recognizedItems: true,
   allowExtraIngredients: true,
-  state: true,
 }).partial();
 
 export type RecipeSessionUpdatePayload = z.infer<typeof RecipeSessionUpdatePayload>;

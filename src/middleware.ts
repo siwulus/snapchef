@@ -15,6 +15,7 @@ import { Effect } from "effect";
 import { SnapchefExternalSystemError } from "./lib/core/model/error";
 import { AuthenticatorUC } from "./lib/core/uc/auth/AuthenticatorUC";
 import { RecipeSessionUC } from "./lib/core/uc/recipe/RecipeSessionUC";
+import { createSessionStateManager } from "./lib/core/uc/recipe/recipe-session-transition";
 import { match } from "ts-pattern";
 
 const PROTECTED_ROUTES = ["/recipes"];
@@ -50,13 +51,17 @@ const injectDependencies = (context: APIContext): Effect.Effect<void, SnapchefEx
       Effect.mapError(() => new SnapchefExternalSystemError({ message: "Supabase is not configured" })),
       Effect.flatMap((supabase) => {
         context.locals.authenticator = new AuthenticatorUC(createSupabaseAuthenticator(supabase));
+        // One sessionRepository instance feeds both the UC's repo dependency and the transition
+        // aspect — the single composition root where the port meets the aspect.
+        const sessionRepository = createRecipeSessionRepository(supabase);
         context.locals.recipeSessions = new RecipeSessionUC(
-          createRecipeSessionRepository(supabase),
+          sessionRepository,
           createPhotoRepository(supabase),
           createSessionPhotoStorage(supabase),
           useFakeLlm ? createFakeProductRecognizer() : createProductRecognizer(),
           createRecipeRepository(supabase),
           useFakeLlm ? createFakeRecipeGenerator() : createRecipeGenerator(),
+          createSessionStateManager(sessionRepository),
         );
         return Effect.void;
       }),

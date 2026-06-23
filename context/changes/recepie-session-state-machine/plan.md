@@ -373,26 +373,26 @@ No DB migration. The change is code-only; the existing `state` column/CHECK is s
 
 #### Automated
 
-- [x] 3.1 Lint passes: `pnpm lint`
-- [x] 3.2 Aspect + reducer tests pass: `pnpm test`
+- [x] 3.1 Lint passes: `pnpm lint` — 0cc51e8af
+- [x] 3.2 Aspect + reducer tests pass: `pnpm test` — 0cc51e8af
 
 #### Manual
 
-- [x] 3.3 Aspect test asserts `action` recorder empty on illegal event
+- [x] 3.3 Aspect test asserts `action` recorder empty on illegal event — 0cc51e8af
 
 ### Phase 4: UC Refactor + Enforcement Seal + Test Migration
 
 #### Automated
 
-- [ ] 4.1 Lint passes: `pnpm lint`
-- [ ] 4.2 All unit tests pass (migrated + new): `pnpm test`
-- [ ] 4.3 Production build passes: `pnpm build`
-- [ ] 4.4 E2E smoke passes: `pnpm test:e2e` (fake-LLM)
+- [x] 4.1 Lint passes: `pnpm lint`
+- [x] 4.2 All unit tests pass (migrated + new): `pnpm test`
+- [x] 4.3 Production build passes: `pnpm build`
+- [x] 4.4 E2E smoke passes: `pnpm test:e2e` (fake-LLM)
 
 #### Manual
 
-- [ ] 4.5 Wizard happy path works end-to-end
-- [ ] 4.6 An out-of-order call returns 409
-- [ ] 4.7 Re-runs still work (re-upload / re-recognize / re-generate / re-save)
-- [ ] 4.8 A `saved` session rejects re-edit events with 409
-- [ ] 4.9 Session manager injected via middleware, not constructed inside the UC
+- [x] 4.5 Wizard happy path works end-to-end
+- [x] 4.6 An out-of-order call returns 409
+- [x] 4.7 Re-runs still work (re-upload / re-recognize / re-generate / re-save)
+- [x] 4.8 A `saved` session rejects re-edit events with 409
+- [x] 4.9 Session manager injected via middleware, not constructed inside the UC
