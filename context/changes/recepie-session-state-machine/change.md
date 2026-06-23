@@ -1,7 +1,7 @@
 ---
 change_id: recepie-session-state-machine
 title: Centralized state machine and transition aspect for recipe sessions
-status: implemented
+status: impl_reviewed
 created: 2026-06-23
 updated: 2026-06-23
 archived_at: null
