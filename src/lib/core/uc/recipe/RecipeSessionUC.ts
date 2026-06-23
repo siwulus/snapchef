@@ -17,6 +17,7 @@ import {
   SnapchefNotFoundError,
 } from "@/lib/core/model/error";
 import { type Photo, type Recipe, type RecipeSession, type RecognizedItem } from "@/lib/core/model/recipe";
+import type { SessionStateManager } from "@/lib/core/uc/recipe/recipe-session-transition";
 import { getOrThrowNotFound, logResult } from "@/lib/utils/effect";
 import { Effect } from "effect";
 import { isEmpty, isNotEmpty } from "ramda";
@@ -30,6 +31,9 @@ export class RecipeSessionUC {
     private readonly productRecognizer: ProductRecognizer,
     private readonly recipeRepository: RecipeRepository,
     private readonly recipeGenerator: RecipeGenerator,
+    // The transition aspect: the sole writer of `state`. Injected (not built here) so it stays
+    // external and test-substitutable. Composed in src/middleware.ts from the same sessionRepository.
+    private readonly sessions: SessionStateManager,
   ) {}
 
   createSession(userId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
@@ -37,12 +41,17 @@ export class RecipeSessionUC {
   }
 
   attachPhotos(userId: string, sessionId: string, files: File[]): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.fetchRecipeSession(userId, sessionId).pipe(
-      Effect.tap((session) => this.removeExistingPhotos(session)),
-      Effect.flatMap((session) => this.uploadAndPersistPhotos(session, files)),
-      Effect.flatMap((session) => this.markPhotosUploaded(session)),
-      logResult("recipe.attachPhotos"),
-    );
+    // Dispatch "upload_photos": the aspect loads + guards (legal from any non-`saved` state), runs
+    // the data-only work (drop existing photos, upload + persist the new set), then advances state
+    // to photos_uploaded. The returned session is the authoritative post-transition one.
+    return this.sessions
+      .run("upload_photos", userId, sessionId, (session) =>
+        this.removeExistingPhotos(session).pipe(Effect.flatMap(() => this.uploadAndPersistPhotos(session, files))),
+      )
+      .pipe(
+        Effect.map(({ session }) => session),
+        logResult("recipe.attachPhotos"),
+      );
   }
 
   // Fan-out one LLM call per photo (concurrent, timed, retried once, per-photo failure → []),
@@ -52,83 +61,92 @@ export class RecipeSessionUC {
     userId: string,
     sessionId: string,
   ): Effect.Effect<{ session: RecipeSession; photos: Photo[] }, SnapchefServerError> {
-    return this.fetchRecipeSession(userId, sessionId).pipe(
-      Effect.flatMap((session) =>
+    // Dispatch "recognize_products": the aspect loads + guards (legal from any state with photos),
+    // then the data-only work fans out one LLM call per photo, persists the merged list (no state
+    // write — wouldn't compile), and the aspect advances state to products_recognized on close.
+    return this.sessions
+      .run("recognize_products", userId, sessionId, (session) =>
         this.photoRepository.listBySession(session.userId, session.id).pipe(
           Effect.tap((photos) => this.guardHasPhotos(photos)),
           Effect.flatMap((photos) => this.recognizeEachPhoto(session.userId, photos)),
           Effect.flatMap((recognized) =>
             this.resolveItems(recognized.map((entry) => entry.items)).pipe(
-              Effect.flatMap((merged) => this.persistRecognizedItems(session, merged)),
-              Effect.map((updatedSession) => ({
-                session: updatedSession,
-                photos: recognized.map((entry) => ({ ...entry.photo, recognizedItems: entry.items })),
-              })),
+              Effect.tap((merged) =>
+                this.sessionRepository.update(session.userId, session.id, { recognizedItems: merged }),
+              ),
+              Effect.map(() => recognized.map((entry) => ({ ...entry.photo, recognizedItems: entry.items }))),
             ),
           ),
         ),
-      ),
-      logResult("recipe.recognize"),
-    );
+      )
+      .pipe(
+        Effect.map(({ result, session }) => ({ session, photos: result })),
+        logResult("recipe.recognize"),
+      );
   }
 
-  // S-02: persist the edited inputs (provenance) BEFORE generating, so a generation failure leaves
-  // the session re-runnable with its inputs saved. Generate is timed (30 s) and retried once — the
-  // only thing that re-rolls a truncated/invalid model response (OpenRouter's model fallback only
-  // covers provider-side errors). The recipe is upserted, then the state advances to
-  // `recipe_generated` only after the recipe row is safely persisted. Returns the recipe together
-  // with the updated session (the single source of truth the final step renders from) — the session
-  // carries the persisted items / meal context / off-list toggle that `Recipe` alone does not.
+  // S-02: dispatch "generate_recipe" (legal from products_recognized|recipe_generated). The aspect
+  // loads + guards before any work. The data-only business action persists the edited inputs
+  // (provenance) BEFORE generating — so a generation failure leaves the session re-runnable with its
+  // inputs saved (hence the inputs write lives INSIDE the action, and the aspect's close is
+  // state-only). Generate is timed (30 s) and retried once — the only thing that re-rolls a
+  // truncated/invalid model response (OpenRouter's model fallback only covers provider-side errors).
+  // The recipe is upserted; the aspect then advances state to `recipe_generated` on success only.
+  // Returns the recipe together with the post-transition session (the single source of truth the
+  // final step renders from) — the session carries the persisted items / meal context / off-list
+  // toggle that `Recipe` alone does not.
   generateRecipe(
     userId: string,
     sessionId: string,
     command: RecipeGenerationCommand,
   ): Effect.Effect<RecipeGenerationResult, SnapchefServerError> {
-    return this.fetchRecipeSession(userId, sessionId).pipe(
-      Effect.flatMap(() =>
+    return this.sessions
+      .run("generate_recipe", userId, sessionId, () =>
         this.sessionRepository
           .update(userId, sessionId, {
             correctedItems: command.correctedItems,
             mealContext: command.mealContext,
             allowExtraIngredients: command.allowExtraIngredients,
           })
-          .pipe(Effect.flatMap(getOrThrowNotFound("Session not found"))),
-      ),
-      Effect.flatMap(() =>
-        this.recipeGenerator
-          .generate({
-            items: command.correctedItems,
-            mealContext: command.mealContext,
-            allowExtraIngredients: command.allowExtraIngredients,
-          })
           .pipe(
-            Effect.timeoutFail({
-              duration: "30 seconds",
-              onTimeout: () => new SnapchefExternalSystemError({ message: "Recipe generation timed out" }),
-            }),
-            Effect.retry({ times: 1 }),
+            Effect.flatMap(() =>
+              this.recipeGenerator
+                .generate({
+                  items: command.correctedItems,
+                  mealContext: command.mealContext,
+                  allowExtraIngredients: command.allowExtraIngredients,
+                })
+                .pipe(
+                  Effect.timeoutFail({
+                    duration: "30 seconds",
+                    onTimeout: () => new SnapchefExternalSystemError({ message: "Recipe generation timed out" }),
+                  }),
+                  Effect.retry({ times: 1 }),
+                ),
+            ),
+            Effect.flatMap((generated) =>
+              this.recipeRepository.upsert({ sessionId, userId, name: generated.name, contentMd: generated.contentMd }),
+            ),
           ),
-      ),
-      Effect.flatMap((generated) =>
-        this.recipeRepository.upsert({ sessionId, userId, name: generated.name, contentMd: generated.contentMd }),
-      ),
-      Effect.flatMap((recipe) =>
-        this.sessionRepository.update(userId, sessionId, { state: "recipe_generated" }).pipe(
-          Effect.flatMap(getOrThrowNotFound("Session not found")),
-          Effect.map((session) => ({ recipe, session })),
-        ),
-      ),
-      logResult("recipe.generate"),
-    );
+      )
+      .pipe(
+        Effect.map(({ result: recipe, session }) => ({ recipe, session })),
+        logResult("recipe.generate"),
+      );
   }
 
-  // Final step (save): validate ownership, then advance the session to `saved`. The recipe row
-  // already exists from generation, so this is solely a state transition — idempotent,
-  // last-write-wins (no `recipe_generated` precondition).
+  // Final step (save): dispatch "save". The aspect loads + owns the session (NotFound on a
+  // missing/foreign row) and guards legality — save is legal only from `recipe_generated` (or the
+  // idempotent `saved` self-loop), so saving a session that skipped generation now fails 409. The
+  // recipe row already exists from generation, so the business action is a no-op and the aspect's
+  // close performs the sole state write.
   saveSession(userId: string, sessionId: string): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.sessionRepository
-      .update(userId, sessionId, { state: "saved" })
-      .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")), logResult("recipe.save"));
+    return this.sessions
+      .run("save", userId, sessionId, () => Effect.void)
+      .pipe(
+        Effect.map(({ session }) => session),
+        logResult("recipe.save"),
+      );
   }
 
   // Final step (delete): validate ownership, clean up the storage-bucket files (best-effort,
@@ -243,12 +261,6 @@ export class RecipeSessionUC {
     ).pipe(Effect.as(session));
   }
 
-  private markPhotosUploaded(session: RecipeSession): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.sessionRepository
-      .update(session.userId, session.id, { state: "photos_uploaded" })
-      .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
-  }
-
   private guardHasPhotos(photos: Photo[]): Effect.Effect<void, SnapchefServerError> {
     return match(isEmpty(photos))
       .with(true, () => Effect.fail(new SnapchefBusinessRuleViolationError({ message: "No photos to recognize" })))
@@ -287,14 +299,5 @@ export class RecipeSessionUC {
         ),
       )
       .otherwise(() => this.productRecognizer.mergeItems(nonEmptyLists.flat()));
-  }
-
-  private persistRecognizedItems(
-    session: RecipeSession,
-    items: RecognizedItem[],
-  ): Effect.Effect<RecipeSession, SnapchefServerError> {
-    return this.sessionRepository
-      .update(session.userId, session.id, { recognizedItems: items, state: "products_recognized" })
-      .pipe(Effect.flatMap(getOrThrowNotFound("Session not found")));
   }
 }

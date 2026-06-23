@@ -45,7 +45,6 @@ const toRecipeSessionUpdate = (data: RecipeSessionUpdatePayload): RecipeSessionU
         ["meal_context", data.mealContext],
         ["recognized_items", data.recognizedItems],
         ["allow_extra_ingredients", data.allowExtraIngredients],
-        ["state", data.state],
       ] as const
     ).filter(([, value]) => value != null),
   ) as RecipeSessionUpdate;
