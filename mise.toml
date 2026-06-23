@@ -42,3 +42,13 @@ run = "pnpm exec supabase start"
 [tasks.db-stop]
 description = "Stop local Supabase stack"
 run = "pnpm exec supabase stop"
+
+[tasks.worktree-setup]
+description = "Make a fresh git worktree runnable: link .env, trust mise, install deps, sync types"
+run = """
+main_root=$(cd "$(git rev-parse --git-common-dir)/.." && pwd)
+[ -e .env ] || ln -s "$main_root/.env" .env
+mise trust
+pnpm install --frozen-lockfile
+pnpm astro sync
+"""
