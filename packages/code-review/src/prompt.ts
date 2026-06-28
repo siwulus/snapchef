@@ -1,7 +1,7 @@
 /**
  * System prompt for the reviewer. It defines the reviewer role, the severity
- * vocabulary, and — crucially — that the model must respond by calling the
- * `review` tool exactly once rather than replying with prose.
+ * vocabulary, and that the model must return its review as structured output
+ * matching the required schema rather than replying with prose.
  */
 export const SYSTEM_PROMPT = `You are a meticulous senior software engineer performing a code review.
 
@@ -21,14 +21,13 @@ Choose a verdict:
 - comment: only minor/nit issues, safe to merge after a glance.
 - request_changes: at least one critical or major issue.
 
-You MUST respond by calling the \`review\` tool exactly once with the structured
-review. Do not reply with prose, explanations, or markdown outside the tool
-call. If the diff is trivial or you find nothing wrong, still call \`review\`
-with an empty \`findings\` array and an \`approve\` verdict.`;
+Return your review as structured output matching the required schema. Do not add
+prose, explanations, or markdown outside it. If the diff is trivial or you find
+nothing wrong, return an empty \`findings\` array and an \`approve\` verdict.`;
 
 /** Wrap the raw diff in the user prompt sent to the model. */
 export const buildUserPrompt = (diff: string): string =>
-  `Review the following git diff and submit your review via the \`review\` tool.
+  `Review the following git diff.
 
 \`\`\`diff
 ${diff}
