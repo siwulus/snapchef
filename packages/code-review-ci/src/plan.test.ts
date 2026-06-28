@@ -117,6 +117,11 @@ describe("buildPostPlan", () => {
     expect(plan.reviewBody.length).toBeGreaterThan(0);
     expect(plan.comments).toHaveLength(0);
   });
+
+  it("carries the review verdict onto the plan (for the action's verdict output)", () => {
+    expect(buildPostPlan(review({ verdict: "request_changes" }), new Map()).verdict).toBe("request_changes");
+    expect(buildPostPlan(review({ verdict: "approve" }), new Map()).verdict).toBe("approve");
+  });
 });
 
 describe("parseReview", () => {

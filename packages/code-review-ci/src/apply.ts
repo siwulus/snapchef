@@ -126,18 +126,19 @@ export interface ReviewContext {
   runId: number;
 }
 
-/** The subset of `@actions/core` this module logs through. */
+/** The subset of `@actions/core` this module logs through + sets step outputs with. */
 export interface CoreApi {
   info(message: string): void;
   warning(message: string): void;
   error(message: string): void;
+  setOutput(name: string, value: string): void;
 }
 
 export interface ApplyDeps {
   github: GitHubApi;
   context: ReviewContext;
   core: CoreApi;
-  /** Process env (reads `GITHUB_WORKSPACE`, `PKG_CODE`, `DIFF_EMPTY`, `GITHUB_SERVER_URL`, `GITHUB_REPOSITORY`). */
+  /** Process env (reads `GITHUB_WORKSPACE`, `PKG_CODE`, `DIFF_EMPTY`, `STATUS_CONTEXT`, `GITHUB_SERVER_URL`, `GITHUB_REPOSITORY`). */
   env: Record<string, string | undefined>;
   /** Reads a workspace file as UTF-8 (injected so tests need no filesystem). */
   readFile(path: string): string;
@@ -159,6 +160,7 @@ export const apply = async ({ github, context: ctx, core, env, readFile }: Apply
   const runUrl = `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${ctx.runId}`;
   const pkgCode = env.PKG_CODE ?? "";
   const isEmpty = env.DIFF_EMPTY === "true";
+  const statusContext = env.STATUS_CONTEXT ?? "code-review/gate";
 
   const ensureLabel = async (name: string, color: string, description: string): Promise<void> => {
     try {
@@ -202,7 +204,7 @@ export const apply = async ({ github, context: ctx, core, env, readFile }: Apply
       owner,
       repo,
       sha: headSha,
-      context: "code-review/gate",
+      context: statusContext,
       state,
       target_url: runUrl,
       description,
@@ -211,6 +213,9 @@ export const apply = async ({ github, context: ctx, core, env, readFile }: Apply
 
   let finalState: "success" | "failure" = "failure";
   let finalDescription = "Code review blocked";
+  // Surfaced as the action's `verdict` output. "error" on the infra/I-O fail-closed
+  // paths (no verdict was produced); "approve" on empty; the plan's verdict on success.
+  let finalVerdict = "error";
 
   try {
     await ensureLabel("cr:pass", "0e8a16", "AI code-review gate passed");
@@ -225,6 +230,7 @@ export const apply = async ({ github, context: ctx, core, env, readFile }: Apply
     if (isEmpty) {
       finalState = "success";
       finalDescription = "No reviewable changes";
+      finalVerdict = "approve";
       await upsertSticky(emptyDiffStickyBody());
       await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: ["cr:pass"] });
     } else if (pkgCode !== "0") {
@@ -242,6 +248,7 @@ export const apply = async ({ github, context: ctx, core, env, readFile }: Apply
       const plan = JSON.parse(readFile(`${ws}/cr-output.json`)) as PostPlan;
       finalState = plan.state;
       finalDescription = plan.state === "success" ? "Code review passed" : "Code review requested changes";
+      finalVerdict = plan.verdict;
 
       // Remove prior bot inline comments so a re-run does not duplicate.
       const reviewComments = await github.paginate<CommentLike>(github.rest.pulls.listReviewComments, {
@@ -282,6 +289,10 @@ export const apply = async ({ github, context: ctx, core, env, readFile }: Apply
       core.warning(`could not upsert error sticky: ${errMsg(inner)}`);
     }
   } finally {
+    // Outputs first so they are recorded to $GITHUB_OUTPUT even if the (network)
+    // status post throws — the gate then fails closed via the missing status.
+    core.setOutput("gate-state", finalState);
+    core.setOutput("verdict", finalVerdict);
     await setStatus(finalState, finalDescription);
   }
 };

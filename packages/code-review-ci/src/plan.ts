@@ -61,6 +61,8 @@ export interface InlineComment {
 export interface PostPlan {
   state: "success" | "failure";
   label: "cr:pass" | "cr:fail";
+  /** The review verdict, surfaced unchanged as the action's `verdict` output. */
+  verdict: Verdict;
   /** Top-level body of the one PR Review (event: COMMENT). Always non-empty. */
   reviewBody: string;
   /** Diff-validated inline comments (capped). */
@@ -156,6 +158,7 @@ export const buildPostPlan = (
   return {
     state: gate.state,
     label: gate.label,
+    verdict: review.verdict,
     reviewBody,
     comments,
     stickyBody: renderStickyBody(review, summaryFindings, comments.length),
