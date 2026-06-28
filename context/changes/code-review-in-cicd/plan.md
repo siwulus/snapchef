@@ -303,27 +303,27 @@ Additive only — a new workflow, a new workspace member, an updated `pnpm-lock.
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `pnpm --filter @snapchef/code-review-ci test`
-- [x] 1.2 Type checking passes: `pnpm --filter @snapchef/code-review-ci typecheck`
-- [x] 1.3 Root lint passes: `pnpm lint`
-- [x] 1.4 Lockfile consistent: `pnpm install --frozen-lockfile` succeeds
-- [x] 1.5 Entrypoint writes a valid `PostPlan` JSON from a sample diff+review
+- [x] 1.1 Unit tests pass: `pnpm --filter @snapchef/code-review-ci test` — e84728b37
+- [x] 1.2 Type checking passes: `pnpm --filter @snapchef/code-review-ci typecheck` — e84728b37
+- [x] 1.3 Root lint passes: `pnpm lint` — e84728b37
+- [x] 1.4 Lockfile consistent: `pnpm install --frozen-lockfile` succeeds — e84728b37
+- [x] 1.5 Entrypoint writes a valid `PostPlan` JSON from a sample diff+review — e84728b37
 
 #### Manual
 
-- [x] 1.6 Spot-check `cr-output.json` from a real `git diff` + `code-review --json`: partition correct, no out-of-diff line in `comments[]`
+- [x] 1.6 Spot-check `cr-output.json` from a real `git diff` + `code-review --json`: partition correct, no out-of-diff line in `comments[]` — e84728b37
 
 ### Phase 2: The `code-review.yml` workflow
 
 #### Automated
 
-- [ ] 2.1 Workflow YAML lints (`actionlint`)
-- [ ] 2.2 Phase-1 module still green: `pnpm --filter @snapchef/code-review-ci test`
-- [ ] 2.3 Root lint + `--frozen-lockfile` unaffected
+- [x] 2.1 Workflow YAML lints (`actionlint`)
+- [x] 2.2 Phase-1 module still green: `pnpm --filter @snapchef/code-review-ci test`
+- [x] 2.3 Root lint + `--frozen-lockfile` unaffected
 
 #### Manual
 
-- [ ] 2.4 Read-through: status on `head.sha`; `event: COMMENT`; fail-closed on infra path; no status write when not running; secret scoped to the package step
+- [x] 2.4 Read-through: status on `head.sha`; `event: COMMENT`; fail-closed on infra path; no status write when not running; secret scoped to the package step
 
 ### Phase 3: Repo setup + live verification
 
