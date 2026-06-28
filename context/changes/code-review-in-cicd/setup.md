@@ -83,12 +83,12 @@ verdict label. Restore the key afterward.
 
 ## Mapping to plan Progress (Phase 3)
 
-| Row                                                      | Status                                        |
-| -------------------------------------------------------- | --------------------------------------------- |
-| 3.1 gate check transitions failure→stale→success         | live PR (after secret + required check)       |
-| 3.2 secret + 3 labels exist                              | labels ✅ created; **secret pending (admin)** |
-| 3.3 `code-review/gate` required on `main`                | **pending (admin)**                           |
-| 3.4 walkthrough (a)–(f)                                  | live PR                                       |
-| 3.5 merge blocked on failure/missing, allowed on success | live PR                                       |
-| 3.6 infra-failure path fail-closed                       | live PR                                       |
-| 3.7 no duplicate inline comments after revalidate        | live PR                                       |
+| Row                                                      | Status                                                                                                                 |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 3.1 gate check transitions failure→stale→success         | live PR (after secret + required check)                                                                                |
+| 3.2 secret + 3 labels exist                              | labels ✅ created; **secret pending (admin)**                                                                          |
+| 3.3 `code-review/gate` required on `main`                | **pending (admin)**                                                                                                    |
+| 3.4 walkthrough (a)–(f)                                  | live PR                                                                                                                |
+| 3.5 merge blocked on failure/missing, allowed on success | live PR                                                                                                                |
+| 3.6 infra-failure path fail-closed                       | ✅ verified live — PR #19 run 28330027406 (no secret ⇒ blocking `failure` + error sticky + no verdict label, no spend) |
+| 3.7 no duplicate inline comments after revalidate        | live PR                                                                                                                |
