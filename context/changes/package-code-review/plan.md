@@ -363,9 +363,9 @@ Purely additive: a new `packages/` tree, a new `packages:` glob in `pnpm-workspa
 
 #### Automated
 
-- [x] 4.1 `pnpm --filter code-review typecheck` passes
-- [x] 4.2 `renderReview` JSON output round-trips; pretty output contains verdict, summary, and each finding's file/title
-- [x] 4.3 Empty-stdin invocation exits non-zero with the "no diff" message (engine not called)
+- [x] 4.1 `pnpm --filter code-review typecheck` passes — 55dd3cc1d
+- [x] 4.2 `renderReview` JSON output round-trips; pretty output contains verdict, summary, and each finding's file/title — 55dd3cc1d
+- [x] 4.3 Empty-stdin invocation exits non-zero with the "no diff" message (engine not called) — 55dd3cc1d
 
 #### Manual
 
