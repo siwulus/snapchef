@@ -34,21 +34,44 @@ describe("runCli", () => {
     expect(engine.runReview).not.toHaveBeenCalled();
   });
 
-  it("passes the --model override to the engine and renders the review", async () => {
+  it("passes the --model override to the engine and stays silent without --verbose", async () => {
     engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    const log = vi.fn();
     const result = await runCli({
       argv: ["--model", "claude-opus-4-8"],
       stdin: "diff --git a/x b/x",
       credential: "token",
+      log,
     });
     expect(result.code).toBe(0);
-    expect(engine.runReview).toHaveBeenCalledWith("diff --git a/x b/x", { model: "claude-opus-4-8" });
+    expect(engine.runReview).toHaveBeenCalledWith("diff --git a/x b/x", { model: "claude-opus-4-8", log: undefined });
     expect(result.stdout).toContain("approve");
+  });
+
+  it("forwards the log sink to the engine when --verbose is set", async () => {
+    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    const log = vi.fn();
+    await runCli({ argv: ["--verbose"], stdin: "diff --git a/x b/x", credential: "token", log });
+    expect(engine.runReview).toHaveBeenCalledWith("diff --git a/x b/x", { model: expect.any(String), log });
+  });
+
+  it("accepts the -v short flag for verbose", async () => {
+    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    const log = vi.fn();
+    await runCli({ argv: ["-v"], stdin: "diff", credential: "token", log });
+    expect(engine.runReview).toHaveBeenCalledWith("diff", expect.objectContaining({ log }));
   });
 
   it("emits JSON when --json is set", async () => {
     engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
     const result = await runCli({ argv: ["--json"], stdin: "diff", credential: "token" });
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout ?? "")).toEqual({ summary: "ok", findings: [], verdict: "approve" });
+  });
+
+  it("tolerates the leading -- separator that pnpm forwards", async () => {
+    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    const result = await runCli({ argv: ["--", "--json"], stdin: "diff", credential: "token" });
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout ?? "")).toEqual({ summary: "ok", findings: [], verdict: "approve" });
   });

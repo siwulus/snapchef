@@ -1,11 +1,18 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
+import { formatEvent, reviewStartLine } from "./log.js";
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt.js";
 import { Review } from "./review.js";
 
 export interface RunReviewOptions {
   /** Model id, e.g. "claude-sonnet-4-6" or "claude-opus-4-8". */
   model: string;
+  /**
+   * Optional sink for progress lines streamed during the agentic loop. When set,
+   * each loggable SDK message is formatted (see {@link formatEvent}) and the
+   * subprocess's own stderr is forwarded. When undefined, the run is silent.
+   */
+  log?: (line: string) => void;
 }
 
 /**
@@ -56,6 +63,9 @@ const REVIEW_SCHEMA = stripUnsupportedKeywords(z.toJSONSchema(Review)) as Record
  * (Claude Pro/Max subscription) or `ANTHROPIC_API_KEY` — which the SDK subprocess inherits.
  */
 export const runReview = async (diff: string, opts: RunReviewOptions): Promise<Review> => {
+  const { log } = opts;
+  log?.(reviewStartLine(opts.model, Buffer.byteLength(diff)));
+
   for await (const message of query({
     prompt: buildUserPrompt(diff),
     options: {
@@ -72,8 +82,14 @@ export const runReview = async (diff: string, opts: RunReviewOptions): Promise<R
       allowDangerouslySkipPermissions: true,
       // Native structured output: the SDK constrains and validates the final result.
       outputFormat: { type: "json_schema", schema: REVIEW_SCHEMA },
+      // Surface the SDK subprocess's own stderr only when the caller is logging.
+      ...(log ? { stderr: (data: string) => log(`[claude] ${data.trimEnd()}`) } : {}),
     },
   })) {
+    if (log) {
+      const line = formatEvent(message);
+      if (line !== undefined) log(line);
+    }
     if (message.type === "result") {
       if (message.subtype === "success") {
         if (message.structured_output !== undefined) {
