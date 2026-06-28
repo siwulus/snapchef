@@ -298,24 +298,24 @@ No change to runtime cost: the same single reviewer call runs once per gated PR.
 
 #### Automated
 
-- [x] 2.1 Orchestration tests pass incl. verdict/status-context/output assertions
-- [x] 2.2 Orchestration typecheck passes (`CoreApi.setOutput`, `PostPlan.verdict`)
-- [x] 2.3 Root lint passes: `pnpm lint`
-- [x] 2.4 `action.yml` is valid YAML
-- [x] 2.5 `actionlint` over `.github/workflows/` stays green
+- [x] 2.1 Orchestration tests pass incl. verdict/status-context/output assertions — 457b6d760
+- [x] 2.2 Orchestration typecheck passes (`CoreApi.setOutput`, `PostPlan.verdict`) — 457b6d760
+- [x] 2.3 Root lint passes: `pnpm lint` — 457b6d760
+- [x] 2.4 `action.yml` is valid YAML — 457b6d760
+- [x] 2.5 `actionlint` over `.github/workflows/` stays green — 457b6d760
 
 #### Manual
 
-- [x] 2.6 `action.yml` read against contract (inputs/outputs, `shell: bash`, `id:`s, `if:` conditions, apply env)
-- [x] 2.7 `README.md` documents inputs/outputs/usage/PR-only scope/extraction checklist
+- [x] 2.6 `action.yml` read against contract (inputs/outputs, `shell: bash`, `id:`s, `if:` conditions, apply env) — 457b6d760
+- [x] 2.7 `README.md` documents inputs/outputs/usage/PR-only scope/extraction checklist — 457b6d760
 
 ### Phase 3: Thin the workflow + live verification
 
 #### Automated
 
-- [ ] 3.1 `actionlint .github/workflows/code-review.yml` passes
-- [ ] 3.2 `code-review.yml` is valid YAML
-- [ ] 3.3 Root lint passes: `pnpm lint`
+- [x] 3.1 `actionlint .github/workflows/code-review.yml` passes
+- [x] 3.2 `code-review.yml` is valid YAML
+- [x] 3.3 Root lint passes: `pnpm lint`
 
 #### Manual
 
