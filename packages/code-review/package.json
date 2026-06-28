@@ -1,0 +1,25 @@
+{
+  "name": "code-review",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Terminal code reviewer: a git diff on stdin becomes a structured review via the Claude Code SDK.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "review": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit --ignoreDeprecations 6.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.195",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}
