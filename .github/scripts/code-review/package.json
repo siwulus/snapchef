@@ -1,0 +1,23 @@
+{
+  "name": "@snapchef/code-review-ci",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "CI orchestration for the code-review gate: turns a unified diff + Review JSON into a GitHub post plan (verdict→gate, diff-validated inline comments, sticky summary). Pure, unit-tested; the workflow does the GitHub I/O.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit --ignoreDeprecations 6.0"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

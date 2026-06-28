@@ -1,0 +1,34 @@
+{
+  "summary": "Adds a constant in foo.ts and a new bar.ts module.",
+  "findings": [
+    {
+      "severity": "major",
+      "file": "src/foo.ts",
+      "line": 3,
+      "title": "Magic number",
+      "detail": "The literal 4 has no explanatory name.",
+      "suggestion": "Extract it into a named constant."
+    },
+    {
+      "severity": "minor",
+      "file": "src/bar.ts",
+      "line": 1,
+      "title": "Missing explicit return type",
+      "detail": "Annotate greet() with a return type."
+    },
+    {
+      "severity": "nit",
+      "file": "src/foo.ts",
+      "line": 99,
+      "title": "Out-of-diff finding",
+      "detail": "This line is not part of the diff and must roll into the summary."
+    },
+    {
+      "severity": "critical",
+      "file": "src/baz.ts",
+      "title": "Line-less finding",
+      "detail": "No line and an unknown file — routes to the summary, never inline."
+    }
+  ],
+  "verdict": "request_changes"
+}
