@@ -31,10 +31,10 @@ export const Finding = z.object(FindingShape);
 export type Finding = z.infer<typeof Finding>;
 
 /**
- * Raw Zod shape for the whole review. This is the object passed to the SDK
- * `tool()` helper (which takes a raw shape, not a wrapped `z.object`), so it is
- * the single source of truth shared by the engine's `review` tool and the
- * `Review` object schema the CLI renders.
+ * Raw Zod shape for the whole review. It is the single source of truth from which
+ * the `Review` object schema below is derived; the engine turns `Review` into the
+ * JSON Schema it hands to the SDK's `outputFormat`, and the CLI renders the parsed
+ * `Review`.
  */
 export const ReviewShape = {
   summary: z.string().describe("A concise overall summary of the change and the review."),

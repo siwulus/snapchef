@@ -1,33 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Shared, hoisted state so the mocked `tool()` can stash the handler and the
-// mocked `query()` can drive it. `vi.hoisted` is required because `vi.mock`
-// factories are hoisted above normal top-level declarations.
+// Shared, hoisted state so the mocked `query()` can yield a configurable result
+// message. `vi.hoisted` is required because `vi.mock` factories are hoisted above
+// normal top-level declarations.
 const h = vi.hoisted(() => ({
   state: {
-    capturedHandler: undefined as undefined | ((args: unknown, extra: unknown) => Promise<unknown>),
-    handlerArgs: undefined as unknown,
-    callHandler: true,
     resultMessage: undefined as unknown,
   },
 }));
 
 vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
-  tool: (
-    _name: string,
-    _description: string,
-    _shape: unknown,
-    handler: (args: unknown, extra: unknown) => Promise<unknown>,
-  ) => {
-    h.state.capturedHandler = handler;
-    return { name: _name };
-  },
-  createSdkMcpServer: (options: unknown) => options,
   query: (_params: unknown) =>
     (async function* () {
-      if (h.state.callHandler && h.state.capturedHandler) {
-        await h.state.capturedHandler(h.state.handlerArgs, {});
-      }
       yield h.state.resultMessage;
     })(),
 }));
@@ -51,36 +35,28 @@ const validReview = {
 
 describe("runReview", () => {
   beforeEach(() => {
-    h.state.capturedHandler = undefined;
-    h.state.callHandler = true;
-    h.state.handlerArgs = undefined;
-    h.state.resultMessage = { type: "result", subtype: "success" };
+    h.state.resultMessage = { type: "result", subtype: "success", structured_output: validReview };
   });
 
-  it("captures the review tool args and resolves to the validated Review", async () => {
-    h.state.handlerArgs = validReview;
+  it("returns the validated Review from the structured output", async () => {
     const review = await runReview("some diff", { model: "claude-sonnet-4-6" });
     expect(review).toEqual(validReview);
   });
 
-  it("succeeds even if the run hits maxTurns after the tool was called", async () => {
-    h.state.handlerArgs = validReview;
-    h.state.resultMessage = { type: "result", subtype: "error_max_turns", errors: [] };
-    const review = await runReview("some diff", { model: "claude-sonnet-4-6" });
-    expect(review.verdict).toBe("request_changes");
-  });
-
-  it("rejects when the model never calls the review tool", async () => {
-    h.state.callHandler = false;
+  it("rejects when the run succeeds without structured output", async () => {
     h.state.resultMessage = { type: "result", subtype: "success" };
     await expect(runReview("some diff", { model: "claude-sonnet-4-6" })).rejects.toThrow(
-      /did not call the review tool/i,
+      /did not produce a structured review/i,
     );
   });
 
-  it("rejects and surfaces SDK errors when the run fails without a captured review", async () => {
-    h.state.callHandler = false;
+  it("rejects and surfaces SDK errors when the run fails", async () => {
     h.state.resultMessage = { type: "result", subtype: "error_during_execution", errors: ["boom", "kaboom"] };
     await expect(runReview("some diff", { model: "claude-sonnet-4-6" })).rejects.toThrow(/boom; kaboom/);
+  });
+
+  it("rejects when structured-output retries are exhausted", async () => {
+    h.state.resultMessage = { type: "result", subtype: "error_max_structured_output_retries", errors: [] };
+    await expect(runReview("some diff", { model: "claude-sonnet-4-6" })).rejects.toThrow(/Code review failed/);
   });
 });
