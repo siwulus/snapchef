@@ -1,3 +1,4 @@
+import path from "node:path";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 import { runReview } from "./engine.js";
@@ -11,6 +12,8 @@ export interface CliInput {
   stdin: string;
   /** A present Anthropic credential (see {@link CREDENTIAL_ENV_VARS}), or undefined if none is set. */
   credential: string | undefined;
+  /** Sink for `--verbose` progress lines (stderr in the real CLI). Forwarded to the engine only when `--verbose` is set. */
+  log?: (line: string) => void;
 }
 
 export interface CliResult {
@@ -43,14 +46,20 @@ const errorMessage = (error: unknown): string => (error instanceof Error ? error
  * review → render. Returns an exit code plus the text to print; the caller owns
  * all process I/O. Kept side-effect-free so it is unit-testable without spawning.
  */
-export const runCli = async ({ argv, stdin, credential }: CliInput): Promise<CliResult> => {
-  let values: { json: boolean; model?: string };
+export const runCli = async ({ argv, stdin, credential, log }: CliInput): Promise<CliResult> => {
+  // pnpm forwards the `--` separator into argv (`pnpm … review -- --json` arrives as
+  // ["--", "--json"]). We accept no positionals, so a leading `--` is purely that
+  // artifact; dropping it lets the real flags parse instead of becoming positionals.
+  const cleanArgv = argv[0] === "--" ? argv.slice(1) : argv;
+
+  let values: { json: boolean; model?: string; verbose: boolean };
   try {
     ({ values } = parseArgs({
-      args: argv,
+      args: cleanArgv,
       options: {
         json: { type: "boolean", default: false },
         model: { type: "string" },
+        verbose: { type: "boolean", short: "v", default: false },
       },
       allowPositionals: false,
     }));
@@ -58,7 +67,7 @@ export const runCli = async ({ argv, stdin, credential }: CliInput): Promise<Cli
     return { code: 2, stderr: `Invalid arguments: ${errorMessage(error)}` };
   }
 
-  const parsedOptions = CliOptions.safeParse({ json: values.json, model: values.model });
+  const parsedOptions = CliOptions.safeParse({ json: values.json, model: values.model, verbose: values.verbose });
   if (!parsedOptions.success) {
     return { code: 2, stderr: `Invalid options: ${parsedOptions.error.message}` };
   }
@@ -76,10 +85,25 @@ export const runCli = async ({ argv, stdin, credential }: CliInput): Promise<Cli
   }
 
   try {
-    const review = await runReview(stdin, { model: options.model });
+    const review = await runReview(stdin, { model: options.model, log: options.verbose ? log : undefined });
     return { code: 0, stdout: renderReview(review, { json: options.json }) };
   } catch (error) {
     return { code: 1, stderr: `Code review failed: ${errorMessage(error)}` };
+  }
+};
+
+/**
+ * Load `packages/code-review/.env` (resolved relative to this module, so it works
+ * from any cwd) into `process.env`. A missing/unreadable file is a no-op — the
+ * caller only invokes this when the environment doesn't already supply a
+ * credential, so exported vars / the root `.env` (mise) always take precedence.
+ */
+const loadPackageEnv = (): void => {
+  const envPath = path.resolve(import.meta.dirname, "../.env");
+  try {
+    process.loadEnvFile(envPath);
+  } catch {
+    // No package-level .env, or not readable — rely on the inherited environment.
   }
 };
 
@@ -93,11 +117,18 @@ const readStdin = async (): Promise<string> => {
 };
 
 const main = async (): Promise<void> => {
+  // Fall back to the package-level .env only when the environment provides no
+  // credential, so an exported var / root .env keeps precedence.
+  if (resolveCredential(process.env) === undefined) {
+    loadPackageEnv();
+  }
   const stdin = await readStdin();
   const result = await runCli({
     argv: process.argv.slice(2),
     stdin,
     credential: resolveCredential(process.env),
+    // Progress logs go to stderr so stdout stays a clean review / JSON stream.
+    log: (line) => process.stderr.write(`${line}\n`),
   });
   if (result.stdout !== undefined) process.stdout.write(`${result.stdout}\n`);
   if (result.stderr !== undefined) process.stderr.write(`${result.stderr}\n`);

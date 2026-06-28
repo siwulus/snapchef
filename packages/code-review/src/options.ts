@@ -11,6 +11,7 @@ export const DEFAULT_MODEL = "claude-sonnet-4-6";
 export const CliOptions = z.object({
   json: z.boolean().default(false),
   model: z.string().min(1).default(DEFAULT_MODEL),
+  verbose: z.boolean().default(false),
 });
 
 export type CliOptions = z.infer<typeof CliOptions>;
