@@ -339,20 +339,20 @@ Purely additive: a new `packages/` tree, a new `packages:` glob in `pnpm-workspa
 
 #### Automated
 
-- [x] 2.1 `pnpm --filter code-review typecheck` passes
-- [x] 2.2 `Review.parse` accepts valid fixture and throws on invalid (vitest)
-- [x] 2.3 `CliOptions.parse({})` yields defaults (`json: false`, `model: "claude-sonnet-4-6"`)
+- [x] 2.1 `pnpm --filter code-review typecheck` passes — 81e17a1f5
+- [x] 2.2 `Review.parse` accepts valid fixture and throws on invalid (vitest) — 81e17a1f5
+- [x] 2.3 `CliOptions.parse({})` yields defaults (`json: false`, `model: "claude-sonnet-4-6"`) — 81e17a1f5
 
 #### Manual
 
-- [x] 2.4 Review schema fields match the decision and read sensibly for a real diff
+- [x] 2.4 Review schema fields match the decision and read sensibly for a real diff — 81e17a1f5
 
 ### Phase 3: Claude Code SDK engine — the `review` tool
 
 #### Automated
 
-- [ ] 3.1 `pnpm --filter code-review typecheck` passes (SDK types resolve; `runReview` signature correct)
-- [ ] 3.2 Mocked-SDK test: handler captures args → resolved `Review`; no capture at `result` → rejects with "did not call" error
+- [x] 3.1 `pnpm --filter code-review typecheck` passes (SDK types resolve; `runReview` signature correct)
+- [x] 3.2 Mocked-SDK test: handler captures args → resolved `Review`; no capture at `result` → rejects with "did not call" error
 
 #### Manual
 
