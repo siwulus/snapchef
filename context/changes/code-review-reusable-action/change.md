@@ -1,7 +1,7 @@
 ---
 change_id: code-review-reusable-action
 title: Reusable composite Action wrapping the code-review engine + orchestration
-status: implementing
+status: implemented
 created: 2026-06-28
 updated: 2026-06-28
 archived_at: null
