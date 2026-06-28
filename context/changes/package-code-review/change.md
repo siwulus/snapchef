@@ -1,7 +1,7 @@
 ---
 change_id: package-code-review
 title: Independent code-review package powered by the Claude Code SDK
-status: implementing
+status: implemented
 created: 2026-06-28
 updated: 2026-06-28
 archived_at: null
