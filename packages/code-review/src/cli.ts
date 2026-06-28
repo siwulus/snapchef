@@ -9,8 +9,8 @@ export interface CliInput {
   argv: string[];
   /** The full diff read from stdin. */
   stdin: string;
-  /** `process.env.ANTHROPIC_API_KEY`. */
-  apiKey: string | undefined;
+  /** A present Anthropic credential (see {@link CREDENTIAL_ENV_VARS}), or undefined if none is set. */
+  credential: string | undefined;
 }
 
 export interface CliResult {
@@ -19,6 +19,23 @@ export interface CliResult {
   stderr?: string;
 }
 
+/**
+ * Auth env vars the Claude Agent SDK honors, in our order of preference.
+ * `CLAUDE_CODE_OAUTH_TOKEN` bills against a Claude Pro/Max subscription
+ * (generate it once with `claude setup-token`); `ANTHROPIC_API_KEY` is the
+ * standalone pay-as-you-go API key. The SDK subprocess reads whichever is set
+ * from the inherited environment.
+ */
+export const CREDENTIAL_ENV_VARS = ["CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"] as const;
+
+const MISSING_CREDENTIAL_MESSAGE =
+  "No Anthropic credential found. Set CLAUDE_CODE_OAUTH_TOKEN to use your Claude Pro/Max subscription " +
+  "(generate it once with `claude setup-token`), or ANTHROPIC_API_KEY for pay-as-you-go API billing.";
+
+/** First present credential from {@link CREDENTIAL_ENV_VARS}, or undefined when none is set. */
+export const resolveCredential = (env: NodeJS.ProcessEnv): string | undefined =>
+  CREDENTIAL_ENV_VARS.map((name) => env[name]).find((value) => value !== undefined && value.trim().length > 0);
+
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /**
@@ -26,7 +43,7 @@ const errorMessage = (error: unknown): string => (error instanceof Error ? error
  * review → render. Returns an exit code plus the text to print; the caller owns
  * all process I/O. Kept side-effect-free so it is unit-testable without spawning.
  */
-export const runCli = async ({ argv, stdin, apiKey }: CliInput): Promise<CliResult> => {
+export const runCli = async ({ argv, stdin, credential }: CliInput): Promise<CliResult> => {
   let values: { json: boolean; model?: string };
   try {
     ({ values } = parseArgs({
@@ -54,8 +71,8 @@ export const runCli = async ({ argv, stdin, apiKey }: CliInput): Promise<CliResu
     };
   }
 
-  if (apiKey === undefined || apiKey.trim().length === 0) {
-    return { code: 1, stderr: "ANTHROPIC_API_KEY is not set. Export it before running the reviewer." };
+  if (credential === undefined || credential.trim().length === 0) {
+    return { code: 1, stderr: MISSING_CREDENTIAL_MESSAGE };
   }
 
   try {
@@ -80,7 +97,7 @@ const main = async (): Promise<void> => {
   const result = await runCli({
     argv: process.argv.slice(2),
     stdin,
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    credential: resolveCredential(process.env),
   });
   if (result.stdout !== undefined) process.stdout.write(`${result.stdout}\n`);
   if (result.stderr !== undefined) process.stderr.write(`${result.stderr}\n`);
