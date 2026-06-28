@@ -16,38 +16,15 @@ export interface RunReviewOptions {
 }
 
 /**
- * JSON Schema validation keywords the Anthropic structured-output validator rejects.
- * `z.toJSONSchema` emits some of these for `Review` (e.g. `exclusiveMinimum`/`maximum`
- * for the `line` field), so we strip them from the wire schema — the client-side
- * `Review.parse` below still enforces those refinements.
+ * The JSON Schema the SDK validates the model's structured output against, derived from {@link Review}.
+ *
+ * zod v4's `z.toJSONSchema` emits a top-level `$schema` (draft 2020-12) key. The Agent SDK's
+ * structured-output preflight rejects a schema carrying it and silently drops the injected
+ * `StructuredOutput` tool — the model then answers in plain text and `structured_output` is never
+ * populated (no error is raised). Stripping `$schema` is what makes the tool inject and the
+ * structured output actually fire.
  */
-const UNSUPPORTED_KEYWORDS = new Set([
-  "minimum",
-  "maximum",
-  "exclusiveMinimum",
-  "exclusiveMaximum",
-  "multipleOf",
-  "minLength",
-  "maxLength",
-  "pattern",
-  "minItems",
-  "maxItems",
-  "uniqueItems",
-]);
-
-const stripUnsupportedKeywords = (node: unknown): unknown =>
-  Array.isArray(node)
-    ? node.map(stripUnsupportedKeywords)
-    : node !== null && typeof node === "object"
-      ? Object.fromEntries(
-          Object.entries(node)
-            .filter(([key]) => !UNSUPPORTED_KEYWORDS.has(key))
-            .map(([key, value]) => [key, stripUnsupportedKeywords(value)]),
-        )
-      : node;
-
-/** The JSON Schema the SDK validates the model's structured output against, derived from {@link Review}. */
-const REVIEW_SCHEMA = stripUnsupportedKeywords(z.toJSONSchema(Review)) as Record<string, unknown>;
+const REVIEW_SCHEMA = z.toJSONSchema(Review, { target: "draft-07" });
 
 /**
  * Turn a git diff into a validated {@link Review} using the Agent SDK's native
@@ -71,11 +48,10 @@ export const runReview = async (diff: string, opts: RunReviewOptions): Promise<R
     options: {
       model: opts.model,
       systemPrompt: SYSTEM_PROMPT,
-      maxTurns: 5,
-      // The reviewer reads only the diff; no tools are needed or allowed.
+      maxTurns: 3,
       tools: [],
       allowedTools: [],
-      // Headless single-shot run: never prompt. `bypassPermissions` is gated behind
+      //Headless single-shot run: never prompt. `bypassPermissions` is gated behind
       // `allowDangerouslySkipPermissions` in this SDK version; safe here because the
       // model has no tools to call.
       permissionMode: "bypassPermissions",
