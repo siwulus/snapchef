@@ -12,7 +12,7 @@ const numField = (obj: unknown, ...keys: string[]): number | undefined => {
   return undefined;
 };
 
-const truncate = (text: string, max = 100): string => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+const truncate = (text: string, max = 1000): string => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
 const formatBytes = (bytes: number): string => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`);
 
@@ -25,7 +25,9 @@ const assistantPreview = (message: { message?: unknown }): string => {
   const content: unknown = isRecord(message.message) ? message.message.content : undefined;
   if (!Array.isArray(content)) return "(no content)";
   const text = content
-    .filter((block): block is { text: string } => isRecord(block) && block.type === "text" && typeof block.text === "string")
+    .filter(
+      (block): block is { text: string } => isRecord(block) && block.type === "text" && typeof block.text === "string",
+    )
     .map((block) => block.text)
     .join(" ")
     .replace(/\s+/g, " ")

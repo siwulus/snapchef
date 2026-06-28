@@ -21,8 +21,10 @@ Choose a verdict:
 - comment: only minor/nit issues, safe to merge after a glance.
 - request_changes: at least one critical or major issue.
 
-Return your review as structured output matching the required schema. Do not add
-prose, explanations, or markdown outside it. If the diff is trivial or you find
+Return your review as structured output matching the required schema. 
+Do not add prose, explanations, or markdown outside it. 
+
+If the diff is trivial or you find
 nothing wrong, return an empty \`findings\` array and an \`approve\` verdict.`;
 
 /** Wrap the raw diff in the user prompt sent to the model. */

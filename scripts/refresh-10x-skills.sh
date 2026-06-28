@@ -4,7 +4,10 @@
 #
 # Install/refresh all currently-unlocked 10xDevs skills into the USER-LEVEL
 # Claude Code skills dir (~/.claude/skills), so they are available across every
-# project — not just the one you ran `10x get` in.
+# project — not just the one you ran `10x get` in. As an additional step it also
+# copies the same skills into the CURRENT PROJECT's Claude Code skills dir
+# (<git-root-or-cwd>/.claude/skills), so the project you're standing in gets the
+# full unlocked set too. Pass --no-project to install at user level only.
 #
 # Why this exists:
 #   `10x get <ref>` writes skills into the PROJECT (./.claude/skills) for the
@@ -22,15 +25,39 @@
 # this script to update; the CLI won't manage ~/.claude/skills for you.
 #
 # Usage:
-#   scripts/refresh-10x-skills.sh            # fetch every unlocked lesson
-#   scripts/refresh-10x-skills.sh --dry-run  # show what would happen, copy nothing
+#   scripts/refresh-10x-skills.sh               # user-level + current project
+#   scripts/refresh-10x-skills.sh --no-project  # user-level only (skip project copy)
+#   scripts/refresh-10x-skills.sh --dry-run     # show what would happen, copy nothing
 #
 set -euo pipefail
 
 CLI="@przeprogramowani/10x-cli@latest"
 DEST="$HOME/.claude/skills"
 DRY_RUN=0
-[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+COPY_PROJECT=1
+
+# Resolve the "current project" root (git top-level if we're in a repo, else the
+# cwd) and target its Claude Code skills dir. This is the *project-level*
+# destination, distinct from the user-level $DEST above.
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[[ -z "$PROJECT_ROOT" ]] && PROJECT_ROOT="$PWD"
+PROJECT_DEST="$PROJECT_ROOT/.claude/skills"
+
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --no-project) COPY_PROJECT=0 ;;
+    *) echo "error: unknown option '$arg'" >&2; exit 1 ;;
+  esac
+done
+
+# Run from $HOME (or any dir whose project root is $HOME) and the two
+# destinations collapse onto one — copy once, skip the redundant project pass.
+[[ "$PROJECT_DEST" == "$DEST" ]] && COPY_PROJECT=0
+
+# The set of dirs each skill is copied into.
+DESTS=("$DEST")
+[[ $COPY_PROJECT -eq 1 ]] && DESTS+=("$PROJECT_DEST")
 
 run_cli() { npx -y "$CLI" "$@" 2>/dev/null; }
 
@@ -64,13 +91,20 @@ if [[ ${#refs[@]} -eq 0 ]]; then
 fi
 
 echo "Unlocked lessons: ${refs[*]}"
-echo "Destination: $DEST"
+echo "User-level destination:    $DEST"
+if [[ $COPY_PROJECT -eq 1 ]]; then
+  echo "Project-level destination: $PROJECT_DEST"
+else
+  echo "Project-level copy:        skipped"
+fi
 [[ $DRY_RUN -eq 1 ]] && echo "(dry run — no files will be copied)"
 echo
 
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
-mkdir -p "$DEST"
+if [[ $DRY_RUN -eq 0 ]]; then
+  for dst in "${DESTS[@]}"; do mkdir -p "$dst"; done
+fi
 
 total=0
 for ref in "${refs[@]}"; do
@@ -83,7 +117,9 @@ for ref in "${refs[@]}"; do
   if [[ -d "$d/.claude/skills" ]]; then
     n=$(find "$d/.claude/skills" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
     if [[ $DRY_RUN -eq 0 ]]; then
-      cp -R "$d/.claude/skills/." "$DEST/"
+      for dst in "${DESTS[@]}"; do
+        cp -R "$d/.claude/skills/." "$dst/"
+      done
     fi
     total=$((total + n))
     echo "$ref: $n skill(s)"
@@ -94,8 +130,11 @@ done
 
 echo
 if [[ $DRY_RUN -eq 1 ]]; then
-  echo "Dry run complete. Would refresh ~$total skill copies into $DEST"
+  echo "Dry run complete. Would refresh ~$total skill copies into each of:"
+  for dst in "${DESTS[@]}"; do echo "  - $dst"; done
 else
-  installed=$(find "$DEST" -mindepth 1 -maxdepth 1 -type d -name '10x-*' | wc -l | tr -d ' ')
-  echo "Done. $installed '10x-*' skills now in $DEST"
+  for dst in "${DESTS[@]}"; do
+    installed=$(find "$dst" -mindepth 1 -maxdepth 1 -type d -name '10x-*' | wc -l | tr -d ' ')
+    echo "Done. $installed '10x-*' skills now in $dst"
+  done
 fi
