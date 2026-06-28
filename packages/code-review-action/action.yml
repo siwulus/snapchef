@@ -1,0 +1,119 @@
+name: "Code review gate"
+description: >-
+  Run the AI code reviewer over a PR diff and apply the result to the pull
+  request: inline comments, a sticky summary, and a fail-closed merge-gate
+  commit status. Wraps the code-review engine + the @snapchef/code-review-ci
+  orchestration; the caller only needs to check out the repo and pass secrets.
+
+inputs:
+  anthropic-api-key:
+    description: "Anthropic API key the reviewer authenticates with (ANTHROPIC_API_KEY)."
+    required: true
+  github-token:
+    description: "Token used to post the review, sticky comment, labels, and gate status."
+    required: false
+    default: ${{ github.token }}
+  model:
+    description: "Reviewer model id."
+    required: false
+    default: "claude-sonnet-4-6"
+  base-ref:
+    description: "Base branch for the three-dot diff (origin/<base-ref>...HEAD). Ignored when diff-file is set."
+    required: false
+    default: ${{ github.base_ref }}
+  max-inline:
+    description: "Max inline comments before overflow rolls into the sticky summary."
+    required: false
+    default: "30"
+  diff-file:
+    description: "Optional path to a pre-computed unified diff. When set, the action skips git diff and reviews this file."
+    required: false
+    default: ""
+  status-context:
+    description: "Commit-status context name for the gate (set a distinct value when more than one review config runs on a repo)."
+    required: false
+    default: "code-review/gate"
+
+outputs:
+  verdict:
+    description: "Reviewer verdict: approve | comment | request_changes (approve on empty diff, error on the infra/I-O fail-closed paths)."
+    value: ${{ steps.apply.outputs.verdict }}
+  gate-state:
+    description: "Gate commit-status state: success | failure."
+    value: ${{ steps.apply.outputs.gate-state }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup toolchain (mise → node + pnpm)
+      uses: jdx/mise-action@v4
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Compute diff
+      id: diff
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        DIFF_FILE: ${{ inputs.diff-file }}
+      run: |
+        if [ -n "${DIFF_FILE}" ]; then
+          cp "${DIFF_FILE}" "${GITHUB_WORKSPACE}/pr.diff"
+        else
+          git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          git diff "origin/${BASE_REF}...HEAD" > "${GITHUB_WORKSPACE}/pr.diff"
+        fi
+        if [ -s "${GITHUB_WORKSPACE}/pr.diff" ]; then
+          echo "empty=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "empty=true" >> "$GITHUB_OUTPUT"
+        fi
+        echo "diff size: $(wc -c < "${GITHUB_WORKSPACE}/pr.diff") bytes"
+
+    # Capture the reviewer's exit code instead of aborting the step: a non-zero
+    # code (with a non-empty diff) is the infra-failure path the gate fails closed on.
+    - name: Run code reviewer
+      id: review
+      if: steps.diff.outputs.empty == 'false'
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        MODEL: ${{ inputs.model }}
+      run: |
+        set +e
+        pnpm --filter code-review exec tsx src/cli.ts --json --model "${MODEL}" \
+          < "${GITHUB_WORKSPACE}/pr.diff" \
+          > "${GITHUB_WORKSPACE}/review.json" \
+          2> "${GITHUB_WORKSPACE}/review.err"
+        echo "code=$?" >> "$GITHUB_OUTPUT"
+        set -e
+
+    - name: Build post plan
+      if: steps.diff.outputs.empty == 'false' && steps.review.outputs.code == '0'
+      shell: bash
+      env:
+        MAX_INLINE: ${{ inputs.max-inline }}
+      run: |
+        pnpm --filter @snapchef/code-review-ci exec tsx src/index.ts \
+          "${GITHUB_WORKSPACE}/pr.diff" \
+          "${GITHUB_WORKSPACE}/review.json" \
+          "${GITHUB_WORKSPACE}/cr-output.json" \
+          "${MAX_INLINE}"
+
+    # All GitHub I/O in one step. Runs on every path (always()) so the gate status is
+    # posted even on the empty / infra-failure branches. The fail-closed orchestration
+    # (label lifecycle, inline dedup, sticky upsert, branch on DIFF_EMPTY / PKG_CODE,
+    # always-post status, verdict/gate-state outputs) lives in the unit-tested
+    # @snapchef/code-review-ci module (src/apply.ts).
+    - name: Apply review to PR
+      id: apply
+      if: always()
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PKG_CODE: ${{ steps.review.outputs.code }}
+        DIFF_EMPTY: ${{ steps.diff.outputs.empty }}
+        STATUS_CONTEXT: ${{ inputs.status-context }}
+      run: pnpm --filter @snapchef/code-review-ci exec tsx src/apply.ts

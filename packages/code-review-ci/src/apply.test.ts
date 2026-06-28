@@ -57,7 +57,7 @@ const makeGithub = (): MockGitHub => {
   return gh;
 };
 
-const makeCore = () => ({ info: vi.fn(), warning: vi.fn(), error: vi.fn() });
+const makeCore = () => ({ info: vi.fn(), warning: vi.fn(), error: vi.fn(), setOutput: vi.fn() });
 
 const context: ApplyDeps["context"] = {
   payload: { pull_request: { number: 7, head: { sha: "headsha123" } } },
@@ -74,6 +74,7 @@ const baseEnv = {
 const samplePlan: PostPlan = {
   state: "success",
   label: "cr:pass",
+  verdict: "comment",
   reviewBody: "review body",
   comments: [{ path: "src/a.ts", line: 3, side: "RIGHT", body: `inline ${INLINE_MARKER}` }],
   stickyBody: `${STICKY_MARKER}\nsticky`,
@@ -289,6 +290,52 @@ describe("apply — fail-closed", () => {
     const github = makeGithub();
     await run({ github, env: { DIFF_EMPTY: "true" } });
     expect(github.rest.repos.createCommitStatus).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("apply — outputs (gate-state + verdict, every branch)", () => {
+  it("emits the plan's state + verdict on the success path", async () => {
+    const core = makeCore();
+    await run({
+      core,
+      env: { DIFF_EMPTY: "false", PKG_CODE: "0" },
+      readFile: () =>
+        JSON.stringify({ ...samplePlan, state: "failure", label: "cr:fail", verdict: "request_changes" } satisfies PostPlan),
+    });
+    expect(core.setOutput).toHaveBeenCalledWith("gate-state", "failure");
+    expect(core.setOutput).toHaveBeenCalledWith("verdict", "request_changes");
+  });
+
+  it("emits success + approve on the empty-diff path", async () => {
+    const core = makeCore();
+    await run({ core, env: { DIFF_EMPTY: "true" } });
+    expect(core.setOutput).toHaveBeenCalledWith("gate-state", "success");
+    expect(core.setOutput).toHaveBeenCalledWith("verdict", "approve");
+  });
+
+  it("emits failure + error on the infra-failure path (no verdict produced)", async () => {
+    const core = makeCore();
+    await run({ core, env: { DIFF_EMPTY: "false", PKG_CODE: "1" }, readFile: () => "" });
+    expect(core.setOutput).toHaveBeenCalledWith("gate-state", "failure");
+    expect(core.setOutput).toHaveBeenCalledWith("verdict", "error");
+  });
+});
+
+describe("apply — status context", () => {
+  it("uses a custom STATUS_CONTEXT when provided", async () => {
+    const github = makeGithub();
+    await run({ github, env: { DIFF_EMPTY: "true", STATUS_CONTEXT: "code-review/custom" } });
+    expect(github.rest.repos.createCommitStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ context: "code-review/custom" }),
+    );
+  });
+
+  it("defaults to code-review/gate when STATUS_CONTEXT is unset", async () => {
+    const github = makeGithub();
+    await run({ github, env: { DIFF_EMPTY: "true" } });
+    expect(github.rest.repos.createCommitStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ context: "code-review/gate" }),
+    );
   });
 });
 

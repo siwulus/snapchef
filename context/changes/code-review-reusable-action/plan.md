@@ -283,31 +283,31 @@ No change to runtime cost: the same single reviewer call runs once per gated PR.
 
 #### Automated
 
-- [x] 1.1 Orchestration tests pass: `pnpm --filter @snapchef/code-review-ci test`
-- [x] 1.2 Orchestration typecheck passes: `pnpm --filter @snapchef/code-review-ci typecheck`
-- [x] 1.3 Engine unaffected: `pnpm --filter code-review test` and typecheck
-- [x] 1.4 Root lint passes: `pnpm lint`
-- [x] 1.5 Lockfile stable + committed: a second `pnpm install` leaves `pnpm-lock.yaml` with no diff
-- [x] 1.6 No stray config refs: `git grep -n ".github/scripts/code-review"` clean in workspace/eslint/workflows
+- [x] 1.1 Orchestration tests pass: `pnpm --filter @snapchef/code-review-ci test` — 90a9c0fc1
+- [x] 1.2 Orchestration typecheck passes: `pnpm --filter @snapchef/code-review-ci typecheck` — 90a9c0fc1
+- [x] 1.3 Engine unaffected: `pnpm --filter code-review test` and typecheck — 90a9c0fc1
+- [x] 1.4 Root lint passes: `pnpm lint` — 90a9c0fc1
+- [x] 1.5 Lockfile stable + committed: a second `pnpm install` leaves `pnpm-lock.yaml` with no diff — 90a9c0fc1
+- [x] 1.6 No stray config refs: `git grep -n ".github/scripts/code-review"` clean in workspace/eslint/workflows — 90a9c0fc1
 
 #### Manual
 
-- [x] 1.7 `packages/code-review-ci/` has `src/` + `__fixtures__/`; old path gone
+- [x] 1.7 `packages/code-review-ci/` has `src/` + `__fixtures__/`; old path gone — 90a9c0fc1
 
 ### Phase 2: Action contract + composite action
 
 #### Automated
 
-- [ ] 2.1 Orchestration tests pass incl. verdict/status-context/output assertions
-- [ ] 2.2 Orchestration typecheck passes (`CoreApi.setOutput`, `PostPlan.verdict`)
-- [ ] 2.3 Root lint passes: `pnpm lint`
-- [ ] 2.4 `action.yml` is valid YAML
-- [ ] 2.5 `actionlint` over `.github/workflows/` stays green
+- [x] 2.1 Orchestration tests pass incl. verdict/status-context/output assertions
+- [x] 2.2 Orchestration typecheck passes (`CoreApi.setOutput`, `PostPlan.verdict`)
+- [x] 2.3 Root lint passes: `pnpm lint`
+- [x] 2.4 `action.yml` is valid YAML
+- [x] 2.5 `actionlint` over `.github/workflows/` stays green
 
 #### Manual
 
-- [ ] 2.6 `action.yml` read against contract (inputs/outputs, `shell: bash`, `id:`s, `if:` conditions, apply env)
-- [ ] 2.7 `README.md` documents inputs/outputs/usage/PR-only scope/extraction checklist
+- [x] 2.6 `action.yml` read against contract (inputs/outputs, `shell: bash`, `id:`s, `if:` conditions, apply env)
+- [x] 2.7 `README.md` documents inputs/outputs/usage/PR-only scope/extraction checklist
 
 ### Phase 3: Thin the workflow + live verification
 
