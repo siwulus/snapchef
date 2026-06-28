@@ -326,26 +326,26 @@ Purely additive: a new `packages/` tree, a new `packages:` glob in `pnpm-workspa
 
 #### Automated
 
-- [x] 1.1 `pnpm install` at repo root completes and links the new package
-- [x] 1.2 `pnpm --filter code-review exec node -e "console.log('ok')"` runs (package resolves)
-- [x] 1.3 `pnpm lint` passes (package excluded from app ESLint config)
-- [x] 1.4 Root app still builds: `pnpm build` succeeds
+- [x] 1.1 `pnpm install` at repo root completes and links the new package — eeebc2ec4
+- [x] 1.2 `pnpm --filter code-review exec node -e "console.log('ok')"` runs (package resolves) — eeebc2ec4
+- [x] 1.3 `pnpm lint` passes (package excluded from app ESLint config) — eeebc2ec4
+- [x] 1.4 Root app still builds: `pnpm build` succeeds — eeebc2ec4
 
 #### Manual
 
-- [x] 1.5 `pnpm-workspace.yaml` diff is additive; any SDK build-script warning resolved via `allowBuilds`
+- [x] 1.5 `pnpm-workspace.yaml` diff is additive; any SDK build-script warning resolved via `allowBuilds` — eeebc2ec4
 
 ### Phase 2: Domain layer — Zod contracts + prompt
 
 #### Automated
 
-- [ ] 2.1 `pnpm --filter code-review typecheck` passes
-- [ ] 2.2 `Review.parse` accepts valid fixture and throws on invalid (vitest)
-- [ ] 2.3 `CliOptions.parse({})` yields defaults (`json: false`, `model: "claude-sonnet-4-6"`)
+- [x] 2.1 `pnpm --filter code-review typecheck` passes
+- [x] 2.2 `Review.parse` accepts valid fixture and throws on invalid (vitest)
+- [x] 2.3 `CliOptions.parse({})` yields defaults (`json: false`, `model: "claude-sonnet-4-6"`)
 
 #### Manual
 
-- [ ] 2.4 Review schema fields match the decision and read sensibly for a real diff
+- [x] 2.4 Review schema fields match the decision and read sensibly for a real diff
 
 ### Phase 3: Claude Code SDK engine — the `review` tool
 
