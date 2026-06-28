@@ -313,12 +313,12 @@ No change to runtime cost: the same single reviewer call runs once per gated PR.
 
 #### Automated
 
-- [x] 3.1 `actionlint .github/workflows/code-review.yml` passes
-- [x] 3.2 `code-review.yml` is valid YAML
-- [x] 3.3 Root lint passes: `pnpm lint`
+- [x] 3.1 `actionlint .github/workflows/code-review.yml` passes — fce295938
+- [x] 3.2 `code-review.yml` is valid YAML — fce295938
+- [x] 3.3 Root lint passes: `pnpm lint` — fce295938
 
 #### Manual
 
-- [ ] 3.4 Test PR: action posts inline + sticky review; `code-review/gate` status matches verdict
-- [ ] 3.5 `cr:revalidate` re-runs without duplicating inline comments; sticky updated in place
-- [ ] 3.6 Run log shows `verdict` + `gate-state` outputs populated
+- [x] 3.4 Test PR: action posts inline + sticky review; `code-review/gate` status matches verdict — fce295938
+- [x] 3.5 `cr:revalidate` re-runs without duplicating inline comments; sticky updated in place — fce295938
+- [x] 3.6 Run log shows `verdict` + `gate-state` outputs populated — fce295938
