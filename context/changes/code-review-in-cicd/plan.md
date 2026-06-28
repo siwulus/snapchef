@@ -337,5 +337,5 @@ Additive only — a new workflow, a new workspace member, an updated `pnpm-lock.
 - [ ] 3.3 `code-review/gate` marked required in a ruleset/branch protection for `main`
 - [ ] 3.4 Walkthrough steps (a)–(f) behave as specified
 - [ ] 3.5 Merge blocked on `failure`/missing, allowed on `success`
-- [ ] 3.6 Infra-failure path is fail-closed (blocking status + error sticky, no verdict label)
+- [x] 3.6 Infra-failure path is fail-closed (blocking status + error sticky, no verdict label) — live PR #19 run 28330027406 (no secret ⇒ gate=failure, error sticky, no verdict label, no spend)
 - [ ] 3.7 No duplicate inline comments after a revalidate cycle
