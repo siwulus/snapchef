@@ -351,8 +351,8 @@ Purely additive: a new `packages/` tree, a new `packages:` glob in `pnpm-workspa
 
 #### Automated
 
-- [x] 3.1 `pnpm --filter code-review typecheck` passes (SDK types resolve; `runReview` signature correct)
-- [x] 3.2 Mocked-SDK test: handler captures args → resolved `Review`; no capture at `result` → rejects with "did not call" error
+- [x] 3.1 `pnpm --filter code-review typecheck` passes (SDK types resolve; `runReview` signature correct) — f208d8a28
+- [x] 3.2 Mocked-SDK test: handler captures args → resolved `Review`; no capture at `result` → rejects with "did not call" error — f208d8a28
 
 #### Manual
 
@@ -363,9 +363,9 @@ Purely additive: a new `packages/` tree, a new `packages:` glob in `pnpm-workspa
 
 #### Automated
 
-- [ ] 4.1 `pnpm --filter code-review typecheck` passes
-- [ ] 4.2 `renderReview` JSON output round-trips; pretty output contains verdict, summary, and each finding's file/title
-- [ ] 4.3 Empty-stdin invocation exits non-zero with the "no diff" message (engine not called)
+- [x] 4.1 `pnpm --filter code-review typecheck` passes
+- [x] 4.2 `renderReview` JSON output round-trips; pretty output contains verdict, summary, and each finding's file/title
+- [x] 4.3 Empty-stdin invocation exits non-zero with the "no diff" message (engine not called)
 
 #### Manual
 
