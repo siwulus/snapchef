@@ -4,9 +4,6 @@
 # (e.g. packages/code-review) install under one root `pnpm install` and resolve via `pnpm --filter`.
 packages:
   - "packages/*"
-  # CI orchestration logic for the code-review gate. A workspace member so it
-  # resolves the repo's tsx/vitest/typescript toolchain under one root install.
-  - ".github/scripts/code-review"
 
 # Pin Vite across the dependency tree (formerly package.json "overrides").
 overrides:

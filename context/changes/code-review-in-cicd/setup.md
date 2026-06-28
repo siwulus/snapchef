@@ -73,7 +73,7 @@ Open a PR to `main` with a deliberately flawed diff and confirm, in order:
   clobbered.
 
 Also verify the **context-line decision**: if any inline post returns HTTP 422
-("line must be part of the diff"), tighten `.github/scripts/code-review/src/diff.ts`
+("line must be part of the diff"), tighten `packages/code-review-ci/src/diff.ts`
 `parseValidLines` to record **added lines only** (drop the context-line branch),
 re-run `pnpm --filter @snapchef/code-review-ci test`, and re-push.
 
