@@ -1,5 +1,10 @@
 # pnpm settings (pnpm 11 reads overrides + the build-script allowlist here, not from package.json).
 
+# Workspace members. The root Astro app lives at the repo root; independent packages
+# (e.g. packages/code-review) install under one root `pnpm install` and resolve via `pnpm --filter`.
+packages:
+  - "packages/*"
+
 # Pin Vite across the dependency tree (formerly package.json "overrides").
 overrides:
   vite: ^7.3.3
