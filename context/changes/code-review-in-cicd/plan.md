@@ -317,13 +317,13 @@ Additive only — a new workflow, a new workspace member, an updated `pnpm-lock.
 
 #### Automated
 
-- [x] 2.1 Workflow YAML lints (`actionlint`)
-- [x] 2.2 Phase-1 module still green: `pnpm --filter @snapchef/code-review-ci test`
-- [x] 2.3 Root lint + `--frozen-lockfile` unaffected
+- [x] 2.1 Workflow YAML lints (`actionlint`) — 4c58947d8
+- [x] 2.2 Phase-1 module still green: `pnpm --filter @snapchef/code-review-ci test` — 4c58947d8
+- [x] 2.3 Root lint + `--frozen-lockfile` unaffected — 4c58947d8
 
 #### Manual
 
-- [x] 2.4 Read-through: status on `head.sha`; `event: COMMENT`; fail-closed on infra path; no status write when not running; secret scoped to the package step
+- [x] 2.4 Read-through: status on `head.sha`; `event: COMMENT`; fail-closed on infra path; no status write when not running; secret scoped to the package step — 4c58947d8
 
 ### Phase 3: Repo setup + live verification
 
