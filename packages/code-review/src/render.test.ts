@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderReview } from "./render.js";
-import { Review } from "./review.js";
+import { CONCERN_ORDER, Review } from "./review.js";
 
 /** All concerns ok / not-applicable — spread and override per fixture. */
 const areasAllOk = {
@@ -56,6 +56,19 @@ describe("renderReview", () => {
   it("orders findings most-severe first in the pretty output", () => {
     const out = renderReview(fixture, { json: false });
     expect(out.indexOf("CRITICAL")).toBeLessThan(out.indexOf("NIT"));
+  });
+
+  it("renders a coverage line for every concern, including non-ok statuses", () => {
+    const out = renderReview(fixture, { json: false });
+    CONCERN_ORDER.forEach((concern) => expect(out).toContain(concern));
+    expect(out).toContain("BLOCKING"); // correctness in the fixture
+    expect(out).toContain("NOT_APPLICABLE"); // frontend in the fixture
+  });
+
+  it("tags each finding with its concern category", () => {
+    const out = renderReview(fixture, { json: false });
+    expect(out).toContain("[correctness]");
+    expect(out).toContain("[maintainability]");
   });
 
   it("renders an explicit no-findings line when the review is clean", () => {

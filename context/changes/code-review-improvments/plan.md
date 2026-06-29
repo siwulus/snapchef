@@ -330,26 +330,26 @@ The serialized review is **additive** (`summary`/`findings`/`verdict` retained; 
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `pnpm --filter code-review test`
-- [x] 2.2 Type checking passes: `pnpm --filter code-review typecheck`
-- [x] 2.3 Linting passes: `pnpm lint`
+- [x] 2.1 Unit tests pass: `pnpm --filter code-review test` — 2ff95980b
+- [x] 2.2 Type checking passes: `pnpm --filter code-review typecheck` — 2ff95980b
+- [x] 2.3 Linting passes: `pnpm lint` — 2ff95980b
 
 #### Manual
 
-- [x] 2.4 Real backend-only diff via CLI: all 7 areas, `frontend` not_applicable, findings categorized, derived verdict consistent
-- [x] 2.5 UI-touching diff: `frontend` activates
+- [x] 2.4 Real backend-only diff via CLI: all 7 areas, `frontend` not_applicable, findings categorized, derived verdict consistent — 2ff95980b
+- [x] 2.5 UI-touching diff: `frontend` activates — 2ff95980b
 
 ### Phase 3: Terminal rendering of coverage
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass: `pnpm --filter code-review test`
-- [ ] 3.2 Type checking passes: `pnpm --filter code-review typecheck`
-- [ ] 3.3 Linting passes: `pnpm lint`
+- [x] 3.1 Unit tests pass: `pnpm --filter code-review test`
+- [x] 3.2 Type checking passes: `pnpm --filter code-review typecheck`
+- [x] 3.3 Linting passes: `pnpm lint`
 
 #### Manual
 
-- [ ] 3.4 CLI pretty output shows the area-coverage table and per-finding concern
+- [x] 3.4 CLI pretty output shows the area-coverage table and per-finding concern
 
 ### Phase 4: CI contract mirror + PR coverage surfacing
 

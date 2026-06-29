@@ -8,6 +8,23 @@ vi.mock("./engine.js", () => ({ runReview: engine.runReview }));
 
 const { runCli } = await import("./cli.js");
 
+// A clean review the mocked engine resolves with. Includes the full per-area
+// coverage block the renderer now reads (every concern present).
+const okReview = {
+  summary: "ok",
+  areas: {
+    correctness: { status: "ok", rationale: "fine" },
+    error_handling: { status: "ok", rationale: "fine" },
+    security: { status: "ok", rationale: "fine" },
+    tests: { status: "ok", rationale: "fine" },
+    api_contract: { status: "ok", rationale: "fine" },
+    maintainability: { status: "ok", rationale: "fine" },
+    frontend: { status: "not_applicable", rationale: "no UI" },
+  },
+  findings: [],
+  verdict: "approve",
+};
+
 describe("runCli", () => {
   beforeEach(() => {
     engine.runReview.mockReset();
@@ -35,7 +52,7 @@ describe("runCli", () => {
   });
 
   it("passes the --model override to the engine and stays silent without --verbose", async () => {
-    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    engine.runReview.mockResolvedValue(okReview);
     const log = vi.fn();
     const result = await runCli({
       argv: ["--model", "claude-opus-4-8"],
@@ -49,31 +66,31 @@ describe("runCli", () => {
   });
 
   it("forwards the log sink to the engine when --verbose is set", async () => {
-    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    engine.runReview.mockResolvedValue(okReview);
     const log = vi.fn();
     await runCli({ argv: ["--verbose"], stdin: "diff --git a/x b/x", credential: "token", log });
     expect(engine.runReview).toHaveBeenCalledWith("diff --git a/x b/x", { model: expect.any(String), log });
   });
 
   it("accepts the -v short flag for verbose", async () => {
-    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    engine.runReview.mockResolvedValue(okReview);
     const log = vi.fn();
     await runCli({ argv: ["-v"], stdin: "diff", credential: "token", log });
     expect(engine.runReview).toHaveBeenCalledWith("diff", expect.objectContaining({ log }));
   });
 
   it("emits JSON when --json is set", async () => {
-    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    engine.runReview.mockResolvedValue(okReview);
     const result = await runCli({ argv: ["--json"], stdin: "diff", credential: "token" });
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout ?? "")).toEqual({ summary: "ok", findings: [], verdict: "approve" });
+    expect(JSON.parse(result.stdout ?? "")).toEqual(okReview);
   });
 
   it("tolerates the leading -- separator that pnpm forwards", async () => {
-    engine.runReview.mockResolvedValue({ summary: "ok", findings: [], verdict: "approve" });
+    engine.runReview.mockResolvedValue(okReview);
     const result = await runCli({ argv: ["--", "--json"], stdin: "diff", credential: "token" });
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout ?? "")).toEqual({ summary: "ok", findings: [], verdict: "approve" });
+    expect(JSON.parse(result.stdout ?? "")).toEqual(okReview);
   });
 });
 

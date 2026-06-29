@@ -1,4 +1,4 @@
-import { type Review, SEVERITY_ORDER, type Severity } from "./review.js";
+import { CONCERN_ORDER, type Review, SEVERITY_ORDER, type Severity } from "./review.js";
 
 export interface RenderOptions {
   /** When true, emit the raw validated review as pretty JSON instead of text. */
@@ -11,11 +11,21 @@ export const renderReview = (review: Review, opts: RenderOptions): string =>
 
 const severityRank = (severity: Severity): number => SEVERITY_ORDER.indexOf(severity);
 
+/** The per-concern coverage block: one line per concern, in canonical order. */
+const renderAreas = (review: Review): string[] => {
+  const rows = CONCERN_ORDER.map((concern) => {
+    const area = review.areas[concern];
+    return `  ${concern}: ${area.status.toUpperCase()} — ${area.rationale}`;
+  });
+  return ["", "Areas:", ...rows];
+};
+
 const renderPretty = (review: Review): string => {
   const header = [`Verdict: ${review.verdict}`, "", review.summary];
+  const areas = renderAreas(review);
 
   if (review.findings.length === 0) {
-    return [...header, "", "No findings."].join("\n");
+    return [...header, ...areas, "", "No findings."].join("\n");
   }
 
   const sorted = [...review.findings].sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
@@ -25,11 +35,11 @@ const renderPretty = (review: Review): string => {
     if (inGroup.length === 0) return [];
     const items = inGroup.flatMap((finding) => {
       const location = finding.line !== undefined ? `${finding.file}:${finding.line}` : finding.file;
-      const lines = [`  • ${location} — ${finding.title}`, `    ${finding.detail}`];
+      const lines = [`  • [${finding.category}] ${location} — ${finding.title}`, `    ${finding.detail}`];
       return finding.suggestion !== undefined ? [...lines, `    suggestion: ${finding.suggestion}`] : lines;
     });
     return ["", `${severity.toUpperCase()} (${inGroup.length})`, ...items];
   });
 
-  return [...header, ...groups].join("\n");
+  return [...header, ...areas, ...groups].join("\n");
 };
