@@ -5,7 +5,7 @@ import { GENERATION_LOADER_MESSAGE, useRecipeGeneration } from "@/components/rec
 import { Button } from "@/components/ui/button";
 import type { RecipeGenerationResult } from "@/lib/core/boundry/recipe";
 import type { RecognizedItem } from "@/lib/core/model/recipe";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface RecipeGenerationPanelProps {
   sessionId: string;
@@ -19,6 +19,8 @@ interface RecipeGenerationPanelProps {
   // The backend `{ recipe, session }` bundle is reported up; the final step renders its read-only
   // echo from the returned session (source of truth), not from the submitted command.
   onGenerated: (result: RecipeGenerationResult) => void;
+  // Reflects the generation in-flight state up to the wizard so it can gate stepper navigation.
+  onBusyChange: (busy: boolean) => void;
 }
 
 // The generation panel below the product list: a free-text meal-context textarea (with a guiding
@@ -31,10 +33,16 @@ export const RecipeGenerationPanel = ({
   initialMealContext,
   initialAllowExtraIngredients,
   onGenerated,
+  onBusyChange,
 }: RecipeGenerationPanelProps) => {
   const [mealContext, setMealContext] = useState(initialMealContext ?? "");
   const [allowExtraIngredients, setAllowExtraIngredients] = useState(initialAllowExtraIngredients ?? true);
   const { error, isBusy, generate } = useRecipeGeneration(sessionId, onGenerated);
+
+  // Mirror the in-flight state up so the wizard can gate stepper navigation while generating.
+  useEffect(() => {
+    onBusyChange(isBusy);
+  }, [isBusy, onBusyChange]);
 
   const items = toCorrectedItems();
   const canGenerate = items.length > 0 && !isBusy;

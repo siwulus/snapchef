@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { RecognitionResult } from "@/lib/core/boundry/recipe";
 import type { RecipeSession } from "@/lib/core/model/recipe";
 import { ImagePlus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PhotoUploaderProps {
   // The selected-photo set is owned by the wizard so it survives step navigation; this component is
@@ -20,6 +20,8 @@ interface PhotoUploaderProps {
   // re-upload reuses it instead of creating a second session.
   existingSession: RecipeSession | null;
   onComplete: (result: RecognitionResult) => void;
+  // Reflects this step's in-flight state up to the wizard so it can gate stepper navigation.
+  onBusyChange: (busy: boolean) => void;
 }
 
 // Treat two picks as the same file when name, size, and last-modified all match — enough to skip a
@@ -27,13 +29,25 @@ interface PhotoUploaderProps {
 const isSameFile = (a: File, b: File): boolean =>
   a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
 
-export const PhotoUploader = ({ photos, append, removeAt, existingSession, onComplete }: PhotoUploaderProps) => {
+export const PhotoUploader = ({
+  photos,
+  append,
+  removeAt,
+  existingSession,
+  onComplete,
+  onBusyChange,
+}: PhotoUploaderProps) => {
   const { phase, recognitionError, isBusy, canRetry, submit, retry, clearRecognitionError } = usePhotoUpload(
     onComplete,
     existingSession,
   );
   const [errors, setErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Mirror the in-flight state up so the wizard can gate stepper navigation while uploading/recognizing.
+  useEffect(() => {
+    onBusyChange(isBusy);
+  }, [isBusy, onBusyChange]);
 
   const handleSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? []);

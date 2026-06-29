@@ -58,6 +58,7 @@ const renderPanel = (
     initialMealContext: string | null;
     initialAllowExtraIngredients: boolean | null;
     onGenerated: (result: RecipeGenerationResult) => void;
+    onBusyChange: (busy: boolean) => void;
   }> = {},
 ) =>
   render(
@@ -67,6 +68,7 @@ const renderPanel = (
       initialMealContext={props.initialMealContext ?? null}
       initialAllowExtraIngredients={props.initialAllowExtraIngredients ?? null}
       onGenerated={props.onGenerated ?? noop}
+      onBusyChange={props.onBusyChange ?? noop}
     />,
   );
 

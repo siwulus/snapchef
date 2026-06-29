@@ -40,14 +40,28 @@ describe("WizardReviewProducts seeding", () => {
       ...baseSession,
       correctedItems: [{ name: "Papryka", quantity: "2 szt.", context: "poprawione" }],
     };
-    render(<WizardReviewProducts session={session} photos={noPhotos} onGenerated={() => undefined} />);
+    render(
+      <WizardReviewProducts
+        session={session}
+        photos={noPhotos}
+        onGenerated={() => undefined}
+        onBusyChange={() => undefined}
+      />,
+    );
 
     expect(rows()).toHaveLength(1);
     expect(nameInput(rows()[0])).toHaveValue("Papryka");
   });
 
   it("falls back to recognizedItems when correctedItems is null", () => {
-    render(<WizardReviewProducts session={baseSession} photos={noPhotos} onGenerated={() => undefined} />);
+    render(
+      <WizardReviewProducts
+        session={baseSession}
+        photos={noPhotos}
+        onGenerated={() => undefined}
+        onBusyChange={() => undefined}
+      />,
+    );
 
     expect(rows()).toHaveLength(1);
     expect(nameInput(rows()[0])).toHaveValue("Pomidory");

@@ -273,10 +273,10 @@ None — no schema or server changes.
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `pnpm test`
-- [x] 2.2 `usePhotoUpload` test: existing session skips create POST; null session still creates
-- [x] 2.3 Lint passes: `pnpm lint`
-- [x] 2.4 Build passes: `pnpm build`
+- [x] 2.1 Unit tests pass: `pnpm test` — 4054c6d74
+- [x] 2.2 `usePhotoUpload` test: existing session skips create POST; null session still creates — 4054c6d74
+- [x] 2.3 Lint passes: `pnpm lint` — 4054c6d74
+- [x] 2.4 Build passes: `pnpm build` — 4054c6d74
 
 #### Manual
 
@@ -288,10 +288,10 @@ None — no schema or server changes.
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass: `pnpm test`
-- [ ] 3.2 New `WizardStepper.test.tsx`: reachability gating, current marking, navigation callbacks
-- [ ] 3.3 Lint passes: `pnpm lint`
-- [ ] 3.4 Build passes: `pnpm build`
+- [x] 3.1 Unit tests pass: `pnpm test`
+- [x] 3.2 New `WizardStepper.test.tsx`: reachability gating, current marking, navigation callbacks
+- [x] 3.3 Lint passes: `pnpm lint`
+- [x] 3.4 Build passes: `pnpm build`
 
 #### Manual
 
