@@ -23,8 +23,13 @@ const unwrap = (result: ApiResponsePayload<RecipeSession>): Effect.Effect<Recipe
 
 // Owns the upload→recognize workflow and its UI state. The single consumer (UploadStep) feeds it the
 // selected files; success is reported through `onComplete`. Kept as one pipe-first Effect chain with a
-// single runPromise edge per effect.md.
-export const usePhotoUpload = (onComplete: (result: RecognitionResult) => void) => {
+// single runPromise edge per effect.md. When `existingSession` is non-null (a back-navigation re-upload),
+// it reuses that session id instead of minting a new one — the upload route full-replaces photos on an
+// existing session, so re-uploading never orphans a second session's storage + rows.
+export const usePhotoUpload = (
+  onComplete: (result: RecognitionResult) => void,
+  existingSession: RecipeSession | null,
+) => {
   const [phase, setPhase] = useState<Phase>("idle");
   const [recognitionError, setRecognitionError] = useState<string | null>(null);
   const [createdSession, setCreatedSession] = useState<RecipeSession | null>(null);
@@ -81,17 +86,19 @@ export const usePhotoUpload = (onComplete: (result: RecognitionResult) => void) 
       ),
     );
 
+  // Reuse the wizard's session on a re-upload; otherwise mint a new one. The upload + recognition
+  // routes both operate on an existing session, so the only branch is "create or not".
+  const ensureSession = (): Effect.Effect<RecipeSession, SnapchefClientError> =>
+    existingSession
+      ? Effect.succeed(existingSession)
+      : post("/api/recipe-sessions", {}, RecipeSession).pipe(Effect.flatMap(unwrap));
+
   const submit = (files: File[]) => {
     void Effect.sync(() => {
       setPhase("uploading");
     }).pipe(
       Effect.flatMap(() => prepareFiles(files)),
-      Effect.flatMap((prepared) =>
-        post("/api/recipe-sessions", {}, RecipeSession).pipe(
-          Effect.flatMap(unwrap),
-          Effect.flatMap((session) => uploadPhotos(session, prepared)),
-        ),
-      ),
+      Effect.flatMap((prepared) => ensureSession().pipe(Effect.flatMap((session) => uploadPhotos(session, prepared)))),
       Effect.tap((session) =>
         Effect.sync(() => {
           setCreatedSession(session);

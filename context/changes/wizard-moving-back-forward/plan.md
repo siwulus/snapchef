@@ -259,11 +259,11 @@ None — no schema or server changes.
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `pnpm test`
-- [x] 1.2 `RecipeGenerationPanel.test.tsx` asserts render from new initial-value props
-- [x] 1.3 New `useEditableItems` test asserts `correctedItems` precedence + null fallback
-- [x] 1.4 Lint passes: `pnpm lint`
-- [x] 1.5 Build passes: `pnpm build`
+- [x] 1.1 Unit tests pass: `pnpm test` — 5bc0503f0
+- [x] 1.2 `RecipeGenerationPanel.test.tsx` asserts render from new initial-value props — 5bc0503f0
+- [x] 1.3 New `useEditableItems` test asserts `correctedItems` precedence + null fallback — 5bc0503f0
+- [x] 1.4 Lint passes: `pnpm lint` — 5bc0503f0
+- [x] 1.5 Build passes: `pnpm build` — 5bc0503f0
 
 #### Manual
 
@@ -273,10 +273,10 @@ None — no schema or server changes.
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `pnpm test`
-- [ ] 2.2 `usePhotoUpload` test: existing session skips create POST; null session still creates
-- [ ] 2.3 Lint passes: `pnpm lint`
-- [ ] 2.4 Build passes: `pnpm build`
+- [x] 2.1 Unit tests pass: `pnpm test`
+- [x] 2.2 `usePhotoUpload` test: existing session skips create POST; null session still creates
+- [x] 2.3 Lint passes: `pnpm lint`
+- [x] 2.4 Build passes: `pnpm build`
 
 #### Manual
 

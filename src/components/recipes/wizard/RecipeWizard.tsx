@@ -1,3 +1,4 @@
+import { useObjectUrls } from "@/components/hooks/useObjectUrls";
 import { PhotoUploader } from "@/components/recipes/photo/PhotoUploader";
 import { GeneratedRecipeView } from "@/components/recipes/wizard/GeneratedRecipeView";
 import { WizardReviewProducts } from "@/components/recipes/wizard/WizardReviewProducts";
@@ -21,9 +22,14 @@ const RecipeWizard = () => {
   const [session, setSession] = useState<RecipeSession | null>(null);
   const [photos, setPhotos] = useState<PhotoView[]>([]);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [dirty, setDirty] = useState(false);
+  // The selected-photo File set lives here (not in PhotoUploader) so previews survive step navigation;
+  // the wizard is the single owner and thus the single site of object-URL revocation (on its unmount).
+  const { photos: selectedPhotos, append, removeAt } = useObjectUrls();
+  // Leave-guard is armed whenever there is unsaved work: selected photos not yet uploaded, or a live
+  // session. Derived (not separate state) so it tracks both without a callback from PhotoUploader.
+  const dirty = selectedPhotos.length > 0 || session !== null;
   // Ref-backed armed flag so the finalize flow can disarm the guard SYNCHRONOUSLY before
-  // window.location.assign — a deferred setDirty(false) would not flush before the browser
+  // window.location.assign — a deferred guard update would not flush before the browser
   // reads the beforeunload handler.
   const guardArmed = useRef(false);
 
@@ -61,7 +67,15 @@ const RecipeWizard = () => {
 
   const renderStep = () => {
     if (step === "upload" || session === null) {
-      return <PhotoUploader onComplete={handleRecognitionComplete} onDirtyChange={setDirty} />;
+      return (
+        <PhotoUploader
+          photos={selectedPhotos}
+          append={append}
+          removeAt={removeAt}
+          existingSession={session}
+          onComplete={handleRecognitionComplete}
+        />
+      );
     }
 
     if (step === "review") {
