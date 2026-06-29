@@ -18,7 +18,9 @@ interface WizardReviewProductsProps {
 // Below the list, the generation panel collects the meal context + off-list toggle and triggers
 // generation; the generated `{ recipe, session }` bundle is reported up via `onGenerated`.
 export const WizardReviewProducts = ({ session, photos, onGenerated }: WizardReviewProductsProps) => {
-  const editor = useEditableItems(session.recognizedItems);
+  // Seed from the user's prior edits when present (returning to this step), falling back to the
+  // freshly recognized list when they have not edited yet (correctedItems is null on first arrival).
+  const editor = useEditableItems(session.correctedItems ?? session.recognizedItems);
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,6 +43,8 @@ export const WizardReviewProducts = ({ session, photos, onGenerated }: WizardRev
           <RecipeGenerationPanel
             sessionId={session.id}
             toCorrectedItems={editor.toCorrectedItems}
+            initialMealContext={session.mealContext}
+            initialAllowExtraIngredients={session.allowExtraIngredients}
             onGenerated={onGenerated}
           />
         </CardContent>

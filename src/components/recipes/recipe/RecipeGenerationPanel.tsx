@@ -12,6 +12,10 @@ interface RecipeGenerationPanelProps {
   // Projection of the edited list, owned by the parent (ReviewStep). Read at submit time so the
   // command carries exactly what the user sees.
   toCorrectedItems: () => RecognizedItem[];
+  // Session-backed seeds so returning to this step shows what the user last entered. Both are
+  // nullable on the wire: `null` falls back to the forward-flow defaults (empty context, toggle ON).
+  initialMealContext: string | null;
+  initialAllowExtraIngredients: boolean | null;
   // The backend `{ recipe, session }` bundle is reported up; the final step renders its read-only
   // echo from the returned session (source of truth), not from the submitted command.
   onGenerated: (result: RecipeGenerationResult) => void;
@@ -21,9 +25,15 @@ interface RecipeGenerationPanelProps {
 // hint making the user conscious of their influence), an off-list-ingredients Switch defaulting to
 // ON, and the Generuj przepis button. On submit it reads the lifted list's projection and delegates
 // to useRecipeGeneration.
-export const RecipeGenerationPanel = ({ sessionId, toCorrectedItems, onGenerated }: RecipeGenerationPanelProps) => {
-  const [mealContext, setMealContext] = useState("");
-  const [allowExtraIngredients, setAllowExtraIngredients] = useState(true);
+export const RecipeGenerationPanel = ({
+  sessionId,
+  toCorrectedItems,
+  initialMealContext,
+  initialAllowExtraIngredients,
+  onGenerated,
+}: RecipeGenerationPanelProps) => {
+  const [mealContext, setMealContext] = useState(initialMealContext ?? "");
+  const [allowExtraIngredients, setAllowExtraIngredients] = useState(initialAllowExtraIngredients ?? true);
   const { error, isBusy, generate } = useRecipeGeneration(sessionId, onGenerated);
 
   const items = toCorrectedItems();
