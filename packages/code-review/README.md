@@ -65,11 +65,16 @@ git diff -- src/app.ts       | pnpm --filter code-review review
 
 ### Flags
 
-| Flag              | Default             | Description                                                    |
-| ----------------- | ------------------- | -------------------------------------------------------------- |
-| `--json`          | off                 | Emit the raw validated review as pretty JSON instead of text.  |
-| `--model <id>`    | `claude-sonnet-4-6` | Model id, e.g. `claude-opus-4-8` for a deeper (slower) review. |
-| `--verbose`, `-v` | off                 | Stream the agentic loop's progress to **stderr** (see below).  |
+| Flag                 | Default             | Description                                                                                                                          |
+| -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `--json`             | off                 | Emit the raw validated review as pretty JSON instead of text.                                                                        |
+| `--model <id>`       | `claude-sonnet-4-6` | Model id, e.g. `claude-opus-4-8` for a deeper (slower) review.                                                                       |
+| `--project-root <p>` | repo root           | Project root the reviewer reads files + `CLAUDE.md` from (the agent's `cwd`). Defaults to the repo root; CI passes the checkout dir. |
+| `--verbose`, `-v`    | off                 | Stream the agentic loop's progress to **stderr** (see below).                                                                        |
+
+> **Run from the repo root** (or pass `--project-root`). The reviewer examines the diff against
+> the whole project, so its working directory must be the repository root — that is the default,
+> but `pnpm --filter … exec` changes the cwd, which is why CI passes `--project-root` explicitly.
 
 ### `--verbose` output
 
@@ -78,10 +83,17 @@ Verbose logs go to **stderr**, so stdout stays a clean review/JSON stream
 
 ```
 → reviewing diff (model=claude-sonnet-4-6, 1.4 KB)
-· session ready — model=claude-sonnet-4-6, tools=0, permission=bypassPermissions
-· assistant turn — Reviewing the diff for correctness and error handling…
-✓ review complete — 2 turn(s), 3120ms, $0.0041, 1024/280 tok
+· session ready — model=claude-sonnet-4-6, tools=3, permission=dontAsk
+· assistant turn — Reading the changed files and their callers…
+→ Read(src/lib/core/uc/auth/AuthenticatorUC.ts)
+← ok
+→ Grep(signInWithPassword)
+← ok
+✓ review complete — 7 turn(s), 18230ms, $0.0210, 24800/640 tok
 ```
+
+The `→ Tool(arg)` / `← ok|error` lines are the agentic exploration loop: each file the
+reviewer reads and each search it runs against the project shows up here.
 
 ## Output
 
@@ -135,12 +147,18 @@ suggestion when present.
 ## How it works
 
 `cli.ts` reads the diff from stdin and parses flags → `engine.runReview()` calls a
-headless `query()` with `outputFormat: { type: "json_schema", schema }` (derived
-from the `ReviewDraft` Zod schema — the model reports per-concern coverage but not
-the verdict), all built-in tools disabled → the SDK validates the model's response
-against the schema and returns it on the result message's `structured_output`
-field; the engine derives the verdict from the area statuses and assembles the final
-`Review` → `render.ts` prints pretty text or JSON.
+headless `query()` that runs **with the full project as context**: `cwd` is the project
+root, read-only tools (`Read`, `Glob`, `Grep`) let the agent explore the codebase, and
+`settingSources: ["project"]` + the `claude_code` system-prompt preset load `CLAUDE.md`
+and the binding conventions. The model investigates the diff against the real repository —
+callers, types, tests, conventions — then emits its review as native structured output
+(`outputFormat: { type: "json_schema", schema }`, derived from the `ReviewDraft` Zod schema —
+per-concern coverage, no verdict). The SDK validates the response against the schema and
+returns it on the result message's `structured_output` field; the engine derives the verdict
+from the area statuses and assembles the final `Review` → `render.ts` prints pretty text or JSON.
+
+Because the reviewer reads the repo and loads `CLAUDE.md`, a run costs more tokens and takes
+longer (a multi-turn agentic loop) than a diff-only pass — budget for it on larger diffs.
 
 ## Development
 
@@ -153,8 +171,10 @@ Source layout (`src/`): `review.ts` (schema), `options.ts` (CLI options),
 `prompt.ts` (reviewer prompt), `engine.ts` (SDK call), `render.ts` (output),
 `log.ts` (verbose formatter), `cli.ts` (entry).
 
-## Scope (v0)
+## Scope
 
-Diff in → review out, run locally. No CI/GitHub Action, no PR-comment posting, no
-git-hook integration; the tool does not run `git` itself; no multi-file fan-out,
+Diff in → review out. The diff is supplied on stdin (the tool does not run `git` itself);
+the reviewer reads the surrounding project read-only to judge it in context. PR-comment
+posting and the merge-gate status live in the sibling `@snapchef/code-review-ci` package and
+the `packages/code-review-action` composite action — this package is just the engine. No
 diff chunking, retries, or caching.

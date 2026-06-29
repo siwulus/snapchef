@@ -37,6 +37,48 @@ const assistantPreview = (message: { message?: unknown }): string => {
   return kinds.length > 0 ? `(${kinds.join(", ")})` : "(empty)";
 };
 
+/** The content blocks of a streamed assistant/user message (`message.message.content`), or `[]`. */
+const contentBlocks = (message: { message?: unknown }): unknown[] => {
+  const content: unknown = isRecord(message.message) ? message.message.content : undefined;
+  return Array.isArray(content) ? content : [];
+};
+
+/** Salient argument of a tool call, for a compact `Read(src/foo.ts)`-style label. */
+const briefToolInput = (input: unknown): string => {
+  if (!isRecord(input)) return "";
+  const salient = input.file_path ?? input.path ?? input.pattern ?? input.query;
+  if (typeof salient === "string") return truncate(salient, 80);
+  const firstString = Object.values(input).find((value): value is string => typeof value === "string");
+  return firstString !== undefined ? truncate(firstString, 80) : "";
+};
+
+/**
+ * The tool calls in an assistant message, e.g. `Read(src/foo.ts), Grep(port)` — or `undefined`
+ * when the message makes none. This is how the agentic exploration loop becomes visible under
+ * `--verbose`: each Read/Glob/Grep the reviewer issues against the project shows up.
+ */
+const toolUseSummary = (message: { message?: unknown }): string | undefined => {
+  const calls = contentBlocks(message)
+    .filter(
+      (block): block is { name: string; input?: unknown } =>
+        isRecord(block) && block.type === "tool_use" && typeof block.name === "string",
+    )
+    .map((block) => {
+      const arg = briefToolInput(block.input);
+      return arg.length > 0 ? `${block.name}(${arg})` : block.name;
+    });
+  return calls.length > 0 ? calls.join(", ") : undefined;
+};
+
+/** Brief `ok` / `error` summary of the tool_result blocks in a user message, or `undefined`. */
+const toolResultSummary = (message: { message?: unknown }): string | undefined => {
+  const results = contentBlocks(message).filter(
+    (block): block is Record<string, unknown> => isRecord(block) && block.type === "tool_result",
+  );
+  if (results.length === 0) return undefined;
+  return results.some((block) => block.is_error === true) ? "error" : "ok";
+};
+
 /**
  * Format one streamed SDK message into a concise, human-readable progress line —
  * or `undefined` for message types we don't surface. Pure and defensive: it never
@@ -44,8 +86,16 @@ const assistantPreview = (message: { message?: unknown }): string => {
  */
 export const formatEvent = (message: SDKMessage): string | undefined => {
   switch (message.type) {
-    case "assistant":
-      return `· assistant turn — ${assistantPreview(message)}`;
+    case "assistant": {
+      // A turn that calls tools is more informative shown as the calls themselves; a
+      // text-only turn (reasoning) keeps the plain preview.
+      const tools = toolUseSummary(message);
+      return tools !== undefined ? `→ ${tools}` : `· assistant turn — ${assistantPreview(message)}`;
+    }
+    case "user": {
+      const result = toolResultSummary(message);
+      return result !== undefined ? `← ${result}` : undefined;
+    }
     case "result": {
       const turns = numField(message, "num_turns") ?? "?";
       const duration = numField(message, "duration_ms") ?? "?";

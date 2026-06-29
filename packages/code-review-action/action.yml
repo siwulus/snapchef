@@ -83,7 +83,10 @@ runs:
         MODEL: ${{ inputs.model }}
       run: |
         set +e
+        # --project-root is the repo root: `pnpm --filter … exec` runs from packages/code-review,
+        # so the reviewer must be told where the checkout (app source + CLAUDE.md) actually lives.
         pnpm --filter code-review exec tsx src/cli.ts --json --model "${MODEL}" \
+          --project-root "${GITHUB_WORKSPACE}" \
           < "${GITHUB_WORKSPACE}/pr.diff" \
           > "${GITHUB_WORKSPACE}/review.json" \
           2> "${GITHUB_WORKSPACE}/review.err"

@@ -44,6 +44,32 @@ describe("formatEvent", () => {
     expect(line).toContain("thinking");
   });
 
+  it("renders the tool calls in an assistant turn (the exploration loop)", () => {
+    const line = ev({
+      type: "assistant",
+      message: {
+        content: [
+          { type: "tool_use", name: "Read", input: { file_path: "src/foo.ts" } },
+          { type: "tool_use", name: "Grep", input: { pattern: "createClient" } },
+        ],
+      },
+    });
+    expect(line).toContain("→");
+    expect(line).toContain("Read(src/foo.ts)");
+    expect(line).toContain("Grep(createClient)");
+  });
+
+  it("summarizes a tool result from a user message as ok or error", () => {
+    expect(ev({ type: "user", message: { content: [{ type: "tool_result", content: "ok" }] } })).toBe("← ok");
+    expect(ev({ type: "user", message: { content: [{ type: "tool_result", is_error: true, content: "boom" }] } })).toBe(
+      "← error",
+    );
+  });
+
+  it("returns undefined for a user message that carries no tool result", () => {
+    expect(ev({ type: "user", message: { content: [{ type: "text", text: "hi" }] } })).toBeUndefined();
+  });
+
   it("formats an API retry with attempt counts, delay, and reason", () => {
     const line = ev({
       type: "system",

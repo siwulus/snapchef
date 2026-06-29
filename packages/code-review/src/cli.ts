@@ -12,6 +12,12 @@ export interface CliInput {
   stdin: string;
   /** A present Anthropic credential (see {@link CREDENTIAL_ENV_VARS}), or undefined if none is set. */
   credential: string | undefined;
+  /**
+   * Repo root used as the reviewer's project root (the agent's `cwd`) when `--project-root` is
+   * not passed. Injected by the caller (resolved from this module's location in {@link main}) so
+   * `runCli` stays pure and location-independent for tests.
+   */
+  defaultProjectRoot: string;
   /** Sink for `--verbose` progress lines (stderr in the real CLI). Forwarded to the engine only when `--verbose` is set. */
   log?: (line: string) => void;
 }
@@ -46,13 +52,13 @@ const errorMessage = (error: unknown): string => (error instanceof Error ? error
  * review → render. Returns an exit code plus the text to print; the caller owns
  * all process I/O. Kept side-effect-free so it is unit-testable without spawning.
  */
-export const runCli = async ({ argv, stdin, credential, log }: CliInput): Promise<CliResult> => {
+export const runCli = async ({ argv, stdin, credential, defaultProjectRoot, log }: CliInput): Promise<CliResult> => {
   // pnpm forwards the `--` separator into argv (`pnpm … review -- --json` arrives as
   // ["--", "--json"]). We accept no positionals, so a leading `--` is purely that
   // artifact; dropping it lets the real flags parse instead of becoming positionals.
   const cleanArgv = argv[0] === "--" ? argv.slice(1) : argv;
 
-  let values: { json: boolean; model?: string; verbose: boolean };
+  let values: { json: boolean; model?: string; verbose: boolean; "project-root"?: string };
   try {
     ({ values } = parseArgs({
       args: cleanArgv,
@@ -60,6 +66,7 @@ export const runCli = async ({ argv, stdin, credential, log }: CliInput): Promis
         json: { type: "boolean", default: false },
         model: { type: "string" },
         verbose: { type: "boolean", short: "v", default: false },
+        "project-root": { type: "string" },
       },
       allowPositionals: false,
     }));
@@ -67,7 +74,12 @@ export const runCli = async ({ argv, stdin, credential, log }: CliInput): Promis
     return { code: 2, stderr: `Invalid arguments: ${errorMessage(error)}` };
   }
 
-  const parsedOptions = CliOptions.safeParse({ json: values.json, model: values.model, verbose: values.verbose });
+  const parsedOptions = CliOptions.safeParse({
+    json: values.json,
+    model: values.model,
+    verbose: values.verbose,
+    projectRoot: values["project-root"],
+  });
   if (!parsedOptions.success) {
     return { code: 2, stderr: `Invalid options: ${parsedOptions.error.message}` };
   }
@@ -85,7 +97,11 @@ export const runCli = async ({ argv, stdin, credential, log }: CliInput): Promis
   }
 
   try {
-    const review = await runReview(stdin, { model: options.model, log: options.verbose ? log : undefined });
+    const review = await runReview(stdin, {
+      model: options.model,
+      projectRoot: options.projectRoot ?? defaultProjectRoot,
+      log: options.verbose ? log : undefined,
+    });
     return { code: 0, stdout: renderReview(review, { json: options.json }) };
   } catch (error) {
     return { code: 1, stderr: `Code review failed: ${errorMessage(error)}` };
@@ -127,6 +143,10 @@ const main = async (): Promise<void> => {
     argv: process.argv.slice(2),
     stdin,
     credential: resolveCredential(process.env),
+    // Repo root = three levels up from this module (src/ → code-review/ → packages/ → root).
+    // Used as the reviewer's project root unless `--project-root` overrides it (CI passes
+    // GITHUB_WORKSPACE, because `pnpm --filter … exec` runs from the package dir).
+    defaultProjectRoot: path.resolve(import.meta.dirname, "../../.."),
     // Progress logs go to stderr so stdout stays a clean review / JSON stream.
     log: (line) => process.stderr.write(`${line}\n`),
   });
