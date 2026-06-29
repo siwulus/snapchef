@@ -1,7 +1,7 @@
 ---
 change_id: wizard-moving-back-forward
 title: Let users move back and forward through the new-recipe wizard
-status: implementing
+status: implemented
 created: 2026-06-29
 updated: 2026-06-29
 archived_at: null

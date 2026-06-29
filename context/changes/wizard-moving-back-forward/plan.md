@@ -288,10 +288,10 @@ None — no schema or server changes.
 
 #### Automated
 
-- [x] 3.1 Unit tests pass: `pnpm test`
-- [x] 3.2 New `WizardStepper.test.tsx`: reachability gating, current marking, navigation callbacks
-- [x] 3.3 Lint passes: `pnpm lint`
-- [x] 3.4 Build passes: `pnpm build`
+- [x] 3.1 Unit tests pass: `pnpm test` — 46b50ce24
+- [x] 3.2 New `WizardStepper.test.tsx`: reachability gating, current marking, navigation callbacks — 46b50ce24
+- [x] 3.3 Lint passes: `pnpm lint` — 46b50ce24
+- [x] 3.4 Build passes: `pnpm build` — 46b50ce24
 
 #### Manual
 
