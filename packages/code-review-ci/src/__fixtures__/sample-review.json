@@ -1,8 +1,18 @@
 {
   "summary": "Adds a constant in foo.ts and a new bar.ts module.",
+  "areas": {
+    "correctness": { "status": "blocking", "rationale": "a line-less critical issue in baz.ts" },
+    "error_handling": { "status": "ok", "rationale": "no error paths touched" },
+    "security": { "status": "ok", "rationale": "no trust boundaries crossed" },
+    "tests": { "status": "ok", "rationale": "no test changes required" },
+    "api_contract": { "status": "ok", "rationale": "no public contract change" },
+    "maintainability": { "status": "concerns", "rationale": "magic number and a missing return type" },
+    "frontend": { "status": "not_applicable", "rationale": "no UI in the diff" }
+  },
   "findings": [
     {
       "severity": "major",
+      "category": "maintainability",
       "file": "src/foo.ts",
       "line": 3,
       "title": "Magic number",
@@ -11,6 +21,7 @@
     },
     {
       "severity": "minor",
+      "category": "maintainability",
       "file": "src/bar.ts",
       "line": 1,
       "title": "Missing explicit return type",
@@ -18,6 +29,7 @@
     },
     {
       "severity": "nit",
+      "category": "maintainability",
       "file": "src/foo.ts",
       "line": 99,
       "title": "Out-of-diff finding",
@@ -25,6 +37,7 @@
     },
     {
       "severity": "critical",
+      "category": "correctness",
       "file": "src/baz.ts",
       "title": "Line-less finding",
       "detail": "No line and an unknown file — routes to the summary, never inline."

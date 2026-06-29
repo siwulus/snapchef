@@ -343,24 +343,24 @@ The serialized review is **additive** (`summary`/`findings`/`verdict` retained; 
 
 #### Automated
 
-- [x] 3.1 Unit tests pass: `pnpm --filter code-review test`
-- [x] 3.2 Type checking passes: `pnpm --filter code-review typecheck`
-- [x] 3.3 Linting passes: `pnpm lint`
+- [x] 3.1 Unit tests pass: `pnpm --filter code-review test` — 713162bd3
+- [x] 3.2 Type checking passes: `pnpm --filter code-review typecheck` — 713162bd3
+- [x] 3.3 Linting passes: `pnpm lint` — 713162bd3
 
 #### Manual
 
-- [x] 3.4 CLI pretty output shows the area-coverage table and per-finding concern
+- [x] 3.4 CLI pretty output shows the area-coverage table and per-finding concern — 713162bd3
 
 ### Phase 4: CI contract mirror + PR coverage surfacing
 
 #### Automated
 
-- [ ] 4.1 CI package tests pass: `pnpm --filter @snapchef/code-review-ci test`
-- [ ] 4.2 Reviewer tests still pass: `pnpm --filter code-review test`
-- [ ] 4.3 Type checking passes: `pnpm --filter @snapchef/code-review-ci typecheck`
-- [ ] 4.4 Linting passes: `pnpm lint`
+- [x] 4.1 CI package tests pass: `pnpm --filter @snapchef/code-review-ci test`
+- [x] 4.2 Reviewer tests still pass: `pnpm --filter code-review test`
+- [x] 4.3 Type checking passes: `pnpm --filter @snapchef/code-review-ci typecheck`
+- [x] 4.4 Linting passes: `pnpm lint`
 
 #### Manual
 
-- [ ] 4.5 End-to-end dry run: `cr-output.json` shows area coverage, gate state matches derived verdict, inline ≤ cap
-- [ ] 4.6 Gate still fails closed on `request_changes`
+- [x] 4.5 End-to-end dry run: `cr-output.json` shows area coverage, gate state matches derived verdict, inline ≤ cap
+- [x] 4.6 Gate still fails closed on `request_changes`

@@ -1,8 +1,9 @@
 # code-review-action
 
 A composite GitHub Action that runs the AI code reviewer over a pull request and
-applies the result: **inline comments**, a **sticky summary** comment, and a
-**fail-closed merge-gate commit status**. It is the composition layer over two
+applies the result: **inline comments**, a **sticky summary** comment (including a
+**per-concern coverage** section), and a **fail-closed merge-gate commit status**.
+It is the composition layer over two
 workspace packages — the platform-agnostic reviewer engine (`packages/code-review`)
 and the GitHub orchestration (`@snapchef/code-review-ci`) — wired together so a
 workflow runs the whole gate in one step.
@@ -66,7 +67,9 @@ reference consumer.
   fails, no status is posted and branch protection blocks via the _missing required
   status_ — still fail-closed.
 - **Gate semantics.** Only a `request_changes` verdict blocks; `comment` and
-  `approve` pass. An empty diff passes with no billable AI call.
+  `approve` pass. An empty diff passes with no billable AI call. The verdict is
+  derived from the reviewer's per-concern coverage (any `blocking` area →
+  `request_changes`; any `concerns` → `comment`; else `approve`).
 - **Idempotent re-runs.** Prior bot inline comments are removed before posting and
   the sticky is upserted in place, so re-running (e.g. via a revalidate label) does
   not duplicate.

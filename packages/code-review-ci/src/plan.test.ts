@@ -11,6 +11,7 @@ import {
 
 const finding = (over: Partial<Finding> = {}): Finding => ({
   severity: "major",
+  category: "correctness",
   file: "src/foo.ts",
   line: 1,
   title: "title",
@@ -18,8 +19,19 @@ const finding = (over: Partial<Finding> = {}): Finding => ({
   ...over,
 });
 
+const okAreas = {
+  correctness: { status: "ok", rationale: "fine" },
+  error_handling: { status: "ok", rationale: "fine" },
+  security: { status: "ok", rationale: "fine" },
+  tests: { status: "ok", rationale: "fine" },
+  api_contract: { status: "ok", rationale: "fine" },
+  maintainability: { status: "ok", rationale: "fine" },
+  frontend: { status: "not_applicable", rationale: "no UI" },
+} as const;
+
 const review = (over: Partial<Review> = {}): Review => ({
   summary: "a summary",
+  areas: okAreas,
   findings: [],
   verdict: "comment",
   ...over,
@@ -107,6 +119,16 @@ describe("buildPostPlan", () => {
     expect(plan.stickyBody).toContain("_No findings._");
   });
 
+  it("renders an area-coverage section in the sticky body", () => {
+    const plan = buildPostPlan(
+      review({ areas: { ...okAreas, security: { status: "blocking", rationale: "secret leaked" } }, verdict: "request_changes" }),
+      new Map(),
+    );
+    expect(plan.stickyBody).toContain("### Area coverage");
+    expect(plan.stickyBody).toContain("**security**");
+    expect(plan.stickyBody).toContain("BLOCKING");
+  });
+
   it("notes when all findings landed inline", () => {
     const plan = buildPostPlan(review({ findings: [finding({ line: 1 })] }), validLines({ "src/foo.ts": [1] }));
     expect(plan.stickyBody).toContain("posted as inline comments");
@@ -130,6 +152,9 @@ describe("parseReview", () => {
     expect(parseReview(json).verdict).toBe("comment");
   });
   it("throws on a contract drift (bad verdict)", () => {
-    expect(() => parseReview(JSON.stringify({ findings: [], verdict: "lgtm" }))).toThrow();
+    expect(() => parseReview(JSON.stringify({ areas: okAreas, findings: [], verdict: "lgtm" }))).toThrow();
+  });
+  it("throws when the per-area coverage block is missing", () => {
+    expect(() => parseReview(JSON.stringify({ findings: [], verdict: "approve" }))).toThrow();
   });
 });

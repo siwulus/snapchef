@@ -16,8 +16,50 @@ export const SEVERITY_ORDER: readonly Severity[] = ["critical", "major", "minor"
 export const Verdict = z.enum(["approve", "comment", "request_changes"]);
 export type Verdict = z.infer<typeof Verdict>;
 
+/** Concern areas, mirrored from the engine. Findings carry a `category`; the review a per-area block. */
+export const ConcernArea = z.enum([
+  "correctness",
+  "error_handling",
+  "security",
+  "tests",
+  "api_contract",
+  "maintainability",
+  "frontend",
+]);
+export type ConcernArea = z.infer<typeof ConcernArea>;
+
+/** Display order for concern areas. */
+export const CONCERN_ORDER: readonly ConcernArea[] = [
+  "correctness",
+  "error_handling",
+  "security",
+  "tests",
+  "api_contract",
+  "maintainability",
+  "frontend",
+];
+
+export const AreaStatus = z.enum(["ok", "concerns", "blocking", "not_applicable"]);
+export type AreaStatus = z.infer<typeof AreaStatus>;
+
+export const AreaReview = z.object({ status: AreaStatus, rationale: z.string() });
+export type AreaReview = z.infer<typeof AreaReview>;
+
+/** Per-area coverage: one entry per concern (mirrors the engine's required-keyed object). */
+export const Areas = z.object({
+  correctness: AreaReview,
+  error_handling: AreaReview,
+  security: AreaReview,
+  tests: AreaReview,
+  api_contract: AreaReview,
+  maintainability: AreaReview,
+  frontend: AreaReview,
+});
+export type Areas = z.infer<typeof Areas>;
+
 export const Finding = z.object({
   severity: Severity,
+  category: ConcernArea,
   file: z.string(),
   line: z.number().optional(),
   title: z.string(),
@@ -28,6 +70,7 @@ export type Finding = z.infer<typeof Finding>;
 
 export const Review = z.object({
   summary: z.string().optional(),
+  areas: Areas,
   findings: z.array(Finding),
   verdict: Verdict,
 });
@@ -92,7 +135,7 @@ const location = (finding: Finding): string =>
 
 /** Body of a single inline review comment (carries the dedup marker). */
 const renderInlineBody = (finding: Finding): string => {
-  const lines = [`**[${finding.severity.toUpperCase()}] ${finding.title}**`, "", finding.detail];
+  const lines = [`**[${finding.category} · ${finding.severity.toUpperCase()}] ${finding.title}**`, "", finding.detail];
   if (finding.suggestion !== undefined) lines.push("", `**Suggestion:** ${finding.suggestion}`);
   lines.push("", INLINE_MARKER);
   return lines.join("\n");
@@ -100,9 +143,18 @@ const renderInlineBody = (finding: Finding): string => {
 
 /** One bullet for a finding rolled into the sticky summary. */
 const renderSummaryItem = (finding: Finding): string => {
-  const head = `- **[${finding.severity.toUpperCase()}]** \`${location(finding)}\` — ${finding.title}`;
+  const head = `- **[${finding.category} · ${finding.severity.toUpperCase()}]** \`${location(finding)}\` — ${finding.title}`;
   const detail = `  ${finding.detail}`;
   return finding.suggestion !== undefined ? [head, detail, `  _Suggestion:_ ${finding.suggestion}`].join("\n") : [head, detail].join("\n");
+};
+
+/** The per-concern coverage section: one bullet per concern, in canonical order. */
+const renderAreaCoverage = (review: Review): string[] => {
+  const rows = CONCERN_ORDER.map((concern) => {
+    const area = review.areas[concern];
+    return `- **${concern}** — ${area.status.toUpperCase()}: ${area.rationale}`;
+  });
+  return ["", "### Area coverage", "", ...rows];
 };
 
 const renderStickyBody = (review: Review, summaryFindings: Finding[], inlineCount: number): string => {
@@ -110,6 +162,7 @@ const renderStickyBody = (review: Review, summaryFindings: Finding[], inlineCoun
   if (review.summary !== undefined && review.summary.trim().length > 0) {
     parts.push("", review.summary.trim());
   }
+  parts.push(...renderAreaCoverage(review));
   if (summaryFindings.length > 0) {
     parts.push("", "### Additional findings", "", ...summaryFindings.map(renderSummaryItem));
   } else if (inlineCount > 0) {

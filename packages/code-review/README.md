@@ -85,18 +85,32 @@ Verbose logs go to **stderr**, so stdout stays a clean review/JSON stream
 
 ## Output
 
-**Pretty (default):** a verdict line, the summary, then findings grouped and
-ordered by severity (`critical` → `major` → `minor` → `nit`), each showing
-`file:line — title`, the detail, and a suggestion when present.
+**Pretty (default):** a verdict line, the summary, a per-concern **Areas** block
+(every concern with its `ok | concerns | blocking | not_applicable` status and a
+rationale), then findings grouped and ordered by severity (`critical` → `major` →
+`minor` → `nit`), each showing `[category] file:line — title`, the detail, and a
+suggestion when present.
 
 **JSON (`--json`):** the validated `Review` object:
 
 ```jsonc
 {
   "summary": "…",
+  // One entry per concern — the model must report every concern (coverage is
+  // enforced by the schema), with a status of ok | concerns | blocking | not_applicable.
+  "areas": {
+    "correctness": { "status": "blocking", "rationale": "…" },
+    "error_handling": { "status": "ok", "rationale": "…" },
+    "security": { "status": "ok", "rationale": "…" },
+    "tests": { "status": "ok", "rationale": "…" },
+    "api_contract": { "status": "ok", "rationale": "…" },
+    "maintainability": { "status": "ok", "rationale": "…" },
+    "frontend": { "status": "not_applicable", "rationale": "…" },
+  },
   "findings": [
     {
       "severity": "critical", // critical | major | minor | nit
+      "category": "correctness", // the concern this finding belongs to
       "file": "src/math.ts",
       "line": 12, // optional
       "title": "Division by zero not guarded",
@@ -104,7 +118,9 @@ ordered by severity (`critical` → `major` → `minor` → `nit`), each showing
       "suggestion": "…", // optional
     },
   ],
-  "verdict": "request_changes", // approve | comment | request_changes
+  // Derived from the area statuses, not chosen by the model: any blocking →
+  // request_changes; else any concerns → comment; else approve.
+  "verdict": "request_changes",
 }
 ```
 
@@ -120,10 +136,11 @@ ordered by severity (`critical` → `major` → `minor` → `nit`), each showing
 
 `cli.ts` reads the diff from stdin and parses flags → `engine.runReview()` calls a
 headless `query()` with `outputFormat: { type: "json_schema", schema }` (derived
-from the `Review` Zod schema), all built-in tools disabled → the SDK validates the
-model's response against the schema and returns it on the result message's
-`structured_output` field, which is re-parsed through `Review` → `render.ts` prints
-pretty text or JSON.
+from the `ReviewDraft` Zod schema — the model reports per-concern coverage but not
+the verdict), all built-in tools disabled → the SDK validates the model's response
+against the schema and returns it on the result message's `structured_output`
+field; the engine derives the verdict from the area statuses and assembles the final
+`Review` → `render.ts` prints pretty text or JSON.
 
 ## Development
 
