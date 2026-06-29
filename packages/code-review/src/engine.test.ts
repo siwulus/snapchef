@@ -20,9 +20,19 @@ const { runReview } = await import("./engine.js");
 
 const validReview = {
   summary: "One off-by-one in the loop bound.",
+  areas: {
+    correctness: { status: "blocking", rationale: "off-by-one in the loop bound" },
+    error_handling: { status: "ok", rationale: "no error paths touched" },
+    security: { status: "ok", rationale: "no trust boundaries touched" },
+    tests: { status: "ok", rationale: "covered" },
+    api_contract: { status: "ok", rationale: "no contract change" },
+    maintainability: { status: "ok", rationale: "fine" },
+    frontend: { status: "not_applicable", rationale: "no UI in diff" },
+  },
   findings: [
     {
       severity: "major",
+      category: "correctness",
       file: "src/loop.ts",
       line: 4,
       title: "Off-by-one",
