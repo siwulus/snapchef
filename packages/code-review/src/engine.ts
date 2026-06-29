@@ -2,7 +2,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
 import { formatEvent, reviewStartLine } from "./log.js";
 import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt.js";
-import { Review } from "./review.js";
+import { deriveVerdict, Review, ReviewDraft } from "./review.js";
 
 export interface RunReviewOptions {
   /** Model id, e.g. "claude-sonnet-4-6" or "claude-opus-4-8". */
@@ -16,15 +16,18 @@ export interface RunReviewOptions {
 }
 
 /**
- * The JSON Schema the SDK validates the model's structured output against, derived from {@link Review}.
+ * The JSON Schema the SDK validates the model's structured output against, derived from
+ * {@link ReviewDraft} (the model emits the draft; the engine derives the verdict). Because
+ * `areas` is an object with one required key per concern, this schema forces the model to
+ * report every concern — coverage cannot be silently skipped during constrained generation.
  *
  * zod v4's `z.toJSONSchema` emits a top-level `$schema` (draft 2020-12) key. The Agent SDK's
  * structured-output preflight rejects a schema carrying it and silently drops the injected
  * `StructuredOutput` tool — the model then answers in plain text and `structured_output` is never
- * populated (no error is raised). Stripping `$schema` is what makes the tool inject and the
+ * populated (no error is raised). Targeting draft-07 is what makes the tool inject and the
  * structured output actually fire.
  */
-const REVIEW_SCHEMA = z.toJSONSchema(Review, { target: "draft-07" });
+export const REVIEW_SCHEMA = z.toJSONSchema(ReviewDraft, { target: "draft-07" });
 
 /**
  * Turn a git diff into a validated {@link Review} using the Agent SDK's native
@@ -32,9 +35,9 @@ const REVIEW_SCHEMA = z.toJSONSchema(Review, { target: "draft-07" });
  * validates the model's response against it (re-prompting on mismatch), and the
  * validated value arrives on the result message's `structured_output` field.
  *
- * The reviewer reads only the diff, so every built-in tool is disabled. We re-parse
- * the captured value through the `Review` object schema to normalize it to the
- * canonical domain type and enforce client-side refinements.
+ * The reviewer reads only the diff, so every built-in tool is disabled. We parse the
+ * captured value as a `ReviewDraft`, derive the verdict from its per-area statuses, and
+ * assemble the canonical `Review`.
  *
  * Requires an Anthropic credential in the environment — `CLAUDE_CODE_OAUTH_TOKEN`
  * (Claude Pro/Max subscription) or `ANTHROPIC_API_KEY` — which the SDK subprocess inherits.
@@ -69,7 +72,8 @@ export const runReview = async (diff: string, opts: RunReviewOptions): Promise<R
     if (message.type === "result") {
       if (message.subtype === "success") {
         if (message.structured_output !== undefined) {
-          return Review.parse(message.structured_output);
+          const draft = ReviewDraft.parse(message.structured_output);
+          return Review.parse({ ...draft, verdict: deriveVerdict(draft.areas) });
         }
         throw new Error("Code review failed: model did not produce a structured review");
       }

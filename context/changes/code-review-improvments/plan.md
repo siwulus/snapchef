@@ -318,26 +318,26 @@ The serialized review is **additive** (`summary`/`findings`/`verdict` retained; 
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `pnpm --filter code-review test`
-- [x] 1.2 Type checking passes: `pnpm --filter code-review typecheck`
-- [x] 1.3 Linting passes: `pnpm lint`
+- [x] 1.1 Unit tests pass: `pnpm --filter code-review test` — 25ee44955
+- [x] 1.2 Type checking passes: `pnpm --filter code-review typecheck` — 25ee44955
+- [x] 1.3 Linting passes: `pnpm lint` — 25ee44955
 
 #### Manual
 
-- [x] 1.4 `deriveVerdict` precedence reads correctly and `not_applicable` never blocks
+- [x] 1.4 `deriveVerdict` precedence reads correctly and `not_applicable` never blocks — 25ee44955
 
 ### Phase 2: Concern-structured prompt + engine wiring
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `pnpm --filter code-review test`
-- [ ] 2.2 Type checking passes: `pnpm --filter code-review typecheck`
-- [ ] 2.3 Linting passes: `pnpm lint`
+- [x] 2.1 Unit tests pass: `pnpm --filter code-review test`
+- [x] 2.2 Type checking passes: `pnpm --filter code-review typecheck`
+- [x] 2.3 Linting passes: `pnpm lint`
 
 #### Manual
 
-- [ ] 2.4 Real backend-only diff via CLI: all 7 areas, `frontend` not_applicable, findings categorized, derived verdict consistent
-- [ ] 2.5 UI-touching diff: `frontend` activates
+- [x] 2.4 Real backend-only diff via CLI: all 7 areas, `frontend` not_applicable, findings categorized, derived verdict consistent
+- [x] 2.5 UI-touching diff: `frontend` activates
 
 ### Phase 3: Terminal rendering of coverage
 
