@@ -10,6 +10,8 @@ interface WizardReviewProductsProps {
   session: RecipeSession;
   photos: PhotoView[];
   onGenerated: (result: RecipeGenerationResult) => void;
+  // Reflects the generation step's in-flight state up to the wizard so it can gate stepper navigation.
+  onBusyChange: (busy: boolean) => void;
 }
 
 // The review screen: per-photo read-only lists (PhotoReviewCard) plus the merged/consolidated list
@@ -17,8 +19,10 @@ interface WizardReviewProductsProps {
 // (lifted from the editor) so the generation panel can read its `toCorrectedItems()` projection.
 // Below the list, the generation panel collects the meal context + off-list toggle and triggers
 // generation; the generated `{ recipe, session }` bundle is reported up via `onGenerated`.
-export const WizardReviewProducts = ({ session, photos, onGenerated }: WizardReviewProductsProps) => {
-  const editor = useEditableItems(session.recognizedItems);
+export const WizardReviewProducts = ({ session, photos, onGenerated, onBusyChange }: WizardReviewProductsProps) => {
+  // Seed from the user's prior edits when present (returning to this step), falling back to the
+  // freshly recognized list when they have not edited yet (correctedItems is null on first arrival).
+  const editor = useEditableItems(session.correctedItems ?? session.recognizedItems);
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,7 +45,10 @@ export const WizardReviewProducts = ({ session, photos, onGenerated }: WizardRev
           <RecipeGenerationPanel
             sessionId={session.id}
             toCorrectedItems={editor.toCorrectedItems}
+            initialMealContext={session.mealContext}
+            initialAllowExtraIngredients={session.allowExtraIngredients}
             onGenerated={onGenerated}
+            onBusyChange={onBusyChange}
           />
         </CardContent>
       </Card>

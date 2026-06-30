@@ -50,6 +50,28 @@ const noop = () => undefined;
 
 const generateButton = () => screen.getByRole("button", { name: "Generuj przepis" });
 
+// Render with explicit, overridable props. The seeds default to null so the existing tests exercise
+// the forward-flow defaults (empty context, toggle ON) exactly as before the seeding props existed.
+const renderPanel = (
+  props: Partial<{
+    toCorrectedItems: () => RecognizedItem[];
+    initialMealContext: string | null;
+    initialAllowExtraIngredients: boolean | null;
+    onGenerated: (result: RecipeGenerationResult) => void;
+    onBusyChange: (busy: boolean) => void;
+  }> = {},
+) =>
+  render(
+    <RecipeGenerationPanel
+      sessionId={SESSION_ID}
+      toCorrectedItems={props.toCorrectedItems ?? (() => items)}
+      initialMealContext={props.initialMealContext ?? null}
+      initialAllowExtraIngredients={props.initialAllowExtraIngredients ?? null}
+      onGenerated={props.onGenerated ?? noop}
+      onBusyChange={props.onBusyChange ?? noop}
+    />,
+  );
+
 beforeEach(() => {
   Object.defineProperty(window, "location", {
     configurable: true,
@@ -60,7 +82,7 @@ beforeEach(() => {
 describe("RecipeGenerationPanel", () => {
   it("defaults the off-list toggle to on and flips it off on click", async () => {
     const user = userEvent.setup();
-    render(<RecipeGenerationPanel sessionId={SESSION_ID} toCorrectedItems={() => items} onGenerated={noop} />);
+    renderPanel();
 
     const toggle = screen.getByRole("switch");
     expect(toggle).toBeChecked();
@@ -69,25 +91,39 @@ describe("RecipeGenerationPanel", () => {
     expect(toggle).not.toBeChecked();
   });
 
+  it("seeds the textarea and toggle from the session-backed initial values", () => {
+    renderPanel({ initialMealContext: "szybka kolacja", initialAllowExtraIngredients: false });
+
+    expect(screen.getByLabelText("Co chcesz ugotować?")).toHaveValue("szybka kolacja");
+    expect(screen.getByRole("switch")).not.toBeChecked();
+  });
+
+  it("falls back to empty context and toggle ON when the initial values are null", () => {
+    renderPanel({ initialMealContext: null, initialAllowExtraIngredients: null });
+
+    expect(screen.getByLabelText("Co chcesz ugotować?")).toHaveValue("");
+    expect(screen.getByRole("switch")).toBeChecked();
+  });
+
   it("enables the generate button when the projected list is non-empty", () => {
-    render(<RecipeGenerationPanel sessionId={SESSION_ID} toCorrectedItems={() => items} onGenerated={noop} />);
+    renderPanel({ toCorrectedItems: () => items });
     expect(generateButton()).toBeEnabled();
   });
 
   it("disables the generate button when the projected list is empty", () => {
-    render(<RecipeGenerationPanel sessionId={SESSION_ID} toCorrectedItems={() => []} onGenerated={noop} />);
+    renderPanel({ toCorrectedItems: () => [] });
     expect(generateButton()).toBeDisabled();
   });
 
   it("exposes the meal-context textarea", () => {
-    render(<RecipeGenerationPanel sessionId={SESSION_ID} toCorrectedItems={() => items} onGenerated={noop} />);
+    renderPanel();
     expect(screen.getByLabelText("Co chcesz ugotować?")).toBeInTheDocument();
   });
 
   it("forwards the backend recipe-and-session bundle to onGenerated", async () => {
     const user = userEvent.setup();
     const onGenerated = vi.fn<(result: RecipeGenerationResult) => void>();
-    render(<RecipeGenerationPanel sessionId={SESSION_ID} toCorrectedItems={() => items} onGenerated={onGenerated} />);
+    renderPanel({ onGenerated });
 
     await user.type(screen.getByLabelText("Co chcesz ugotować?"), "szybka kolacja");
     await user.click(screen.getByRole("switch")); // turn the off-list toggle off
