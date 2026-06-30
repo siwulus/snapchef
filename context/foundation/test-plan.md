@@ -6,7 +6,8 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-22 (full refresh of §1–§4 — see §8 ledger)
+> Last updated: 2026-06-30 (Phase 4 reconciled to `complete` — E2E smoke + CI
+> gate landed; local-hook e2e gate dropped by cost × signal. See §8 ledger.)
 
 ## 1. Strategy
 
@@ -87,24 +88,27 @@ that change delivered the FSM reducer + transition aspect + enforcement seal
 `recipe-session-transition.test.ts`, and a hardened `RecipeSessionUC.test.ts`
 (18 cases, incl. "surfaces `SnapchefNotFoundError` when the owner-scoped find
 matches no row", closing the 2026-06-21 drift). Phase 1's intent is satisfied;
-the folder cell points at the real change. **Phase 4's E2E smoke is partly
-pre-built out of band**: `e2e/*.spec.ts` (×4: public-access,
-recipes-authenticated, recipes-wizard, recipes-wizard-cancel),
+the folder cell points at the real change. **Phase 4 is now `complete`** — its
+E2E smoke landed out of band: `e2e/*.spec.ts` (×4: public-access,
+recipes-authenticated, recipes-wizard, recipes-wizard-cancel), including the
+Risk #2 critical-path test (upload → recognize → edit → generate → save),
 `playwright.config.ts`, and a fake-LLM adapter (`mock-openrouter-for-tests-e2e`
-→ `FakeLlm`) already exist and pass locally. The **CI gate is now wired** by
-this change (`.github/workflows/ci.yml` runs the `e2e` job — Playwright with
-`E2E_FAKE_LLM` — on PRs to `main`); the **local lefthook hook gate**
-(`lefthook.yml` unchanged) and any critical-flow gap analysis remain, so Phase 4
-is `in_progress`, not greenfield. The app-layer ownership guard from Phase 1 is proven; the
+→ `FakeLlm`); all pass locally. The **CI gate is wired**: `.github/workflows/ci.yml`
+runs the `e2e` job — Playwright with `E2E_FAKE_LLM`, against staging Supabase —
+on PRs to `main`. The original goal's **local lefthook hook gate is deliberately
+dropped**: running Playwright (spawns a dev server, minutes per run) in
+pre-commit violates §1 principle #1 (cost × signal); e2e-on-PR is the correct
+gate. The app-layer ownership guard from Phase 1 is proven; the
 **database-layer** ownership / cross-user isolation (Risk #1 foreign-session
-tail + Risk #3) remains unproven — that is Phase 2's job.)
+tail + Risk #3) remains unproven — that is Phase 2's job, the highest-value
+remaining gap.)
 
-| #   | Phase name                              | Goal (one line)                                                                                                                         | Risks covered                   | Test types                                | Status      | Change folder                                  |
-| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------- | ----------- | ---------------------------------------------- |
-| 1   | Recipe session UC + state machine       | Prove `RecipeSessionUC` transitions, ownership, and save/delete idempotency cannot silently regress (close the drift class just found)  | #1                              | unit / integration (fake ports)           | complete    | context/changes/recepie-session-state-machine/ |
-| 2   | Auth + RLS integration (local Supabase) | Prove two-user isolation on domain tables and the storage bucket, and that reset/verification callbacks fail closed                     | #3, #4                          | integration (local Supabase)              | not started | —                                              |
-| 3   | LLM boundary + upload limits            | Confirm malformed model output fails typed at both LLM boundaries and server-side upload limits hold; add only gaps existing tests miss | #5                              | contract/unit with fixtures + integration | not started | —                                              |
-| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | in_progress | —                                              |
+| #   | Phase name                              | Goal (one line)                                                                                                                         | Risks covered                   | Test types                                | Status      | Change folder                                                                      |
+| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| 1   | Recipe session UC + state machine       | Prove `RecipeSessionUC` transitions, ownership, and save/delete idempotency cannot silently regress (close the drift class just found)  | #1                              | unit / integration (fake ports)           | complete    | context/changes/recepie-session-state-machine/                                     |
+| 2   | Auth + RLS integration (local Supabase) | Prove two-user isolation on domain tables and the storage bucket, and that reset/verification callbacks fail closed                     | #3, #4                          | integration (local Supabase)              | not started | —                                                                                  |
+| 3   | LLM boundary + upload limits            | Confirm malformed model output fails typed at both LLM boundaries and server-side upload limits hold; add only gaps existing tests miss | #5                              | contract/unit with fixtures + integration | not started | —                                                                                  |
+| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow, gated on CI (PR → `main`); local-hook e2e gate dropped (cost × signal)                    | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | complete    | context/changes/mock-openrouter-for-tests-e2e/ (+ e2e specs & CI gate out of band) |
 
 ## 4. Stack
 
@@ -134,15 +138,15 @@ The full set of gates that must pass before a change reaches production.
 "Required after §3 Phase N" means the gate is enforced once that rollout
 phase lands; before that, the gate is planned.
 
-| Gate                                   | Where                                 | Required?                   | Catches                                              |
-| -------------------------------------- | ------------------------------------- | --------------------------- | ---------------------------------------------------- |
-| lint + typecheck (type-checked ESLint) | local (Lefthook) + CI                 | required (already wired)    | syntactic / type drift                               |
-| unit + component (Vitest)              | local + CI                            | required (runner installed) | logic and contract regressions                       |
-| UC + state-machine coverage            | local + CI                            | required after §3 Phase 1   | recipe-session transition / ownership regressions    |
-| RLS isolation suite                    | local + CI                            | required after §3 Phase 2   | cross-user data leaks; reset/verify callback holes   |
-| LLM boundary contracts                 | local + CI                            | required after §3 Phase 3   | malformed-output and limit-bypass regressions        |
-| e2e on the critical flow               | CI on PR                              | required after §3 Phase 4   | broken end-to-end user path                          |
-| pre-prod smoke                         | between merge + prod (Workers Builds) | optional                    | environment-specific failures (dev-vs-Workers drift) |
+| Gate                                   | Where                                 | Required?                     | Catches                                              |
+| -------------------------------------- | ------------------------------------- | ----------------------------- | ---------------------------------------------------- |
+| lint + typecheck (type-checked ESLint) | local (Lefthook) + CI                 | required (already wired)      | syntactic / type drift                               |
+| unit + component (Vitest)              | local + CI                            | required (runner installed)   | logic and contract regressions                       |
+| UC + state-machine coverage            | local + CI                            | required after §3 Phase 1     | recipe-session transition / ownership regressions    |
+| RLS isolation suite                    | local + CI                            | required after §3 Phase 2     | cross-user data leaks; reset/verify callback holes   |
+| LLM boundary contracts                 | local + CI                            | required after §3 Phase 3     | malformed-output and limit-bypass regressions        |
+| e2e on the critical flow               | CI on PR (→ `main`)                   | required (wired — §3 Phase 4) | broken end-to-end user path                          |
+| pre-prod smoke                         | between merge + prod (Workers Builds) | optional                      | environment-specific failures (dev-vs-Workers drift) |
 
 ## 6. Cookbook Patterns
 
@@ -179,7 +183,23 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 ### 6.6 Adding an e2e test
 
-- TBD — see §3 Phase 4 (critical-flow smoke; `/10x-e2e` skill rules apply: role-based locators, no `waitForTimeout`, test independence).
+- Shipped (§3 Phase 4). Exemplar: `e2e/recipes-wizard.spec.ts` (the Risk #2
+  critical-path smoke: upload → recognize → edit context → generate → save);
+  `e2e/recipes-wizard-cancel.spec.ts` for the cancel/delete path. The `/10x-e2e`
+  skill governs generation; its hard rules apply:
+  - Role-based locators (`getByRole` / `getByLabel` / `getByText`); `getByTestId`
+    only when a11y attributes are ambiguous. Never CSS selectors or XPath.
+  - Never `page.waitForTimeout` — wait on state (`toBeVisible`, `waitForURL`,
+    `waitForResponse`). Wait for island hydration before driving a `client:load`
+    component.
+  - Authenticated specs reuse the stored session from `e2e/auth.setup.ts`; seed
+    deterministically and clean up per-test (unique ids; CSRF-safe verify/cleanup
+    via same-origin `page.evaluate(fetch)`, not the `request` fixture — Astro CSRF
+    rejects `request` POST/DELETE with no Origin).
+  - LLM calls are faked via `E2E_FAKE_LLM` (`mock-openrouter-for-tests-e2e` →
+    `FakeLlm`) — never assert exact model output as the oracle.
+  - Runs in CI only (`e2e` job in `.github/workflows/ci.yml`, PR → `main`); not a
+    local pre-commit gate, by §1 cost × signal.
 
 ### 6.7 Per-rollout-phase notes
 
@@ -213,6 +233,25 @@ contributors should respect these unless the underlying assumption changes.
 - Stack versions last verified: 2026-06-22
 - AI-native tool references last verified: 2026-06-22
 
+**2026-06-30 reconciliation #2 (§3 status sync from disk — no §1/§2 rewrite):**
+
+- Triggered by `/10x-test-plan --refresh` ("check Phase 4 — looks obsolete, E2E
+  CI is in place"). Supersedes the Phase 4 bullet in reconciliation #1 below.
+- **Phase 4 → `complete`.** Grounding: `e2e/recipes-wizard.spec.ts` is the
+  Risk #2 critical-path smoke (upload → recognize → edit → generate → save) and
+  passes; the `e2e` job in `.github/workflows/ci.yml` runs Playwright (with
+  `E2E_FAKE_LLM`, staging Supabase) on PRs to `main`. Both halves of the phase's
+  load-bearing intent — browser proof of the critical flow + a CI gate — are met.
+  The E2E specs + Playwright integration + CI gate landed as direct commits out of
+  band (no dedicated change folder); the deterministic fake-LLM seam is
+  `mock-openrouter-for-tests-e2e`, which the §3 cell now points at.
+- **Local-hook e2e gate dropped as a deliberate non-goal**, not deferred work:
+  Playwright in pre-commit (spawns a dev server, minutes per run) violates §1
+  principle #1 (cost × signal); e2e-on-PR is the correct gate. Phase 4's goal
+  text was edited to reflect this; §5 e2e gate row flipped to `required (wired)`.
+- **§6.6 cookbook filled** with the shipped e2e pattern (was "TBD — see Phase 4").
+- No edits to §1 strategy or §2 risk map / response guidance.
+
 **2026-06-30 reconciliation (§3 status sync from disk — no §1/§2 rewrite):**
 
 - Triggered by a report finding ("rollout partially complete by design;
@@ -229,7 +268,8 @@ contributors should respect these unless the underlying assumption changes.
   assertion — the highest-value remaining gap. Selected as the next phase.
 - **Phase 4 E2E specs noted as pre-built out of band** (`e2e/*.spec.ts`,
   `playwright.config.ts`, `FakeLlm`); status held at `not started` because the
-  CI gate is unwired. No status change.
+  CI gate was unwired at the time. _(Superseded by reconciliation #2 above: the
+  CI gate has since been wired and Phase 4 is now `complete`.)_
 - No edits to §1 strategy or §2 risk map / response guidance.
 
 **2026-06-22 refresh (full §1–§4 rewrite, in place by user direction):**
