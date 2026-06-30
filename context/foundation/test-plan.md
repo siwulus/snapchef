@@ -79,12 +79,31 @@ orchestrator updates Status as artifacts appear on disk.
 Library + jsdom + `src/test/setup.ts` are installed and a ~13-file suite
 exists. Its residue is folded into Phase 1.)
 
-| #   | Phase name                              | Goal (one line)                                                                                                                         | Risks covered                   | Test types                                | Status        | Change folder                                         |
-| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------- | ----------------------------------------------------- |
-| 1   | Recipe session UC + state machine       | Prove `RecipeSessionUC` transitions, ownership, and save/delete idempotency cannot silently regress (close the drift class just found)  | #1                              | unit / integration (fake ports)           | change opened | context/changes/testing-recipe-session-state-machine/ |
-| 2   | Auth + RLS integration (local Supabase) | Prove two-user isolation on domain tables and the storage bucket, and that reset/verification callbacks fail closed                     | #3, #4                          | integration (local Supabase)              | not started   | —                                                     |
-| 3   | LLM boundary + upload limits            | Confirm malformed model output fails typed at both LLM boundaries and server-side upload limits hold; add only gaps existing tests miss | #5                              | contract/unit with fixtures + integration | not started   | —                                                     |
-| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | not started   | —                                                     |
+(2026-06-30 reconciliation — see §8 ledger. **Phase 1 is `complete`**, but it
+shipped under the feature change `recepie-session-state-machine` (status
+`impl_reviewed`), not the `testing-…` folder the table originally projected:
+that change delivered the FSM reducer + transition aspect + enforcement seal
+**and** the proving tests — `recipe-session-state-machine.test.ts`,
+`recipe-session-transition.test.ts`, and a hardened `RecipeSessionUC.test.ts`
+(18 cases, incl. "surfaces `SnapchefNotFoundError` when the owner-scoped find
+matches no row", closing the 2026-06-21 drift). Phase 1's intent is satisfied;
+the folder cell points at the real change. **Phase 4's E2E smoke is partly
+pre-built out of band**: `e2e/*.spec.ts` (×4: public-access,
+recipes-authenticated, recipes-wizard, recipes-wizard-cancel),
+`playwright.config.ts`, and a fake-LLM adapter (`mock-openrouter-for-tests-e2e`
+→ `FakeLlm`) already exist and pass locally — but `test:e2e` is **not** wired
+into CI (CI runs `lint` + `pnpm test` + `build` only), so Phase 4 stays
+`not started`: the remaining work is the CI/hook gate + any critical-flow gaps,
+not greenfield. The app-layer ownership guard from Phase 1 is proven; the
+**database-layer** ownership / cross-user isolation (Risk #1 foreign-session
+tail + Risk #3) remains unproven — that is Phase 2's job.)
+
+| #   | Phase name                              | Goal (one line)                                                                                                                         | Risks covered                   | Test types                                | Status      | Change folder                                  |
+| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------- | ----------- | ---------------------------------------------- |
+| 1   | Recipe session UC + state machine       | Prove `RecipeSessionUC` transitions, ownership, and save/delete idempotency cannot silently regress (close the drift class just found)  | #1                              | unit / integration (fake ports)           | complete    | context/changes/recepie-session-state-machine/ |
+| 2   | Auth + RLS integration (local Supabase) | Prove two-user isolation on domain tables and the storage bucket, and that reset/verification callbacks fail closed                     | #3, #4                          | integration (local Supabase)              | not started | —                                              |
+| 3   | LLM boundary + upload limits            | Confirm malformed model output fails typed at both LLM boundaries and server-side upload limits hold; add only gaps existing tests miss | #5                              | contract/unit with fixtures + integration | not started | —                                              |
+| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | not started | —                                              |
 
 ## 4. Stack
 
@@ -192,6 +211,25 @@ contributors should respect these unless the underlying assumption changes.
 - Strategy (§1–§5) last reviewed: 2026-06-22 (full refresh)
 - Stack versions last verified: 2026-06-22
 - AI-native tool references last verified: 2026-06-22
+
+**2026-06-30 reconciliation (§3 status sync from disk — no §1/§2 rewrite):**
+
+- Triggered by a report finding ("rollout partially complete by design;
+  Phases 2–4 not started; criterion met by implemented Phase 1 + existing E2E
+  specs; RLS two-user suite would close the highest-value remaining risk #3").
+- **Phase 1 → `complete`** and its change-folder cell corrected from the
+  never-created `testing-recipe-session-state-machine/` to the real
+  `recepie-session-state-machine/` (feature change, `impl_reviewed`, that also
+  carried the test migration — see §3 note). Risk #1 app-layer
+  ownership/NotFound and illegal-transition drift are now test-covered.
+- **Phase 2 (RLS + auth callbacks) confirmed genuinely uncovered**: no
+  two-user isolation test exists anywhere in `src/`, `e2e/`, or `supabase/`.
+  Risk #3 (cross-user leak) is protected only by RLS policies with no automated
+  assertion — the highest-value remaining gap. Selected as the next phase.
+- **Phase 4 E2E specs noted as pre-built out of band** (`e2e/*.spec.ts`,
+  `playwright.config.ts`, `FakeLlm`); status held at `not started` because the
+  CI gate is unwired. No status change.
+- No edits to §1 strategy or §2 risk map / response guidance.
 
 **2026-06-22 refresh (full §1–§4 rewrite, in place by user direction):**
 

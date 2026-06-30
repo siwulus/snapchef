@@ -1,10 +1,6 @@
 # Snapchef
 
-<!-- CI re-trigger -->
-
-![](./public/template.png)
-
-A modern, opinionated starter template for building fast, accessible web applications.
+Snapchef helps home cooks decide what to make from the ingredients they already have. Instead of typing out a list, you photograph your fridge and pantry — Snapchef recognizes the products, lets you correct the consolidated list, and, given a free-text meal context (e.g. "a light Mediterranean dinner"), generates a recipe you can save and revisit. It targets the everyday trio of decision paralysis ("what do I cook tonight?"), the friction of manual inventory, and food waste.
 
 ## Tech Stack
 
@@ -25,8 +21,8 @@ A modern, opinionated starter template for building fast, accessible web applica
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
+git clone https://github.com/siwulus/snapchef.git
+cd snapchef
 ```
 
 2. Install dependencies:
@@ -113,7 +109,7 @@ pnpm exec supabase stop
 
 The local Studio UI is available at `http://localhost:54323`.
 
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+The migrations under `supabase/migrations/` (recipe-session and recipe tables, RLS policies, the photos storage bucket) are applied automatically when the stack starts; run `pnpm exec supabase db reset` to re-apply them from scratch. After a schema change, regenerate the typed DB client with `pnpm db:types`.
 
 ### Using a cloud Supabase project instead
 
@@ -141,12 +137,14 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 ### Auth routes
 
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| Route                   | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `/auth/signin`          | Email/password sign-in form                                    |
+| `/auth/signup`          | Email/password sign-up form                                    |
+| `/auth/confirm-email`   | Post-signup "check your inbox" page                            |
+| `/auth/forgot-password` | Request a password-reset link                                  |
+| `/auth/reset-password`  | Set a new password from a recovery link                        |
+| `/recipes`              | Protected app (redirects to `/auth/signin` if unauthenticated) |
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
 
