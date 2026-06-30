@@ -91,10 +91,11 @@ the folder cell points at the real change. **Phase 4's E2E smoke is partly
 pre-built out of band**: `e2e/*.spec.ts` (×4: public-access,
 recipes-authenticated, recipes-wizard, recipes-wizard-cancel),
 `playwright.config.ts`, and a fake-LLM adapter (`mock-openrouter-for-tests-e2e`
-→ `FakeLlm`) already exist and pass locally — but `test:e2e` is **not** wired
-into CI (CI runs `lint` + `pnpm test` + `build` only), so Phase 4 stays
-`not started`: the remaining work is the CI/hook gate + any critical-flow gaps,
-not greenfield. The app-layer ownership guard from Phase 1 is proven; the
+→ `FakeLlm`) already exist and pass locally. The **CI gate is now wired** by
+this change (`.github/workflows/ci.yml` runs the `e2e` job — Playwright with
+`E2E_FAKE_LLM` — on PRs to `main`); the **local lefthook hook gate**
+(`lefthook.yml` unchanged) and any critical-flow gap analysis remain, so Phase 4
+is `in_progress`, not greenfield. The app-layer ownership guard from Phase 1 is proven; the
 **database-layer** ownership / cross-user isolation (Risk #1 foreign-session
 tail + Risk #3) remains unproven — that is Phase 2's job.)
 
@@ -103,7 +104,7 @@ tail + Risk #3) remains unproven — that is Phase 2's job.)
 | 1   | Recipe session UC + state machine       | Prove `RecipeSessionUC` transitions, ownership, and save/delete idempotency cannot silently regress (close the drift class just found)  | #1                              | unit / integration (fake ports)           | complete    | context/changes/recepie-session-state-machine/ |
 | 2   | Auth + RLS integration (local Supabase) | Prove two-user isolation on domain tables and the storage bucket, and that reset/verification callbacks fail closed                     | #3, #4                          | integration (local Supabase)              | not started | —                                              |
 | 3   | LLM boundary + upload limits            | Confirm malformed model output fails typed at both LLM boundaries and server-side upload limits hold; add only gaps existing tests miss | #5                              | contract/unit with fixtures + integration | not started | —                                              |
-| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | not started | —                                              |
+| 4   | E2E smoke + quality-gates wiring        | One real-browser pass over the critical flow and a test gate wired into the local hook + CI                                             | #2 (+ floor for #1, #3, #4, #5) | e2e (Playwright) + gates                  | in_progress | —                                              |
 
 ## 4. Stack
 

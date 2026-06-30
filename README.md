@@ -159,7 +159,12 @@ This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) vi
 
 ## CI
 
-GitHub Actions runs lint + build on every push and PR to `main`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step. CI does **not** deploy — deploys are owned by Cloudflare Workers Builds (see Deployment above).
+GitHub Actions (`.github/workflows/ci.yml`) has two jobs:
+
+- **`ci`** (lint + unit tests + build) runs on **every push to any branch**.
+- **`e2e`** (Playwright, against a staging Supabase) runs on **pull requests to `main`** — the LLM boundaries are swapped for deterministic fakes via `E2E_FAKE_LLM`, so no model API key is needed.
+
+Configure `SUPABASE_KEY` and `E2E_USER_PASSWORD` as repository **secrets**, and `SUPABASE_URL` and `E2E_USER_EMAIL` as repository **variables**. CI does **not** deploy — deploys are owned by Cloudflare Workers Builds (see Deployment above).
 
 ## License
 
