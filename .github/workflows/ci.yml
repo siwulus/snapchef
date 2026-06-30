@@ -1,13 +1,19 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
+  push: # any branch
   pull_request:
     branches: [main]
 
+# Cancel superseded runs (per-PR for PR events, per-ref for pushes).
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
+    # Lint + unit + build on every push to any branch.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +23,32 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
+
+  e2e:
+    # Browser-level proof of the critical wizard ("Wire") flow.
+    # Pull requests to main only — never runs on a plain push.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      # Real staging Supabase — read by the Playwright-spawned `pnpm dev` server
+      # (SUPABASE_URL/KEY) and by auth.setup.ts (E2E_USER_*). E2E_FAKE_LLM is set
+      # by playwright.config.ts; OPENROUTER_API_KEY is intentionally absent (fakes).
+      # Non-sensitive values are GitHub Actions variables (vars); the key/password
+      # are secrets. All four already exist on the repo.
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      E2E_USER_EMAIL: ${{ vars.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec astro sync
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
